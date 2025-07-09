@@ -7,7 +7,7 @@ function Home() {
   return (
     <div className="p-2">
       <h3>Welcome Home!!!</h3>
-      <Link to="/posts">Posts</Link>
+      <Link to="/statuses">Statuses</Link>
     </div>
   );
 }

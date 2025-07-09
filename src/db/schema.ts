@@ -1,7 +1,7 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   pgTableCreator,
   uuid,
@@ -11,6 +11,7 @@ import {
   text,
   integer,
 } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -26,6 +27,7 @@ export const tasks = createTable(
     id: uuid("id").primaryKey(),
     name: varchar("name", { length: 256 }).notNull(),
     description: text("description"),
+    statusId: uuid("status_id").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -36,4 +38,30 @@ export const tasks = createTable(
   // })
 );
 
-export type Tasks = typeof tasks.$inferInsert;
+export const statuses = createTable("status", {
+  id: uuid("id").primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }),
+});
+
+export const taskRelations = relations(tasks, ({ one }) => ({
+  status: one(statuses, {
+    fields: [tasks.statusId],
+    references: [statuses.id],
+  }),
+}));
+
+export type Task = typeof tasks.$inferInsert;
+export const insertTaskValidator = createInsertSchema(tasks, {
+  id: (schema) => schema.optional(),
+});
+export type CreateTask = Omit<Task, "id" | "createdAt" | "updatedAt">;
+
+export type Status = typeof statuses.$inferInsert;
+export const insertStatusValidator = createInsertSchema(statuses, {
+  id: (schema) => schema.optional(),
+});
+export type CreateStatus = Omit<Status, "id" | "createdAt" | "updatedAt">;
