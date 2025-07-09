@@ -1,6 +1,14 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FormEvent, useCallback } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { useCreateTaskMutation } from "~/db/mutations";
 import { statusesQueryOptions, tasksQueryOptions } from "~/db/queries";
 export const Route = createFileRoute("/")({
@@ -51,16 +59,31 @@ function Home() {
         </select>
         <button type="submit">Create</button>
       </form>
-      <ul>
-        {[...tasksQuery.data].map((task) => {
+
+      <div className="flex overflow-x-auto gap-3">
+        {[...statusesQuery.data].map((status) => {
           return (
-            <li key={task.id}>
-              {task.name} -{" "}
-              {statusesQuery.data.find((s) => s.id === task.statusId)?.name}
-            </li>
+            <div
+              key={status.id}
+              className="border p-2 flex flex-col gap-2 flex-1 min-w-[250px]"
+            >
+              <h2>{status.name}</h2>
+              {[...tasksQuery.data]
+                .filter((task) => task.statusId === status.id)
+                .map((task) => {
+                  return (
+                    <Card key={task.id}>
+                      <CardHeader>
+                        <CardTitle>{task.name}</CardTitle>
+                        <CardDescription>{task.description}</CardDescription>
+                      </CardHeader>
+                    </Card>
+                  );
+                })}
+            </div>
           );
         })}
-      </ul>
+      </div>
     </div>
   );
 }
