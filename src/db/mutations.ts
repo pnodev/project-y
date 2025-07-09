@@ -2,6 +2,7 @@ import { createServerFn, useServerFn } from "@tanstack/react-start";
 import { db } from ".";
 import {
   CreateStatus,
+  CreateTask,
   insertStatusValidator,
   insertTaskValidator,
   Status,
@@ -35,7 +36,7 @@ export function useCreateTaskMutation() {
   const _createTask = useServerFn(createTask);
 
   return useCallback(
-    async (task: Task) => {
+    async (task: CreateTask) => {
       const result = await _createTask({ data: task });
 
       router.invalidate();
