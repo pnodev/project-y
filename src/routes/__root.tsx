@@ -14,9 +14,8 @@ import { DefaultCatchBoundary } from "~/components/DefaultCatchBoundary";
 import { NotFound } from "~/components/NotFound";
 import appCss from "~/styles/app.css?url";
 import { seo } from "~/utils/seo";
-import { AppSidebar } from "~/components/app-sidebar";
-import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
-import { SiteHeader } from "~/components/site-header";
+
+import { ClerkProvider } from "@clerk/tanstack-react-start";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
@@ -80,26 +79,18 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html>
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <div className="[--header-height:calc(--spacing(14))]">
-          <SidebarProvider className="flex flex-col">
-            <SiteHeader />
-            <div className="flex flex-1">
-              <AppSidebar />
-              <SidebarInset>
-                <div className="flex flex-1 flex-col gap-4 p-4">{children}</div>
-              </SidebarInset>
-            </div>
-          </SidebarProvider>
-        </div>
-        <TanStackRouterDevtools position="bottom-right" />
-        <ReactQueryDevtools buttonPosition="bottom-left" />
-        <Scripts />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html>
+        <head>
+          <HeadContent />
+        </head>
+        <body>
+          {children}
+          <TanStackRouterDevtools position="bottom-right" />
+          {/* <ReactQueryDevtools buttonPosition="bottom-left" /> */}
+          <Scripts />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

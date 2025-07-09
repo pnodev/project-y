@@ -9,25 +9,36 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PathlessLayoutRouteImport } from './routes/_pathlessLayout'
 import { Route as StatusesRouteRouteImport } from './routes/statuses.route'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostsIndexRouteImport } from './routes/posts.index'
+import { Route as PathlessLayoutIndexRouteImport } from './routes/_pathlessLayout/index'
+import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
 import { Route as PostsPostIdRouteImport } from './routes/posts.$postId'
 import { Route as PostsPostIdDeepRouteImport } from './routes/posts_.$postId.deep'
 
+const PathlessLayoutRoute = PathlessLayoutRouteImport.update({
+  id: '/_pathlessLayout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StatusesRouteRoute = StatusesRouteRouteImport.update({
   id: '/statuses',
   path: '/statuses',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PostsIndexRoute = PostsIndexRouteImport.update({
   id: '/posts/',
   path: '/posts/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PathlessLayoutIndexRoute = PathlessLayoutIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PathlessLayoutRoute,
+} as any)
+const SignInSplatRoute = SignInSplatRouteImport.update({
+  id: '/sign-in/$',
+  path: '/sign-in/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PostsPostIdRoute = PostsPostIdRouteImport.update({
@@ -42,56 +53,77 @@ const PostsPostIdDeepRoute = PostsPostIdDeepRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '/statuses': typeof StatusesRouteRoute
   '/posts/$postId': typeof PostsPostIdRoute
+  '/sign-in/$': typeof SignInSplatRoute
+  '/': typeof PathlessLayoutIndexRoute
   '/posts': typeof PostsIndexRoute
   '/posts/$postId/deep': typeof PostsPostIdDeepRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/statuses': typeof StatusesRouteRoute
   '/posts/$postId': typeof PostsPostIdRoute
+  '/sign-in/$': typeof SignInSplatRoute
+  '/': typeof PathlessLayoutIndexRoute
   '/posts': typeof PostsIndexRoute
   '/posts/$postId/deep': typeof PostsPostIdDeepRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/statuses': typeof StatusesRouteRoute
+  '/_pathlessLayout': typeof PathlessLayoutRouteWithChildren
   '/posts/$postId': typeof PostsPostIdRoute
+  '/sign-in/$': typeof SignInSplatRoute
+  '/_pathlessLayout/': typeof PathlessLayoutIndexRoute
   '/posts/': typeof PostsIndexRoute
   '/posts_/$postId/deep': typeof PostsPostIdDeepRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
     | '/statuses'
     | '/posts/$postId'
+    | '/sign-in/$'
+    | '/'
     | '/posts'
     | '/posts/$postId/deep'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/statuses' | '/posts/$postId' | '/posts' | '/posts/$postId/deep'
-  id:
-    | '__root__'
-    | '/'
+  to:
     | '/statuses'
     | '/posts/$postId'
+    | '/sign-in/$'
+    | '/'
+    | '/posts'
+    | '/posts/$postId/deep'
+  id:
+    | '__root__'
+    | '/statuses'
+    | '/_pathlessLayout'
+    | '/posts/$postId'
+    | '/sign-in/$'
+    | '/_pathlessLayout/'
     | '/posts/'
     | '/posts_/$postId/deep'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   StatusesRouteRoute: typeof StatusesRouteRoute
+  PathlessLayoutRoute: typeof PathlessLayoutRouteWithChildren
   PostsPostIdRoute: typeof PostsPostIdRoute
+  SignInSplatRoute: typeof SignInSplatRoute
   PostsIndexRoute: typeof PostsIndexRoute
   PostsPostIdDeepRoute: typeof PostsPostIdDeepRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/_pathlessLayout': {
+      id: '/_pathlessLayout'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof PathlessLayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/statuses': {
       id: '/statuses'
       path: '/statuses'
@@ -99,18 +131,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StatusesRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/posts/': {
       id: '/posts/'
       path: '/posts'
       fullPath: '/posts'
       preLoaderRoute: typeof PostsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_pathlessLayout/': {
+      id: '/_pathlessLayout/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof PathlessLayoutIndexRouteImport
+      parentRoute: typeof PathlessLayoutRoute
+    }
+    '/sign-in/$': {
+      id: '/sign-in/$'
+      path: '/sign-in/$'
+      fullPath: '/sign-in/$'
+      preLoaderRoute: typeof SignInSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/posts/$postId': {
@@ -130,10 +169,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface PathlessLayoutRouteChildren {
+  PathlessLayoutIndexRoute: typeof PathlessLayoutIndexRoute
+}
+
+const PathlessLayoutRouteChildren: PathlessLayoutRouteChildren = {
+  PathlessLayoutIndexRoute: PathlessLayoutIndexRoute,
+}
+
+const PathlessLayoutRouteWithChildren = PathlessLayoutRoute._addFileChildren(
+  PathlessLayoutRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   StatusesRouteRoute: StatusesRouteRoute,
+  PathlessLayoutRoute: PathlessLayoutRouteWithChildren,
   PostsPostIdRoute: PostsPostIdRoute,
+  SignInSplatRoute: SignInSplatRoute,
   PostsIndexRoute: PostsIndexRoute,
   PostsPostIdDeepRoute: PostsPostIdDeepRoute,
 }

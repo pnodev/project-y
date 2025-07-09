@@ -11,6 +11,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@clerk/tanstack-react-start": "^0.19.0",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-collapsible": "^1.1.11",
     "@radix-ui/react-dialog": "^1.1.14",
@@ -53,6 +54,7 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
+      "@clerk/shared",
       "@parcel/watcher",
       "@tailwindcss/oxide",
       "esbuild"

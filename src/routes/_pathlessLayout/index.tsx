@@ -10,12 +10,17 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { useCreateTaskMutation } from "~/db/mutations";
-import { statusesQueryOptions, tasksQueryOptions } from "~/db/queries";
-export const Route = createFileRoute("/")({
+import {
+  authStateFn,
+  statusesQueryOptions,
+  tasksQueryOptions,
+} from "~/db/queries";
+export const Route = createFileRoute("/_pathlessLayout/")({
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData(tasksQueryOptions());
     await context.queryClient.ensureQueryData(statusesQueryOptions());
   },
+  beforeLoad: async () => await authStateFn(),
   component: Home,
 });
 
