@@ -51,6 +51,7 @@ function StatusesComponent() {
         <input type="text" placeholder="Name" name="name" />
         <button type="submit">Create</button>
       </form>
+      {statusesQuery.isFetching ? <div>Loading...</div> : <div>Loaded</div>}
       <ul className="list-disc pl-4">
         {[...statusesQuery.data].map((status) => {
           return (
