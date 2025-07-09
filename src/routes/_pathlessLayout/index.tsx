@@ -1,20 +1,17 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FormEvent, useCallback } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
-import { useCreateTaskMutation } from "~/db/mutations";
+
+import { useCreateTaskMutation, useUpdateTaskMutation } from "~/db/mutations";
 import {
   authStateFn,
   statusesQueryOptions,
   tasksQueryOptions,
 } from "~/db/queries";
+import { DndContext, DragEndEvent } from "@dnd-kit/core";
+import TaskCard from "~/components/TaskCard";
+import TaskColumn from "~/components/TaskColumn";
+
 export const Route = createFileRoute("/_pathlessLayout/")({
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData(tasksQueryOptions());
@@ -28,6 +25,7 @@ function Home() {
   const tasksQuery = useSuspenseQuery(tasksQueryOptions());
   const statusesQuery = useSuspenseQuery(statusesQueryOptions());
   const createTask = useCreateTaskMutation();
+  const updateTask = useUpdateTaskMutation();
   const handleSubmit = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -46,8 +44,20 @@ function Home() {
     [createTask]
   );
 
+  const handleDrop = useCallback(
+    async (e: DragEndEvent) => {
+      const taskId = (e.active.id as string).split(":")[1];
+      const statusId = (e.over?.id as string).split(":")[1];
+      await updateTask({
+        id: taskId,
+        statusId,
+      });
+    },
+    [createTask]
+  );
+
   return (
-    <div className="p-2">
+    <div className="flex flex-col gap-2 h-full grow-0">
       <Link to="/statuses">Statuses</Link>
       <form className="border p-2" onSubmit={handleSubmit}>
         <input type="text" placeholder="Name" name="name" />
@@ -65,30 +75,21 @@ function Home() {
         <button type="submit">Create</button>
       </form>
 
-      <div className="flex overflow-x-auto gap-3">
-        {[...statusesQuery.data].map((status) => {
-          return (
-            <div
-              key={status.id}
-              className="border p-2 flex flex-col gap-2 flex-1 min-w-[250px]"
-            >
-              <h2>{status.name}</h2>
-              {[...tasksQuery.data]
-                .filter((task) => task.statusId === status.id)
-                .map((task) => {
-                  return (
-                    <Card key={task.id}>
-                      <CardHeader>
-                        <CardTitle>{task.name}</CardTitle>
-                        <CardDescription>{task.description}</CardDescription>
-                      </CardHeader>
-                    </Card>
-                  );
-                })}
-            </div>
-          );
-        })}
-      </div>
+      <DndContext onDragEnd={handleDrop}>
+        <div className="flex overflow-x-auto gap-3 h-full grow">
+          {[...statusesQuery.data].map((status) => {
+            return (
+              <TaskColumn key={status.id} status={status}>
+                {[...tasksQuery.data]
+                  .filter((task) => task.statusId === status.id)
+                  .map((task) => {
+                    return <TaskCard key={task.id} task={task} />;
+                  })}
+              </TaskColumn>
+            );
+          })}
+        </div>
+      </DndContext>
     </div>
   );
 }

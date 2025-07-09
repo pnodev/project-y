@@ -58,10 +58,25 @@ export type Task = typeof tasks.$inferInsert;
 export const insertTaskValidator = createInsertSchema(tasks, {
   id: (schema) => schema.optional(),
 });
+export const updateTaskValidator = createInsertSchema(tasks, {
+  name: (schema) => schema.optional(),
+  description: (schema) => schema.optional(),
+  statusId: (schema) => schema.optional(),
+});
 export type CreateTask = Omit<Task, "id" | "createdAt" | "updatedAt">;
+export type UpdateTask = {
+  id: string;
+  name?: string;
+  description?: string;
+  statusId?: string;
+};
 
 export type Status = typeof statuses.$inferInsert;
 export const insertStatusValidator = createInsertSchema(statuses, {
   id: (schema) => schema.optional(),
 });
+export const updateStatusValidator = createInsertSchema(statuses, {
+  id: (schema) => schema.optional(),
+});
 export type CreateStatus = Omit<Status, "id" | "createdAt" | "updatedAt">;
+export type UpdateStatus = Omit<Status, "createdAt" | "updatedAt">;

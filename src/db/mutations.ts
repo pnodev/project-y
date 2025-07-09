@@ -9,6 +9,10 @@ import {
   statuses,
   Task,
   tasks,
+  UpdateStatus,
+  updateStatusValidator,
+  UpdateTask,
+  updateTaskValidator,
 } from "./schema";
 import { v7 as uuid } from "uuid";
 import z from "zod";
@@ -50,6 +54,38 @@ export function useCreateTaskMutation() {
   );
 }
 
+export const updateTask = createServerFn({ method: "POST" })
+  .validator(updateTaskValidator)
+  .handler(async ({ data }) => {
+    await db
+      .update(tasks)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(tasks.id, data.id!));
+  });
+
+export function useUpdateTaskMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _updateTask = useServerFn(updateTask);
+
+  return useCallback(
+    async (task: UpdateTask) => {
+      const result = await _updateTask({ data: task });
+
+      router.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+
+      return result;
+    },
+    [router, queryClient, _updateTask]
+  );
+}
+
 export const createStatus = createServerFn({ method: "POST" })
   .validator(insertStatusValidator)
   .handler(async ({ data }) => {
@@ -78,6 +114,38 @@ export function useCreateStatusMutation() {
       return result;
     },
     [router, queryClient, _createStatus]
+  );
+}
+
+export const updateStatus = createServerFn({ method: "POST" })
+  .validator(updateStatusValidator)
+  .handler(async ({ data }) => {
+    await db
+      .update(statuses)
+      .set({
+        name: data.name,
+        updatedAt: new Date(),
+      })
+      .where(eq(statuses.id, data.id!));
+  });
+
+export function useUpdateStatusMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _updateStatus = useServerFn(updateStatus);
+
+  return useCallback(
+    async (status: UpdateStatus) => {
+      const result = await _updateStatus({ data: status });
+
+      router.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: ["statuses"],
+      });
+
+      return result;
+    },
+    [router, queryClient, _updateStatus]
   );
 }
 

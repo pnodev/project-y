@@ -27,6 +27,7 @@ import {
   SidebarMenuItem,
 } from "~/components/ui/sidebar";
 import { UserButton } from "@clerk/tanstack-react-start";
+import { ClientOnly } from "@tanstack/react-router";
 
 const data = {
   user: {
@@ -181,15 +182,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <UserButton
-          showName={true}
-          appearance={{
-            elements: {
-              avatarBox: "order-1",
-              userButtonOuterIdentifier: "order-2",
-            },
-          }}
-        />
+        <ClientOnly>
+          <UserButton
+            showName={true}
+            appearance={{
+              elements: {
+                avatarBox: "order-1",
+                userButtonOuterIdentifier: "order-2",
+              },
+            }}
+          />
+        </ClientOnly>
       </SidebarFooter>
     </Sidebar>
   );
