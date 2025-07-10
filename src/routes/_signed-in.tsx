@@ -3,7 +3,7 @@ import { AppSidebar } from "~/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { SiteHeader } from "~/components/site-header";
 
-export const Route = createFileRoute("/_pathlessLayout")({
+export const Route = createFileRoute("/_signed-in")({
   component: PathlessLayoutComponent,
 });
 

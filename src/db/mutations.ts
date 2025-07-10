@@ -90,8 +90,8 @@ export const createStatus = createServerFn({ method: "POST" })
   .validator(insertStatusValidator)
   .handler(async ({ data }) => {
     await db.insert(statuses).values({
+      ...data,
       id: uuid(),
-      name: data.name,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -152,6 +152,10 @@ export function useUpdateStatusMutation() {
 export const deleteStatus = createServerFn({ method: "POST" })
   .validator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
+    await db
+      .update(tasks)
+      .set({ statusId: null })
+      .where(eq(tasks.statusId, data.id));
     await db.delete(statuses).where(eq(statuses.id, data.id));
   });
 

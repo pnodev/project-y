@@ -1,27 +1,71 @@
 import { Status } from "~/db/schema";
 import { useDroppable } from "@dnd-kit/core";
+import { cn } from "~/lib/utils";
 
 export default function TaskColumn({
   status,
+  numberOfTasks,
   children,
 }: {
-  status: Status;
+  status?: Status;
+  numberOfTasks?: number;
   children: React.ReactNode;
 }) {
   const { isOver, setNodeRef } = useDroppable({
-    id: `status:${status.id}`,
+    id: status ? `status:${status.id}` : "status-unassigned",
   });
+  const colorClassesColumnBackground = {
+    red: "bg-red-500",
+    orange: "bg-orange-500",
+    yellow: "bg-yellow-500",
+    green: "bg-green-500",
+    emerald: "bg-emerald-500",
+    teal: "bg-teal-500",
+    cyan: "bg-cyan-500",
+    blue: "bg-blue-500",
+    indigo: "bg-indigo-500",
+    violet: "bg-violet-500",
+    purple: "bg-purple-500",
+    fuchsia: "bg-fuchsia-500",
+    pink: "bg-pink-500",
+    rose: "bg-rose-500",
+    neutral: "bg-neutral-500",
+  };
   const style = {
     background: isOver ? "var(--color-indigo-50)" : undefined,
   };
   return (
     <div
-      className="border p-2 flex flex-col gap-2 flex-1 min-w-[250px]"
+      className={cn(
+        "rounded-sm border flex flex-col gap-1.5 flex-1 min-w-[250px] max-w-[450px]",
+        status ? "bg-slate-50" : "bg-yellow-100 border-yellow-300"
+      )}
       ref={setNodeRef}
       style={style}
     >
-      <h2 className="text-xl font-bold">{status.name}</h2>
-      {children}
+      <h2
+        className={cn(
+          "mx-2 mt-2 px-1 font-semibold py-1 rounded-sm text-sm flex items-center"
+          // colorClasses[status?.color || "neutral"]
+        )}
+      >
+        <span
+          className={cn(
+            "mr-2 w-2.5 h-2.5 rounded-full block",
+            colorClassesColumnBackground[status?.color || "neutral"]
+          )}
+        ></span>
+        {status ? status.name : "Unassigned"}
+        <span
+          className={cn(
+            "ml-3 text-[10px] inline-flex w-5 h-5 items-center justify-center rounded-full",
+            status ? "bg-gray-300" : "bg-yellow-400 text-yellow-900"
+          )}
+        >
+          {numberOfTasks}
+        </span>
+      </h2>
+      <div className="px-1.5 flex flex-col gap-1.5">{children}</div>
     </div>
   );
 }

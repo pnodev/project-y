@@ -10,6 +10,7 @@ import {
   varchar,
   text,
   integer,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 
@@ -21,13 +22,44 @@ import { createInsertSchema } from "drizzle-zod";
  */
 export const createTable = pgTableCreator((name) => `project-y_${name}`);
 
+export const colorsEnum = pgEnum("color", [
+  "red",
+  "orange",
+  "yellow",
+  "green",
+  "emerald",
+  "teal",
+  "cyan",
+  "blue",
+  "indigo",
+  "violet",
+  "purple",
+  "fuchsia",
+  "pink",
+  "rose",
+  "neutral",
+]);
+export const COLOR_VALUES = colorsEnum.enumValues;
+export type Color = (typeof colorsEnum.enumValues)[number];
+
+export const priorityEnum = pgEnum("priority", [
+  "low",
+  "medium",
+  "high",
+  "critical",
+]);
+export const PRIORITY_VALUES = priorityEnum.enumValues;
+export type Priority = (typeof priorityEnum.enumValues)[number];
+
 export const tasks = createTable(
   "task",
   {
     id: uuid("id").primaryKey(),
     name: varchar("name", { length: 256 }).notNull(),
     description: text("description"),
-    statusId: uuid("status_id").notNull(),
+    statusId: uuid("status_id"),
+    priority: priorityEnum("priority").notNull().default("medium"),
+    deadline: timestamp("deadline", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -41,6 +73,7 @@ export const tasks = createTable(
 export const statuses = createTable("status", {
   id: uuid("id").primaryKey(),
   name: varchar("name", { length: 256 }).notNull(),
+  color: colorsEnum("color").notNull().default("neutral"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -54,7 +87,7 @@ export const taskRelations = relations(tasks, ({ one }) => ({
   }),
 }));
 
-export type Task = typeof tasks.$inferInsert;
+export type Task = typeof tasks.$inferSelect;
 export const insertTaskValidator = createInsertSchema(tasks, {
   id: (schema) => schema.optional(),
 });
@@ -62,13 +95,20 @@ export const updateTaskValidator = createInsertSchema(tasks, {
   name: (schema) => schema.optional(),
   description: (schema) => schema.optional(),
   statusId: (schema) => schema.optional(),
+  priority: (schema) => schema.optional(),
+  deadline: (schema) => schema.optional(),
 });
-export type CreateTask = Omit<Task, "id" | "createdAt" | "updatedAt">;
+export type CreateTask = Omit<
+  typeof tasks.$inferInsert,
+  "id" | "createdAt" | "updatedAt"
+>;
 export type UpdateTask = {
   id: string;
   name?: string;
   description?: string;
   statusId?: string;
+  priority?: "low" | "medium" | "high" | "critical";
+  deadline?: Date;
 };
 
 export type Status = typeof statuses.$inferInsert;

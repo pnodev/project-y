@@ -9,8 +9,15 @@ import {
 } from "~/components/ui/card";
 import { useDraggable } from "@dnd-kit/core";
 import { ClientOnly } from "@tanstack/react-router";
+import { Badge } from "./ui/badge";
 
-export default function TaskCard({ task }: { task: Task }) {
+export default function TaskCard({
+  task,
+  onClick,
+}: {
+  task: Task;
+  onClick?: () => void;
+}) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: `task:${task.id}`,
   });
@@ -22,18 +29,27 @@ export default function TaskCard({ task }: { task: Task }) {
   return (
     <ClientOnly fallback={<TaskCardComponent task={task} key={task.id} />}>
       <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
-        <TaskCardComponent task={task} key={task.id} />
+        <TaskCardComponent onClick={onClick} task={task} key={task.id} />
       </div>
     </ClientOnly>
   );
 }
 
-const TaskCardComponent = ({ task }: { task: Task }) => {
+const TaskCardComponent = ({
+  task,
+  onClick,
+}: {
+  task: Task;
+  onClick?: () => void;
+}) => {
   return (
-    <Card>
+    <Card className="cursor-pointer" onClick={onClick}>
       <CardHeader>
+        <div className="-mt-2 mb-2.5">
+          <Badge color={"orange"}>Backend</Badge>
+        </div>
         <CardTitle>{task.name}</CardTitle>
-        <CardDescription>{task.description}</CardDescription>
+        {/* <CardDescription>{task.description}</CardDescription> */}
       </CardHeader>
     </Card>
   );

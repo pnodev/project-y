@@ -9,32 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as PathlessLayoutRouteImport } from './routes/_pathlessLayout'
-import { Route as StatusesRouteRouteImport } from './routes/statuses.route'
+import { Route as SignedInRouteImport } from './routes/_signed-in'
 import { Route as PostsIndexRouteImport } from './routes/posts.index'
-import { Route as PathlessLayoutIndexRouteImport } from './routes/_pathlessLayout/index'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
 import { Route as PostsPostIdRouteImport } from './routes/posts.$postId'
+import { Route as SignedInTasksRouteImport } from './routes/_signed-in/tasks'
+import { Route as SignedInStatusesRouteImport } from './routes/_signed-in/statuses'
 import { Route as PostsPostIdDeepRouteImport } from './routes/posts_.$postId.deep'
+import { Route as SignedInTasksTaskIdRouteImport } from './routes/_signed-in/tasks.$taskId'
 
-const PathlessLayoutRoute = PathlessLayoutRouteImport.update({
-  id: '/_pathlessLayout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StatusesRouteRoute = StatusesRouteRouteImport.update({
-  id: '/statuses',
-  path: '/statuses',
+const SignedInRoute = SignedInRouteImport.update({
+  id: '/_signed-in',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PostsIndexRoute = PostsIndexRouteImport.update({
   id: '/posts/',
   path: '/posts/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const PathlessLayoutIndexRoute = PathlessLayoutIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => PathlessLayoutRoute,
 } as any)
 const SignInSplatRoute = SignInSplatRouteImport.update({
   id: '/sign-in/$',
@@ -46,69 +37,89 @@ const PostsPostIdRoute = PostsPostIdRouteImport.update({
   path: '/posts/$postId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignedInTasksRoute = SignedInTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => SignedInRoute,
+} as any)
+const SignedInStatusesRoute = SignedInStatusesRouteImport.update({
+  id: '/statuses',
+  path: '/statuses',
+  getParentRoute: () => SignedInRoute,
+} as any)
 const PostsPostIdDeepRoute = PostsPostIdDeepRouteImport.update({
   id: '/posts_/$postId/deep',
   path: '/posts/$postId/deep',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignedInTasksTaskIdRoute = SignedInTasksTaskIdRouteImport.update({
+  id: '/$taskId',
+  path: '/$taskId',
+  getParentRoute: () => SignedInTasksRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/statuses': typeof StatusesRouteRoute
+  '/statuses': typeof SignedInStatusesRoute
+  '/tasks': typeof SignedInTasksRouteWithChildren
   '/posts/$postId': typeof PostsPostIdRoute
   '/sign-in/$': typeof SignInSplatRoute
-  '/': typeof PathlessLayoutIndexRoute
   '/posts': typeof PostsIndexRoute
+  '/tasks/$taskId': typeof SignedInTasksTaskIdRoute
   '/posts/$postId/deep': typeof PostsPostIdDeepRoute
 }
 export interface FileRoutesByTo {
-  '/statuses': typeof StatusesRouteRoute
+  '/statuses': typeof SignedInStatusesRoute
+  '/tasks': typeof SignedInTasksRouteWithChildren
   '/posts/$postId': typeof PostsPostIdRoute
   '/sign-in/$': typeof SignInSplatRoute
-  '/': typeof PathlessLayoutIndexRoute
   '/posts': typeof PostsIndexRoute
+  '/tasks/$taskId': typeof SignedInTasksTaskIdRoute
   '/posts/$postId/deep': typeof PostsPostIdDeepRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/statuses': typeof StatusesRouteRoute
-  '/_pathlessLayout': typeof PathlessLayoutRouteWithChildren
+  '/_signed-in': typeof SignedInRouteWithChildren
+  '/_signed-in/statuses': typeof SignedInStatusesRoute
+  '/_signed-in/tasks': typeof SignedInTasksRouteWithChildren
   '/posts/$postId': typeof PostsPostIdRoute
   '/sign-in/$': typeof SignInSplatRoute
-  '/_pathlessLayout/': typeof PathlessLayoutIndexRoute
   '/posts/': typeof PostsIndexRoute
+  '/_signed-in/tasks/$taskId': typeof SignedInTasksTaskIdRoute
   '/posts_/$postId/deep': typeof PostsPostIdDeepRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/statuses'
+    | '/tasks'
     | '/posts/$postId'
     | '/sign-in/$'
-    | '/'
     | '/posts'
+    | '/tasks/$taskId'
     | '/posts/$postId/deep'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/statuses'
+    | '/tasks'
     | '/posts/$postId'
     | '/sign-in/$'
-    | '/'
     | '/posts'
+    | '/tasks/$taskId'
     | '/posts/$postId/deep'
   id:
     | '__root__'
-    | '/statuses'
-    | '/_pathlessLayout'
+    | '/_signed-in'
+    | '/_signed-in/statuses'
+    | '/_signed-in/tasks'
     | '/posts/$postId'
     | '/sign-in/$'
-    | '/_pathlessLayout/'
     | '/posts/'
+    | '/_signed-in/tasks/$taskId'
     | '/posts_/$postId/deep'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  StatusesRouteRoute: typeof StatusesRouteRoute
-  PathlessLayoutRoute: typeof PathlessLayoutRouteWithChildren
+  SignedInRoute: typeof SignedInRouteWithChildren
   PostsPostIdRoute: typeof PostsPostIdRoute
   SignInSplatRoute: typeof SignInSplatRoute
   PostsIndexRoute: typeof PostsIndexRoute
@@ -117,18 +128,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_pathlessLayout': {
-      id: '/_pathlessLayout'
+    '/_signed-in': {
+      id: '/_signed-in'
       path: ''
       fullPath: ''
-      preLoaderRoute: typeof PathlessLayoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/statuses': {
-      id: '/statuses'
-      path: '/statuses'
-      fullPath: '/statuses'
-      preLoaderRoute: typeof StatusesRouteRouteImport
+      preLoaderRoute: typeof SignedInRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/posts/': {
@@ -137,13 +141,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/posts'
       preLoaderRoute: typeof PostsIndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_pathlessLayout/': {
-      id: '/_pathlessLayout/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof PathlessLayoutIndexRouteImport
-      parentRoute: typeof PathlessLayoutRoute
     }
     '/sign-in/$': {
       id: '/sign-in/$'
@@ -159,6 +156,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostsPostIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_signed-in/tasks': {
+      id: '/_signed-in/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof SignedInTasksRouteImport
+      parentRoute: typeof SignedInRoute
+    }
+    '/_signed-in/statuses': {
+      id: '/_signed-in/statuses'
+      path: '/statuses'
+      fullPath: '/statuses'
+      preLoaderRoute: typeof SignedInStatusesRouteImport
+      parentRoute: typeof SignedInRoute
+    }
     '/posts_/$postId/deep': {
       id: '/posts_/$postId/deep'
       path: '/posts/$postId/deep'
@@ -166,24 +177,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostsPostIdDeepRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_signed-in/tasks/$taskId': {
+      id: '/_signed-in/tasks/$taskId'
+      path: '/$taskId'
+      fullPath: '/tasks/$taskId'
+      preLoaderRoute: typeof SignedInTasksTaskIdRouteImport
+      parentRoute: typeof SignedInTasksRoute
+    }
   }
 }
 
-interface PathlessLayoutRouteChildren {
-  PathlessLayoutIndexRoute: typeof PathlessLayoutIndexRoute
+interface SignedInTasksRouteChildren {
+  SignedInTasksTaskIdRoute: typeof SignedInTasksTaskIdRoute
 }
 
-const PathlessLayoutRouteChildren: PathlessLayoutRouteChildren = {
-  PathlessLayoutIndexRoute: PathlessLayoutIndexRoute,
+const SignedInTasksRouteChildren: SignedInTasksRouteChildren = {
+  SignedInTasksTaskIdRoute: SignedInTasksTaskIdRoute,
 }
 
-const PathlessLayoutRouteWithChildren = PathlessLayoutRoute._addFileChildren(
-  PathlessLayoutRouteChildren,
+const SignedInTasksRouteWithChildren = SignedInTasksRoute._addFileChildren(
+  SignedInTasksRouteChildren,
+)
+
+interface SignedInRouteChildren {
+  SignedInStatusesRoute: typeof SignedInStatusesRoute
+  SignedInTasksRoute: typeof SignedInTasksRouteWithChildren
+}
+
+const SignedInRouteChildren: SignedInRouteChildren = {
+  SignedInStatusesRoute: SignedInStatusesRoute,
+  SignedInTasksRoute: SignedInTasksRouteWithChildren,
+}
+
+const SignedInRouteWithChildren = SignedInRoute._addFileChildren(
+  SignedInRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
-  StatusesRouteRoute: StatusesRouteRoute,
-  PathlessLayoutRoute: PathlessLayoutRouteWithChildren,
+  SignedInRoute: SignedInRouteWithChildren,
   PostsPostIdRoute: PostsPostIdRoute,
   SignInSplatRoute: SignInSplatRoute,
   PostsIndexRoute: PostsIndexRoute,

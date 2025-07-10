@@ -18,6 +18,23 @@ export const tasksQueryOptions = () =>
     queryFn: () => fetchTasks(),
   });
 
+export const fetchTask = createServerFn({ method: "GET" })
+  .validator((d: string) => d)
+  .handler(async ({ data }) => {
+    console.info("Fetching task...");
+    return await db.query.tasks.findFirst({
+      where(fields, operators) {
+        return operators.eq(fields.id, data);
+      },
+    });
+  });
+
+export const taskQueryOptions = (id: string) =>
+  queryOptions({
+    queryKey: ["tasks", id],
+    queryFn: () => fetchTask({ data: id }),
+  });
+
 export const fetchStatuses = createServerFn({ method: "GET" }).handler(
   async () => {
     console.info("Fetching statuses...");
@@ -40,7 +57,7 @@ export const authStateFn = createServerFn({ method: "GET" }).handler(
       // This will error because you're redirecting to a path that doesn't exist yet
       // You can create a sign-in route to handle this
       throw redirect({
-        to: "/sign-in",
+        to: "/sign-in/$",
       });
     }
 
