@@ -73,14 +73,24 @@ export function useUpdateTaskMutation() {
 
   return useCallback(
     async (task: UpdateTask) => {
-      const result = await _updateTask({ data: task });
-
-      router.invalidate();
-      queryClient.invalidateQueries({
-        queryKey: ["tasks"],
+      // Optimistically update the task in the cache
+      queryClient.setQueryData(["tasks"], (oldData: Task[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map((t) =>
+          t.id === task.id ? { ...t, ...task, updatedAt: new Date() } : t
+        );
       });
 
-      return result;
+      try {
+        const result = await _updateTask({ data: task });
+        return result;
+      } catch (error) {
+        // If the mutation fails, roll back to the previous state
+        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        throw error;
+      } finally {
+        router.invalidate();
+      }
     },
     [router, queryClient, _updateTask]
   );
