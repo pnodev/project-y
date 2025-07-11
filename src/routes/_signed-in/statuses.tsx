@@ -22,7 +22,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { EllipsisVertical, Trash2 } from "lucide-react";
+import { EllipsisVertical, Flag, Trash2 } from "lucide-react";
+import { EntityList, EntityListItem } from "~/components/EntityList";
 
 export const Route = createFileRoute("/_signed-in/statuses")({
   loader: async ({ context }) => {
@@ -79,54 +80,22 @@ function StatusesComponent() {
         <ColorSelect name="color" />
         <Button type="submit">Create</Button>
       </form>
-      <ul className="grid gap-2">
+      <EntityList>
         {[...statusesQuery.data].map((status) => {
           return (
-            <li
+            <EntityListItem
               key={status.id}
-              className="col-span-1 flex rounded-md shadow-xs"
-            >
-              <div
-                className={cn(
-                  "flex w-16 shrink-0 rounded-l-md",
-                  selectableColorClasses[status.color]
-                )}
-              ></div>
-              <div className="flex flex-1 items-center justify-between truncate rounded-r-md border-t border-r border-b border-gray-200 bg-white">
-                <div className="flex-1 truncate px-4 py-2 text-sm">
-                  <p className="font-medium text-gray-900">{status.name}</p>
-                  <p className="text-gray-500">
-                    {status.taskCount}{" "}
-                    {status.taskCount === 1 ? "Task" : "Tasks"} associated with
-                    this status
-                  </p>
-                </div>
-                <div className="shrink-0 pr-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <EllipsisVertical />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem asChild>
-                        <button
-                          type="button"
-                          className="w-full cursor-pointer"
-                          onClick={() => handleDelete(status.id)}
-                        >
-                          <Trash2 />
-                          Delete
-                        </button>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            </li>
+              name={status.name}
+              description={`${status.taskCount} ${
+                status.taskCount === 1 ? "Task" : "Tasks"
+              } associated with this status`}
+              color={status.color}
+              handleDelete={() => handleDelete(status.id)}
+              icon={Flag}
+            />
           );
         })}
-      </ul>
+      </EntityList>
       <hr />
       <Outlet />
     </div>

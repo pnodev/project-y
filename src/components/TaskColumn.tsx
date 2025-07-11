@@ -2,10 +2,7 @@ import { Status } from "~/db/schema";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "~/lib/utils";
 import { Button } from "./ui/button";
-import { CirclePlus, PlusIcon } from "lucide-react";
-import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
-import { Input } from "./ui/input";
-import { SimpleCard } from "./ui/simple-card";
+import { PlusIcon } from "lucide-react";
 import TaskQuickCreate from "./TaskQuickCreate";
 import { useState } from "react";
 

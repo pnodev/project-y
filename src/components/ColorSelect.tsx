@@ -8,21 +8,21 @@ import {
 import { COLOR_VALUES } from "~/db/schema";
 
 export const selectableColorClasses = {
-  red: "bg-red-500",
-  orange: "bg-orange-500",
-  yellow: "bg-yellow-500",
-  green: "bg-green-500",
-  emerald: "bg-emerald-500",
-  teal: "bg-teal-500",
-  cyan: "bg-cyan-500",
-  blue: "bg-blue-500",
-  indigo: "bg-indigo-500",
-  violet: "bg-violet-500",
-  purple: "bg-purple-500",
-  fuchsia: "bg-fuchsia-500",
-  pink: "bg-pink-500",
-  rose: "bg-rose-500",
-  neutral: "bg-neutral-500",
+  red: "bg-red-600",
+  orange: "bg-orange-600",
+  yellow: "bg-yellow-600",
+  green: "bg-green-600",
+  emerald: "bg-emerald-600",
+  teal: "bg-teal-600",
+  cyan: "bg-cyan-600",
+  blue: "bg-blue-600",
+  indigo: "bg-indigo-600",
+  violet: "bg-violet-600",
+  purple: "bg-purple-600",
+  fuchsia: "bg-fuchsia-600",
+  pink: "bg-pink-600",
+  rose: "bg-rose-600",
+  neutral: "bg-neutral-600",
 };
 
 export function ColorSelect({ name }: { name: string }) {
