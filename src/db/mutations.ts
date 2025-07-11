@@ -120,6 +120,9 @@ export function useCreateStatusMutation() {
       queryClient.invalidateQueries({
         queryKey: ["statuses"],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["statuses-with-counts"],
+      });
 
       return result;
     },
@@ -152,6 +155,9 @@ export function useUpdateStatusMutation() {
       queryClient.invalidateQueries({
         queryKey: ["statuses"],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["statuses-with-counts"],
+      });
 
       return result;
     },
@@ -181,6 +187,9 @@ export function useDeleteStatusMutation() {
       router.invalidate();
       queryClient.invalidateQueries({
         queryKey: ["statuses"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["statuses-with-counts"],
       });
 
       return result;
