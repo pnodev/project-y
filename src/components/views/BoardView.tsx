@@ -1,11 +1,13 @@
 import {
   DndContext,
   DragEndEvent,
+  DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import TaskCard from "~/components/TaskCard";
+import { useState } from "react";
+import TaskCard, { TaskCardComponent } from "~/components/TaskCard";
 import TaskColumn from "~/components/TaskColumn";
 import { Priority, Status, Task, UpdateTask } from "~/db/schema";
 
@@ -24,7 +26,10 @@ export const BoardView = ({
   updateTask,
   onOpenTask,
 }: TaskViewProps) => {
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+
   const handleDrop = (e: DragEndEvent) => {
+    setActiveTask(null);
     const taskId = (e.active.id as string).split(":")[1];
     const statusId = (e.over?.id as string).split(":")[1];
     updateTask({
@@ -58,8 +63,20 @@ export const BoardView = ({
   }, {} as Record<string, Task[]>);
 
   return (
-    <DndContext onDragEnd={handleDrop} sensors={sensors}>
-      <div className="flex overflow-x-auto gap-3 h-full grow">
+    <DndContext
+      onDragEnd={handleDrop}
+      sensors={sensors}
+      onDragStart={(event) => {
+        const taskId = (event.active.id as string).split(":")[1];
+        const task = tasks.find((t) => t.id === taskId);
+        if (task) setActiveTask(task);
+      }}
+    >
+      {/* Setting the height to 1px is a hack to make flex-grow work */}
+      {/* Without some kind of concrete height, the flex-grow doesn't work */}
+      {/* Doesn't really matter what the height is, as long as it's not a percentage */}
+      {/* TODO: It could make sense to set a fixed height on the view container */}
+      <div className="flex overflow-x-auto gap-3 h-px grow">
         {tasksByStatus["unassigned"] ? (
           <TaskColumn
             key="unassigned"
@@ -119,6 +136,9 @@ export const BoardView = ({
           );
         })}
       </div>
+      <DragOverlay dropAnimation={null}>
+        {activeTask && <TaskCardComponent task={activeTask} />}
+      </DragOverlay>
     </DndContext>
   );
 };

@@ -1,6 +1,13 @@
 import { Status } from "~/db/schema";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "~/lib/utils";
+import { Button } from "./ui/button";
+import { CirclePlus, PlusIcon } from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
+import { Input } from "./ui/input";
+import { SimpleCard } from "./ui/simple-card";
+import TaskQuickCreate from "./TaskQuickCreate";
+import { useState } from "react";
 
 export default function TaskColumn({
   status,
@@ -11,6 +18,7 @@ export default function TaskColumn({
   numberOfTasks?: number;
   children: React.ReactNode;
 }) {
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const { isOver, setNodeRef } = useDroppable({
     id: status ? `status:${status.id}` : "status-unassigned",
   });
@@ -37,7 +45,7 @@ export default function TaskColumn({
   return (
     <div
       className={cn(
-        "rounded-sm border flex flex-col gap-1.5 flex-1 min-w-[250px] max-w-[450px]",
+        "rounded-sm h-full border flex flex-col gap-1.5 flex-1 min-w-[250px] max-w-[450px]",
         status ? "bg-slate-50" : "bg-yellow-100 border-yellow-300"
       )}
       ref={setNodeRef}
@@ -65,7 +73,27 @@ export default function TaskColumn({
           {numberOfTasks}
         </span>
       </h2>
-      <div className="px-1.5 flex flex-col gap-1.5">{children}</div>
+      <div className="px-1.5 flex flex-col gap-1.5 overflow-y-auto flex-1">
+        {children}
+      </div>
+      {status ? (
+        <div className="p-2 gap-1 flex flex-col">
+          <TaskQuickCreate
+            status={status.id}
+            isOpen={quickCreateOpen}
+            onClose={() => setQuickCreateOpen(false)}
+          />
+          <Button
+            size={"sm"}
+            variant={"background"}
+            type="button"
+            onClick={() => setQuickCreateOpen(true)}
+          >
+            <PlusIcon />
+            Add Task
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

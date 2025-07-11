@@ -18,24 +18,25 @@ export default function TaskCard({
   task: Task;
   onClick?: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `task:${task.id}`,
   });
-  const style = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-      }
-    : undefined;
+
   return (
     <ClientOnly fallback={<TaskCardComponent task={task} key={task.id} />}>
-      <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+      <div
+        ref={setNodeRef}
+        style={{ opacity: isDragging ? 0.2 : undefined }}
+        {...listeners}
+        {...attributes}
+      >
         <TaskCardComponent onClick={onClick} task={task} key={task.id} />
       </div>
     </ClientOnly>
   );
 }
 
-const TaskCardComponent = ({
+export const TaskCardComponent = ({
   task,
   onClick,
 }: {
