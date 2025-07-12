@@ -39,7 +39,10 @@ export default function TaskQuickCreate({
 
   return (
     <form onSubmit={handleSubmit}>
-      <SimpleCard>
+      <button onClick={onClose} type="button" className="fixed inset-0 z-50">
+        <span className="sr-only">Close</span>
+      </button>
+      <SimpleCard className="relative z-50">
         <Input
           ref={ref}
           name="name"
