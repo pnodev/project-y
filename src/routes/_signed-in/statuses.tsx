@@ -24,6 +24,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { EllipsisVertical, Flag, Trash2 } from "lucide-react";
 import { EntityList, EntityListItem } from "~/components/EntityList";
+import { PageLayout } from "~/components/PageLayout";
 
 export const Route = createFileRoute("/_signed-in/statuses")({
   loader: async ({ context }) => {
@@ -71,7 +72,7 @@ function StatusesComponent() {
   );
 
   return (
-    <div>
+    <PageLayout title="Statuses">
       <form
         onSubmit={handleSubmit}
         className="border p-2 flex flex-col items-start gap-2 mb-3"
@@ -98,6 +99,6 @@ function StatusesComponent() {
       </EntityList>
       <hr />
       <Outlet />
-    </div>
+    </PageLayout>
   );
 }

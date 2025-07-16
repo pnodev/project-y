@@ -16,6 +16,7 @@ import {
 import { BoardView } from "~/components/views/BoardView";
 import { Priority, UpdateTask } from "~/db/schema";
 import { OpenTask } from "~/components/OpenTask";
+import { PageLayout } from "~/components/PageLayout";
 
 export const Route = createFileRoute("/_signed-in/tasks/$")({
   loader: async ({ context }) => {
@@ -55,18 +56,20 @@ function Home() {
   const priorityOrder: Priority[] = ["low", "medium", "high", "critical"];
 
   return (
-    <div className="flex flex-col gap-2 h-full grow-0">
-      <BoardView
-        priorityOrder={priorityOrder}
-        tasks={tasksQuery.data}
-        statuses={statusesQuery.data}
-        updateTask={handleUpdateTask}
-        onOpenTask={(task) => navigate({ to: `/tasks/${task.id}` })}
-      />
-      <OpenTask
-        task={tasksQuery.data?.find((task) => task.id === openTask)}
-        statuses={statusesQuery.data}
-      />
-    </div>
+    <PageLayout title="Tasks">
+      <div className="flex flex-col gap-2 h-full grow-0">
+        <BoardView
+          priorityOrder={priorityOrder}
+          tasks={tasksQuery.data}
+          statuses={statusesQuery.data}
+          updateTask={handleUpdateTask}
+          onOpenTask={(task) => navigate({ to: `/tasks/${task.id}` })}
+        />
+        <OpenTask
+          task={tasksQuery.data?.find((task) => task.id === openTask)}
+          statuses={statusesQuery.data}
+        />
+      </div>
+    </PageLayout>
   );
 }
