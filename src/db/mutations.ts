@@ -21,7 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { eq } from "drizzle-orm";
 
-export const createTask = createServerFn({ method: "POST" })
+const createTask = createServerFn({ method: "POST" })
   .validator(insertTaskValidator)
   .handler(async ({ data }) => {
     await db.insert(tasks).values({
@@ -54,7 +54,7 @@ export function useCreateTaskMutation() {
   );
 }
 
-export const updateTask = createServerFn({ method: "POST" })
+const updateTask = createServerFn({ method: "POST" })
   .validator(updateTaskValidator)
   .handler(async ({ data }) => {
     await db
@@ -96,7 +96,7 @@ export function useUpdateTaskMutation() {
   );
 }
 
-export const createStatus = createServerFn({ method: "POST" })
+const createStatus = createServerFn({ method: "POST" })
   .validator(insertStatusValidator)
   .handler(async ({ data }) => {
     await db.insert(statuses).values({
@@ -130,13 +130,14 @@ export function useCreateStatusMutation() {
   );
 }
 
-export const updateStatus = createServerFn({ method: "POST" })
+const updateStatus = createServerFn({ method: "POST" })
   .validator(updateStatusValidator)
   .handler(async ({ data }) => {
     await db
       .update(statuses)
       .set({
         name: data.name,
+        color: data.color,
         updatedAt: new Date(),
       })
       .where(eq(statuses.id, data.id!));
@@ -165,7 +166,7 @@ export function useUpdateStatusMutation() {
   );
 }
 
-export const deleteStatus = createServerFn({ method: "POST" })
+const deleteStatus = createServerFn({ method: "POST" })
   .validator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
     await db

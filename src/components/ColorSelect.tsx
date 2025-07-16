@@ -5,7 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { COLOR_VALUES } from "~/db/schema";
+import { Color, COLOR_VALUES } from "~/db/schema";
 
 export const selectableColorClasses = {
   red: "bg-red-600",
@@ -25,11 +25,21 @@ export const selectableColorClasses = {
   neutral: "bg-neutral-600",
 };
 
-export function ColorSelect({ name }: { name: string }) {
+export function ColorSelect({
+  name,
+  value,
+  triggerClassNames,
+}: {
+  name: string;
+  value?: Color;
+  triggerClassNames?: string;
+}) {
   return (
     <>
-      <Select name={name}>
-        <SelectTrigger className="w-[300px]">
+      <Select name={name} defaultValue={value}>
+        <SelectTrigger
+          className={triggerClassNames ? triggerClassNames : "w-[300px]"}
+        >
           <SelectValue placeholder="Select a color" />
         </SelectTrigger>
         <SelectContent>

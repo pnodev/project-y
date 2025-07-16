@@ -85,6 +85,7 @@ function StatusesComponent() {
         {[...statusesQuery.data].map((status) => {
           return (
             <EntityListItem
+              id={status.id}
               key={status.id}
               name={status.name}
               description={`${status.taskCount} ${

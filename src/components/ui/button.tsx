@@ -3,6 +3,7 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "~/lib/utils";
+import { LoadingSpinner } from "./loading-spinner";
 
 const buttonVariants = cva(
   "inline-flex items-center cursor-pointer justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
@@ -18,7 +19,7 @@ const buttonVariants = cva(
         background:
           "border bg-background text-gray-700 shadow-xs hover:bg-gray-100 hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+          "bg-secondary border text-secondary-foreground shadow-xs hover:bg-secondary/80",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
@@ -42,10 +43,19 @@ function Button({
   variant,
   size,
   asChild = false,
+  children,
+  icon: Icon,
+  loading,
+  hideContentWhenLoading,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
+    loading?: boolean;
+    hideContentWhenLoading?: boolean;
+    icon?: React.ComponentType<{
+      className?: string;
+    }>;
   }) {
   const Comp = asChild ? Slot : "button";
 
@@ -53,8 +63,16 @@ function Button({
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      disabled={loading}
       {...props}
-    />
+    >
+      <LoadingSpinner
+        className={hideContentWhenLoading ? "" : "-ml-1 mr-2"}
+        isActive={!!loading}
+      />
+      {Icon && !loading ? <Icon className="-ml-1 mr-2 h-4 w-4" /> : null}
+      {!hideContentWhenLoading || !loading ? children : null}
+    </Comp>
   );
 }
 
