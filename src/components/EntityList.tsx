@@ -22,6 +22,7 @@ export function EntityListItem({
   color,
   id,
   handleDelete,
+  handleUpdate,
   ...props
 }: {
   name: string;
@@ -30,29 +31,27 @@ export function EntityListItem({
   id: string;
   icon?: LucideIcon;
   handleDelete: () => void;
+  handleUpdate: (data: {
+    name: string;
+    color: keyof typeof selectableColorClasses;
+  }) => Promise<void>;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const updateStatus = useUpdateStatusMutation();
 
-  const handleUpdate = useCallback(
+  const handleUpdateCallback = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       setIsSaving(true);
-      const formData = new FormData(e.currentTarget);
-      const name = formData.get("name");
-      const color = formData.get(
-        "color"
-      ) as keyof typeof selectableColorClasses;
-      e.currentTarget.reset();
-
-      if (typeof name !== "string" || !name) return;
-
-      await updateStatus({ id, name, color });
+      const formData = new FormData(e.currentTarget as HTMLFormElement);
+      await handleUpdate({
+        name: formData.get("name") as string,
+        color: formData.get("color") as keyof typeof selectableColorClasses,
+      });
       setIsSaving(false);
       setIsEditing(false);
     },
-    [updateStatus, id]
+    [id]
   );
 
   return (
@@ -68,7 +67,10 @@ export function EntityListItem({
       <div className="flex flex-1 items-center justify-between truncate rounded-r-md border-t border-r border-b border-gray-200 bg-white">
         <div className="flex-1 truncate px-4 py-2 text-sm">
           {isEditing ? (
-            <form onSubmit={handleUpdate} className="grid grid-cols-12 gap-2">
+            <form
+              onSubmit={handleUpdateCallback}
+              className="grid grid-cols-12 gap-2"
+            >
               <Input
                 name="name"
                 placeholder="Name"

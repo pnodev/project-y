@@ -7,6 +7,7 @@ import { Input } from "~/components/ui/input";
 import {
   useCreateStatusMutation,
   useDeleteStatusMutation,
+  useUpdateStatusMutation,
 } from "~/db/mutations";
 import {
   statusesQueryOptions,
@@ -40,6 +41,7 @@ function StatusesComponent() {
   const statusesQuery = useSuspenseQuery(statusesWithCountsQueryOptions());
   const createStatus = useCreateStatusMutation();
   const deleteStatus = useDeleteStatusMutation();
+  const updateStatus = useUpdateStatusMutation();
 
   const handleSubmit = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
@@ -71,6 +73,15 @@ function StatusesComponent() {
     [deleteStatus]
   );
 
+  const handleUpdate = async (
+    id: string,
+    data: { name: string; color: keyof typeof selectableColorClasses }
+  ) => {
+    if (typeof data.name !== "string" || !data.name) return;
+
+    await updateStatus({ id, name: data.name, color: data.color });
+  };
+
   return (
     <PageLayout title="Statuses">
       <form
@@ -93,6 +104,7 @@ function StatusesComponent() {
               } associated with this status`}
               color={status.color}
               handleDelete={() => handleDelete(status.id)}
+              handleUpdate={(data) => handleUpdate(status.id, data)}
               icon={Flag}
             />
           );
