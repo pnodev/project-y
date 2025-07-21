@@ -9,14 +9,20 @@ import {
 import { useState } from "react";
 import TaskCard, { TaskCardComponent } from "~/components/TaskCard";
 import TaskColumn from "~/components/TaskColumn";
-import { Priority, Status, Task, UpdateTask } from "~/db/schema";
+import {
+  Priority,
+  Status,
+  Task,
+  TaskWithLabels,
+  UpdateTask,
+} from "~/db/schema";
 
 type TaskViewProps = {
-  tasks: Task[];
+  tasks: TaskWithLabels[];
   statuses: Status[];
   priorityOrder: Priority[];
   updateTask: (task: UpdateTask) => Promise<void>;
-  onOpenTask?: (task: Task) => void;
+  onOpenTask?: (task: TaskWithLabels) => void;
 };
 
 export const BoardView = ({
@@ -60,7 +66,7 @@ export const BoardView = ({
       ...acc,
       [status.id]: [...(acc[status.id] || []), task],
     };
-  }, {} as Record<string, Task[]>);
+  }, {} as Record<string, TaskWithLabels[]>);
 
   return (
     <DndContext

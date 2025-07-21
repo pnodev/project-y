@@ -1,4 +1,4 @@
-import { Task, TaskWithLabels } from "~/db/schema";
+import { TaskWithLabels } from "~/db/schema";
 import { Card, CardHeader, CardTitle } from "~/components/ui/card";
 import { useDraggable } from "@dnd-kit/core";
 import { ClientOnly } from "@tanstack/react-router";
