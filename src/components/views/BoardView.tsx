@@ -9,13 +9,7 @@ import {
 import { useState } from "react";
 import TaskCard, { TaskCardComponent } from "~/components/TaskCard";
 import TaskColumn from "~/components/TaskColumn";
-import {
-  Priority,
-  Status,
-  Task,
-  TaskWithLabels,
-  UpdateTask,
-} from "~/db/schema";
+import { Priority, Status, TaskWithLabels, UpdateTask } from "~/db/schema";
 
 type TaskViewProps = {
   tasks: TaskWithLabels[];
@@ -32,7 +26,7 @@ export const BoardView = ({
   updateTask,
   onOpenTask,
 }: TaskViewProps) => {
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [activeTask, setActiveTask] = useState<TaskWithLabels | null>(null);
 
   const handleDrop = (e: DragEndEvent) => {
     setActiveTask(null);
