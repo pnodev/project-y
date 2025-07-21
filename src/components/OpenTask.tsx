@@ -5,20 +5,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { Status, Task, UpdateTask } from "~/db/schema";
+import { Label, Status, Task, TaskWithLabels, UpdateTask } from "~/db/schema";
 import { RichtextEditor } from "~/components/RichtextEditor/Editor";
 import { useCallback } from "react";
-import { useUpdateTaskMutation } from "~/db/mutations";
+import { useUpdateTaskMutation } from "~/db/mutations/tasks";
 import { DateDisplay } from "~/components/ui/date-display";
 import { DetailList, DetailListItem } from "~/components/ui/detail-list";
 import { StatusSwitch } from "./StatusSwitch";
+import { Labels } from "./Labels";
 
 export function OpenTask({
   task,
   statuses,
+  labels,
 }: {
-  task?: Task;
+  task?: TaskWithLabels;
   statuses: Status[];
+  labels: Label[];
 }) {
   const navigate = useNavigate();
 
@@ -46,6 +49,9 @@ export function OpenTask({
         </DialogHeader>
         {task && currentStatus ? (
           <div className="grid grid-cols-12 gap-2">
+            <div className="col-span-12">
+              <Labels task={task} labels={labels} />
+            </div>
             <div className="col-span-8 flex flex-col gap-3">
               <DetailList>
                 <DetailListItem label="Status">

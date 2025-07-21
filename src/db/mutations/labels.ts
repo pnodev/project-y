@@ -1,0 +1,182 @@
+import { createServerFn, useServerFn } from "@tanstack/react-start";
+import { db } from "~/db";
+import {
+  CreateLabel,
+  CreateStatus,
+  insertLabelValidator,
+  insertStatusValidator,
+  labels,
+  labelsToTasks,
+  statuses,
+  tasks,
+  UpdateLabel,
+  updateLabelValidator,
+  updateMultipleLabelsValidator,
+  updateMultipleStatusesValidator,
+  UpdateStatus,
+  updateStatusValidator,
+} from "~/db/schema";
+import { v7 as uuid } from "uuid";
+import z from "zod";
+import { useRouter } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
+import { eq } from "drizzle-orm";
+
+const createLabel = createServerFn({ method: "POST" })
+  .validator(insertLabelValidator)
+  .handler(async ({ data }) => {
+    await db.insert(labels).values({
+      ...data,
+      id: uuid(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  });
+
+export function useCreateLabelMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _createLabel = useServerFn(createLabel);
+
+  return useCallback(
+    async (label: CreateLabel) => {
+      const result = await _createLabel({ data: label });
+
+      router.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: ["labels"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["labels-with-counts"],
+      });
+
+      return result;
+    },
+    [router, queryClient, _createLabel]
+  );
+}
+
+const updateLabel = createServerFn({ method: "POST" })
+  .validator(updateLabelValidator)
+  .handler(async ({ data }) => {
+    await db
+      .update(labels)
+      .set({
+        name: data.name,
+        color: data.color,
+        order: data.order,
+        updatedAt: new Date(),
+      })
+      .where(eq(labels.id, data.id!));
+  });
+
+export function useUpdateLabelMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _updateLabel = useServerFn(updateLabel);
+
+  return useCallback(
+    async (label: UpdateLabel) => {
+      const result = await _updateLabel({ data: label });
+
+      router.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: ["labels"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["labels-with-counts"],
+      });
+
+      return result;
+    },
+    [router, queryClient, _updateLabel]
+  );
+}
+
+const updateMultipleLabels = createServerFn({ method: "POST" })
+  .validator(updateMultipleLabelsValidator)
+  .handler(async ({ data }) => {
+    await Promise.all(
+      data.map(async (entry) => {
+        return await db
+          .update(labels)
+          .set({
+            name: entry.name,
+            color: entry.color,
+            order: entry.order,
+            updatedAt: new Date(),
+          })
+          .where(eq(labels.id, entry.id!));
+      })
+    );
+  });
+
+export function useUpdateMultipleLabelsMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _updateMultipleLabels = useServerFn(updateMultipleLabels);
+
+  return useCallback(
+    async (labels: UpdateLabel[]) => {
+      // Generic update function that works for both cache types
+      const updateCache = (oldData: any[] | undefined) => {
+        if (!oldData) return oldData;
+        const labelMap = new Map(labels.map((s) => [s.id, s]));
+        return oldData.map((s) => {
+          const update = labelMap.get(s.id);
+          return update ? { ...s, ...update, updatedAt: new Date() } : s;
+        });
+      };
+
+      // Update both caches
+      queryClient.setQueryData(["labels"], updateCache);
+      queryClient.setQueryData(["labels-with-counts"], updateCache);
+
+      try {
+        const result = await _updateMultipleLabels({ data: labels });
+        return result;
+      } catch (error) {
+        queryClient.invalidateQueries({ queryKey: ["labels"] });
+        queryClient.invalidateQueries({ queryKey: ["labels-with-counts"] });
+        throw error;
+      } finally {
+        router.invalidate();
+      }
+    },
+    [router, queryClient, _updateMultipleLabels]
+  );
+}
+
+const deleteLabel = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string() }))
+  .handler(async ({ data }) => {
+    // await db
+    // .update(tasks)
+    // .set({ labelId: null })
+    // .where(eq(tasks.statusId, data.id));
+    await db.delete(labels).where(eq(labels.id, data.id));
+  });
+
+export function useDeleteLabelMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _deleteLabel = useServerFn(deleteLabel);
+
+  return useCallback(
+    async (id: string) => {
+      const result = await _deleteLabel({ data: { id } });
+
+      router.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: ["labels"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["labels-with-counts"],
+      });
+
+      return result;
+    },
+    [router, queryClient, _deleteLabel]
+  );
+}

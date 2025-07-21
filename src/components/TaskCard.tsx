@@ -1,4 +1,4 @@
-import { Task } from "~/db/schema";
+import { Task, TaskWithLabels } from "~/db/schema";
 import {
   Card,
   CardContent,
@@ -40,14 +40,18 @@ export const TaskCardComponent = ({
   task,
   onClick,
 }: {
-  task: Task;
+  task: TaskWithLabels;
   onClick?: () => void;
 }) => {
   return (
     <Card className="cursor-pointer" onClick={onClick}>
       <CardHeader>
-        <div className="-mt-2 mb-2.5">
-          <Badge color={"orange"}>Backend</Badge>
+        <div className="-mt-2 mb-2.5 flex flex-wrap gap-2">
+          {task.labels.map((label) => (
+            <Badge key={label.id} color={label.color || "neutral"} size="small">
+              {label.name}
+            </Badge>
+          ))}
         </div>
         <CardTitle>{task.name}</CardTitle>
         {/* <CardDescription>{task.description}</CardDescription> */}

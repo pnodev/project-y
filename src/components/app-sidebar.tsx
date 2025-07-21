@@ -13,6 +13,7 @@ import {
   Send,
   Settings2,
   SquareTerminal,
+  Tag,
 } from "lucide-react";
 
 import { NavMain } from "~/components/nav-main";
@@ -63,6 +64,11 @@ const data = {
       name: "Statuses",
       url: "/statuses",
       icon: Flag,
+    },
+    {
+      name: "Labels",
+      url: "/labels",
+      icon: Tag,
     },
   ],
 };

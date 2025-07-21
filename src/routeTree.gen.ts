@@ -15,6 +15,7 @@ import { Route as PostsIndexRouteImport } from './routes/posts.index'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
 import { Route as PostsPostIdRouteImport } from './routes/posts.$postId'
 import { Route as SignedInStatusesRouteImport } from './routes/_signed-in/statuses'
+import { Route as SignedInLabelsRouteImport } from './routes/_signed-in/labels'
 import { Route as PostsPostIdDeepRouteImport } from './routes/posts_.$postId.deep'
 import { Route as SignedInTasksSplatRouteImport } from './routes/_signed-in/tasks.$'
 
@@ -47,6 +48,11 @@ const SignedInStatusesRoute = SignedInStatusesRouteImport.update({
   path: '/statuses',
   getParentRoute: () => SignedInRoute,
 } as any)
+const SignedInLabelsRoute = SignedInLabelsRouteImport.update({
+  id: '/labels',
+  path: '/labels',
+  getParentRoute: () => SignedInRoute,
+} as any)
 const PostsPostIdDeepRoute = PostsPostIdDeepRouteImport.update({
   id: '/posts_/$postId/deep',
   path: '/posts/$postId/deep',
@@ -60,6 +66,7 @@ const SignedInTasksSplatRoute = SignedInTasksSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/labels': typeof SignedInLabelsRoute
   '/statuses': typeof SignedInStatusesRoute
   '/posts/$postId': typeof PostsPostIdRoute
   '/sign-in/$': typeof SignInSplatRoute
@@ -69,6 +76,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/labels': typeof SignedInLabelsRoute
   '/statuses': typeof SignedInStatusesRoute
   '/posts/$postId': typeof PostsPostIdRoute
   '/sign-in/$': typeof SignInSplatRoute
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_signed-in': typeof SignedInRouteWithChildren
+  '/_signed-in/labels': typeof SignedInLabelsRoute
   '/_signed-in/statuses': typeof SignedInStatusesRoute
   '/posts/$postId': typeof PostsPostIdRoute
   '/sign-in/$': typeof SignInSplatRoute
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/labels'
     | '/statuses'
     | '/posts/$postId'
     | '/sign-in/$'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/labels'
     | '/statuses'
     | '/posts/$postId'
     | '/sign-in/$'
@@ -110,6 +121,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_signed-in'
+    | '/_signed-in/labels'
     | '/_signed-in/statuses'
     | '/posts/$postId'
     | '/sign-in/$'
@@ -171,6 +183,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignedInStatusesRouteImport
       parentRoute: typeof SignedInRoute
     }
+    '/_signed-in/labels': {
+      id: '/_signed-in/labels'
+      path: '/labels'
+      fullPath: '/labels'
+      preLoaderRoute: typeof SignedInLabelsRouteImport
+      parentRoute: typeof SignedInRoute
+    }
     '/posts_/$postId/deep': {
       id: '/posts_/$postId/deep'
       path: '/posts/$postId/deep'
@@ -189,11 +208,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface SignedInRouteChildren {
+  SignedInLabelsRoute: typeof SignedInLabelsRoute
   SignedInStatusesRoute: typeof SignedInStatusesRoute
   SignedInTasksSplatRoute: typeof SignedInTasksSplatRoute
 }
 
 const SignedInRouteChildren: SignedInRouteChildren = {
+  SignedInLabelsRoute: SignedInLabelsRoute,
   SignedInStatusesRoute: SignedInStatusesRoute,
   SignedInTasksSplatRoute: SignedInTasksSplatRoute,
 }

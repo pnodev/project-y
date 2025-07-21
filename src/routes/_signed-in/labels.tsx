@@ -15,26 +15,36 @@ import {
   statusesWithCountsQueryOptions,
 } from "~/db/queries/statuses";
 import { Color, COLOR_VALUES } from "~/db/schema";
-import { Flag } from "lucide-react";
+import { Flag, Tag } from "lucide-react";
 import { EntityList, EntityListItem } from "~/components/EntityList";
 import { PageLayout } from "~/components/PageLayout";
+import {
+  labelsQueryOptions,
+  labelsWithCountsQueryOptions,
+} from "~/db/queries/labels";
+import {
+  useCreateLabelMutation,
+  useDeleteLabelMutation,
+  useUpdateLabelMutation,
+  useUpdateMultipleLabelsMutation,
+} from "~/db/mutations/labels";
 
-export const Route = createFileRoute("/_signed-in/statuses")({
+export const Route = createFileRoute("/_signed-in/labels")({
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(statusesQueryOptions());
+    await context.queryClient.ensureQueryData(labelsQueryOptions());
   },
   head: () => ({
-    meta: [{ title: "Statuses" }],
+    meta: [{ title: "Labels" }],
   }),
-  component: StatusesComponent,
+  component: LabelsComponent,
 });
 
-function StatusesComponent() {
-  const statusesQuery = useSuspenseQuery(statusesWithCountsQueryOptions());
-  const createStatus = useCreateStatusMutation();
-  const deleteStatus = useDeleteStatusMutation();
-  const updateStatus = useUpdateStatusMutation();
-  const updateMultipleStatuses = useUpdateMultipleStatusesMutation();
+function LabelsComponent() {
+  const labelsQuery = useSuspenseQuery(labelsWithCountsQueryOptions());
+  const createLabel = useCreateLabelMutation();
+  const deleteLabel = useDeleteLabelMutation();
+  const updateLabel = useUpdateLabelMutation();
+  const updateMultipleLabels = useUpdateMultipleLabelsMutation();
 
   const handleSubmit = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
@@ -54,16 +64,16 @@ function StatusesComponent() {
         return;
       }
 
-      await createStatus({ name, color });
+      await createLabel({ name, color });
     },
-    [createStatus]
+    [createLabel]
   );
 
   const handleDelete = useCallback(
     async (id: string) => {
-      await deleteStatus(id);
+      await deleteLabel(id);
     },
-    [deleteStatus]
+    [deleteLabel]
   );
 
   const handleUpdate = async (
@@ -72,11 +82,11 @@ function StatusesComponent() {
   ) => {
     if (typeof data.name !== "string" || !data.name) return;
 
-    await updateStatus({ id, name: data.name, color: data.color });
+    await updateLabel({ id, name: data.name, color: data.color });
   };
 
   return (
-    <PageLayout title="Statuses">
+    <PageLayout title="Labels">
       <form
         onSubmit={handleSubmit}
         className="border p-2 flex flex-col items-start gap-2 mb-3"
@@ -86,31 +96,31 @@ function StatusesComponent() {
         <Button type="submit">Create</Button>
       </form>
       <EntityList
-        items={[...statusesQuery.data]}
+        items={[...labelsQuery.data]}
         onReorder={async (data) => {
           data.forEach((item, index) => {
             item.order = index;
           });
-          await updateMultipleStatuses(data);
+          await updateMultipleLabels(data);
         }}
       >
-        {[...statusesQuery.data]
+        {[...labelsQuery.data]
           .sort((a, b) => {
             return a.order - b.order;
           })
-          .map((status) => {
+          .map((label) => {
             return (
               <EntityListItem
-                id={status.id}
-                key={status.id}
-                name={status.name}
-                description={`${status.taskCount} ${
-                  status.taskCount === 1 ? "Task" : "Tasks"
-                } associated with this status`}
-                color={status.color}
-                handleDelete={() => handleDelete(status.id)}
-                handleUpdate={(data) => handleUpdate(status.id, data)}
-                icon={Flag}
+                id={label.id}
+                key={label.id}
+                name={label.name}
+                description={`${label.taskCount} ${
+                  label.taskCount === 1 ? "Task" : "Tasks"
+                } associated with this label`}
+                color={label.color}
+                handleDelete={() => handleDelete(label.id)}
+                handleUpdate={(data) => handleUpdate(label.id, data)}
+                icon={Tag}
               />
             );
           })}

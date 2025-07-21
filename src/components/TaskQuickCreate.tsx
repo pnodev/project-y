@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { SimpleCard } from "./ui/simple-card";
-import { useCreateTaskMutation } from "~/db/mutations";
+import { useCreateTaskMutation } from "~/db/mutations/tasks";
 
 export default function TaskQuickCreate({
   isOpen,

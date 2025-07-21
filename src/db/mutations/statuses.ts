@@ -1,101 +1,20 @@
 import { createServerFn, useServerFn } from "@tanstack/react-start";
-import { db } from ".";
+import { db } from "~/db";
 import {
   CreateStatus,
-  CreateTask,
   insertStatusValidator,
-  insertTaskValidator,
-  Status,
   statuses,
-  Task,
   tasks,
   updateMultipleStatusesValidator,
   UpdateStatus,
   updateStatusValidator,
-  UpdateTask,
-  updateTaskValidator,
-} from "./schema";
+} from "~/db/schema";
 import { v7 as uuid } from "uuid";
 import z from "zod";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { eq } from "drizzle-orm";
-
-const createTask = createServerFn({ method: "POST" })
-  .validator(insertTaskValidator)
-  .handler(async ({ data }) => {
-    await db.insert(tasks).values({
-      id: uuid(),
-      name: data.name,
-      description: data.description,
-      statusId: data.statusId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-  });
-
-export function useCreateTaskMutation() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const _createTask = useServerFn(createTask);
-
-  return useCallback(
-    async (task: CreateTask) => {
-      const result = await _createTask({ data: task });
-
-      router.invalidate();
-      queryClient.invalidateQueries({
-        queryKey: ["tasks"],
-      });
-
-      return result;
-    },
-    [router, queryClient, _createTask]
-  );
-}
-
-const updateTask = createServerFn({ method: "POST" })
-  .validator(updateTaskValidator)
-  .handler(async ({ data }) => {
-    await db
-      .update(tasks)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
-      .where(eq(tasks.id, data.id!));
-  });
-
-export function useUpdateTaskMutation() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const _updateTask = useServerFn(updateTask);
-
-  return useCallback(
-    async (task: UpdateTask) => {
-      // Optimistically update the task in the cache
-      queryClient.setQueryData(["tasks"], (oldData: Task[] | undefined) => {
-        if (!oldData) return oldData;
-        return oldData.map((t) =>
-          t.id === task.id ? { ...t, ...task, updatedAt: new Date() } : t
-        );
-      });
-
-      try {
-        const result = await _updateTask({ data: task });
-        return result;
-      } catch (error) {
-        // If the mutation fails, roll back to the previous state
-        queryClient.invalidateQueries({ queryKey: ["tasks"] });
-        throw error;
-      } finally {
-        router.invalidate();
-      }
-    },
-    [router, queryClient, _updateTask]
-  );
-}
 
 const createStatus = createServerFn({ method: "POST" })
   .validator(insertStatusValidator)

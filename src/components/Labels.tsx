@@ -1,0 +1,43 @@
+import { Plus } from "lucide-react";
+import { Button } from "./ui/button";
+import { Label, Task, TaskWithLabels } from "~/db/schema";
+import { LabelSelect } from "./LabelSelect";
+import {
+  useSetLabelsForTaskMutation,
+  useUpdateTaskMutation,
+} from "~/db/mutations/tasks";
+import { Badge } from "./ui/badge";
+
+export const Labels = ({
+  task,
+  labels,
+}: {
+  task?: TaskWithLabels;
+  labels: Label[];
+}) => {
+  const setLabelsForTask = useSetLabelsForTaskMutation();
+  const handleSetLabels = async (labelIds: string[]) => {
+    if (!task) return;
+    await setLabelsForTask(task.id, labelIds);
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm font-medium text-gray-800 ">Labels</p>
+      <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {task?.labels.map((label) => (
+            <Badge size="large" key={label.id} color={label.color || "neutral"}>
+              {label.name}
+            </Badge>
+          ))}
+        </div>
+        <LabelSelect
+          labels={labels}
+          selectedLabels={task?.labels.map((l) => l.id) || []}
+          onSelect={handleSetLabels}
+        />
+      </div>
+    </div>
+  );
+};

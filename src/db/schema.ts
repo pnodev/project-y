@@ -11,6 +11,8 @@ import {
   text,
   integer,
   pgEnum,
+  primaryKey,
+  pgTable,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 
@@ -81,14 +83,57 @@ export const statuses = createTable("status", {
   updatedAt: timestamp("updatedAt", { withTimezone: true }),
 });
 
-export const taskRelations = relations(tasks, ({ one }) => ({
+export const labels = createTable("label", {
+  id: uuid("id").primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  color: colorsEnum("color").notNull().default("neutral"),
+  order: integer("order").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }),
+});
+
+export const labelsToTasks = pgTable(
+  "labels_to_tasks",
+  {
+    labelId: uuid("label_id")
+      .notNull()
+      .references(() => labels.id),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id),
+  },
+  (t) => [primaryKey({ columns: [t.labelId, t.taskId] })]
+);
+
+export const labelsToTasksRelations = relations(labelsToTasks, ({ one }) => ({
+  task: one(tasks, {
+    fields: [labelsToTasks.taskId],
+    references: [tasks.id],
+  }),
+  label: one(labels, {
+    fields: [labelsToTasks.labelId],
+    references: [labels.id],
+  }),
+}));
+
+export const taskRelations = relations(tasks, ({ one, many }) => ({
   status: one(statuses, {
     fields: [tasks.statusId],
     references: [statuses.id],
   }),
+  labelsToTasks: many(labelsToTasks),
+}));
+
+export const labelRelations = relations(labels, ({ one, many }) => ({
+  labelsToTasks: many(labelsToTasks),
 }));
 
 export type Task = typeof tasks.$inferSelect;
+export type TaskWithLabels = Task & {
+  labels: (typeof labels.$inferSelect)[];
+};
 export const insertTaskValidator = createInsertSchema(tasks, {
   id: (schema) => schema.optional(),
 });
@@ -122,3 +167,14 @@ export const updateStatusValidator = createInsertSchema(statuses, {
 export const updateMultipleStatusesValidator = updateStatusValidator.array();
 export type CreateStatus = Omit<Status, "id" | "createdAt" | "updatedAt">;
 export type UpdateStatus = Omit<Status, "createdAt" | "updatedAt">;
+
+export type Label = typeof labels.$inferInsert;
+export const insertLabelValidator = createInsertSchema(labels, {
+  id: (schema) => schema.optional(),
+});
+export const updateLabelValidator = createInsertSchema(labels, {
+  id: (schema) => schema.optional(),
+});
+export const updateMultipleLabelsValidator = updateLabelValidator.array();
+export type CreateLabel = Omit<Status, "id" | "createdAt" | "updatedAt">;
+export type UpdateLabel = Omit<Status, "createdAt" | "updatedAt">;
