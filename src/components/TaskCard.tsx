@@ -1,12 +1,5 @@
 import { Task, TaskWithLabels } from "~/db/schema";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Card, CardHeader, CardTitle } from "~/components/ui/card";
 import { useDraggable } from "@dnd-kit/core";
 import { ClientOnly } from "@tanstack/react-router";
 import { Badge } from "./ui/badge";
@@ -15,7 +8,7 @@ export default function TaskCard({
   task,
   onClick,
 }: {
-  task: Task;
+  task: TaskWithLabels;
   onClick?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
