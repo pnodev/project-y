@@ -7,13 +7,77 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
-import { EllipsisVertical, LucideIcon, Pencil, Trash2 } from "lucide-react";
-import { FormEvent, useCallback, useState } from "react";
+import {
+  EllipsisVertical,
+  LucideIcon,
+  Pencil,
+  Trash2,
+  GripVertical,
+} from "lucide-react";
+import { FormEvent, useCallback, useState, useEffect } from "react";
 import { Input } from "./ui/input";
-import { useUpdateStatusMutation } from "~/db/mutations";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { ClientOnly } from "@tanstack/react-router";
 
-export function EntityList({ children }: { children: React.ReactNode }) {
-  return <ul className="grid gap-2">{children}</ul>;
+interface EntityListProps {
+  children: React.ReactNode;
+  items: Array<{ id: string; order: number; name: string }>;
+  onReorder: (
+    items: Array<{ id: string; order: number; name: string }>
+  ) => void;
+}
+
+export function EntityList({ children, items, onReorder }: EntityListProps) {
+  const sortedItems = items.sort((a, b) => a.order - b.order);
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const oldIndex = items.findIndex((item) => item.id === active.id);
+      const newIndex = sortedItems.findIndex((item) => item.id === over?.id);
+      onReorder(arrayMove(sortedItems, oldIndex, newIndex));
+    }
+  }
+
+  return (
+    <ClientOnly fallback={<ul className="grid gap-2">{children}</ul>}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={sortedItems}
+          strategy={verticalListSortingStrategy}
+        >
+          <ul className="grid gap-2">{children}</ul>
+        </SortableContext>
+      </DndContext>
+    </ClientOnly>
+  );
 }
 
 export function EntityListItem({
@@ -36,8 +100,30 @@ export function EntityListItem({
     color: keyof typeof selectableColorClasses;
   }) => Promise<void>;
 }) {
+  const [isClient, setIsClient] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const sortableProps = useSortable({ id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = sortableProps;
+
+  const style = isClient
+    ? {
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }
+    : {};
 
   const handleUpdateCallback = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
@@ -51,11 +137,18 @@ export function EntityListItem({
       setIsSaving(false);
       setIsEditing(false);
     },
-    [id]
+    [handleUpdate]
   );
 
   return (
-    <li className="col-span-1 flex rounded-md shadow-xs">
+    <li
+      ref={isClient ? setNodeRef : undefined}
+      style={style}
+      className={cn(
+        "col-span-1 flex rounded-md shadow-xs",
+        isClient && isDragging && "opacity-50 z-50"
+      )}
+    >
       <div
         className={cn(
           "flex w-16 shrink-0 rounded-l-md text-white justify-center items-center",
@@ -106,7 +199,17 @@ export function EntityListItem({
             </>
           )}
         </div>
-        <div className="shrink-0 pr-2">
+        <div className="shrink-0 pr-2 flex items-center gap-1">
+          {!isEditing && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(isClient && "cursor-grab active:cursor-grabbing")}
+              {...(isClient ? { ...attributes, ...listeners } : {})}
+            >
+              <GripVertical className="h-4 w-4" />
+            </Button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">

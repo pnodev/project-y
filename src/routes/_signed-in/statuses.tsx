@@ -7,6 +7,7 @@ import { Input } from "~/components/ui/input";
 import {
   useCreateStatusMutation,
   useDeleteStatusMutation,
+  useUpdateMultipleStatusesMutation,
   useUpdateStatusMutation,
 } from "~/db/mutations";
 import {
@@ -42,6 +43,7 @@ function StatusesComponent() {
   const createStatus = useCreateStatusMutation();
   const deleteStatus = useDeleteStatusMutation();
   const updateStatus = useUpdateStatusMutation();
+  const updateMultipleStatuses = useUpdateMultipleStatusesMutation();
 
   const handleSubmit = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
@@ -92,23 +94,35 @@ function StatusesComponent() {
         <ColorSelect name="color" />
         <Button type="submit">Create</Button>
       </form>
-      <EntityList>
-        {[...statusesQuery.data].map((status) => {
-          return (
-            <EntityListItem
-              id={status.id}
-              key={status.id}
-              name={status.name}
-              description={`${status.taskCount} ${
-                status.taskCount === 1 ? "Task" : "Tasks"
-              } associated with this status`}
-              color={status.color}
-              handleDelete={() => handleDelete(status.id)}
-              handleUpdate={(data) => handleUpdate(status.id, data)}
-              icon={Flag}
-            />
-          );
-        })}
+      <EntityList
+        items={[...statusesQuery.data]}
+        onReorder={async (data) => {
+          data.forEach((item, index) => {
+            item.order = index;
+          });
+          await updateMultipleStatuses(data);
+        }}
+      >
+        {[...statusesQuery.data]
+          .sort((a, b) => {
+            return a.order - b.order;
+          })
+          .map((status) => {
+            return (
+              <EntityListItem
+                id={status.id}
+                key={status.id}
+                name={status.name}
+                description={`${status.taskCount} ${
+                  status.taskCount === 1 ? "Task" : "Tasks"
+                } associated with this status`}
+                color={status.color}
+                handleDelete={() => handleDelete(status.id)}
+                handleUpdate={(data) => handleUpdate(status.id, data)}
+                icon={Flag}
+              />
+            );
+          })}
       </EntityList>
       <hr />
       <Outlet />

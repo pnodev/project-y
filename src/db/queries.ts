@@ -5,7 +5,7 @@ import { getAuth } from "@clerk/tanstack-react-start/server";
 import { getWebRequest } from "@tanstack/react-start/server";
 import { redirect } from "@tanstack/react-router";
 import { statuses, tasks } from "./schema";
-import { eq, sql } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 
 export const fetchTasks = createServerFn({ method: "GET" }).handler(
   async () => {
@@ -40,7 +40,9 @@ export const taskQueryOptions = (id: string) =>
 export const fetchStatuses = createServerFn({ method: "GET" }).handler(
   async () => {
     console.info("Fetching statuses...");
-    return await db.query.statuses.findMany();
+    return await db.query.statuses.findMany({
+      orderBy: (fields, { asc }) => [asc(fields.order)],
+    });
   }
 );
 
@@ -76,12 +78,15 @@ export const fetchStatusesWithTaskCounts = createServerFn({
       id: statuses.id,
       name: statuses.name,
       color: statuses.color,
+      order: statuses.order,
+      createdAt: statuses.createdAt,
+      updatedAt: statuses.updatedAt,
       taskCount: sql<number>`count(${tasks.id})::int`,
     })
     .from(statuses)
     .leftJoin(tasks, eq(statuses.id, tasks.statusId))
     .groupBy(statuses.id)
-    .orderBy(statuses.id);
+    .orderBy(asc(statuses.order));
 
   return statusesWithCounts;
 });

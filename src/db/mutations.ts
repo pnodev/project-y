@@ -9,6 +9,7 @@ import {
   statuses,
   Task,
   tasks,
+  updateMultipleStatusesValidator,
   UpdateStatus,
   updateStatusValidator,
   UpdateTask,
@@ -138,6 +139,7 @@ const updateStatus = createServerFn({ method: "POST" })
       .set({
         name: data.name,
         color: data.color,
+        order: data.order,
         updatedAt: new Date(),
       })
       .where(eq(statuses.id, data.id!));
@@ -163,6 +165,60 @@ export function useUpdateStatusMutation() {
       return result;
     },
     [router, queryClient, _updateStatus]
+  );
+}
+
+const updateMultipleStatuses = createServerFn({ method: "POST" })
+  .validator(updateMultipleStatusesValidator)
+  .handler(async ({ data }) => {
+    await Promise.all(
+      data.map(async (entry) => {
+        return await db
+          .update(statuses)
+          .set({
+            name: entry.name,
+            color: entry.color,
+            order: entry.order,
+            updatedAt: new Date(),
+          })
+          .where(eq(statuses.id, entry.id!));
+      })
+    );
+  });
+
+export function useUpdateMultipleStatusesMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _updateMultipleStatuses = useServerFn(updateMultipleStatuses);
+
+  return useCallback(
+    async (statuses: UpdateStatus[]) => {
+      // Generic update function that works for both cache types
+      const updateCache = (oldData: any[] | undefined) => {
+        if (!oldData) return oldData;
+        const statusMap = new Map(statuses.map((s) => [s.id, s]));
+        return oldData.map((s) => {
+          const update = statusMap.get(s.id);
+          return update ? { ...s, ...update, updatedAt: new Date() } : s;
+        });
+      };
+
+      // Update both caches
+      queryClient.setQueryData(["statuses"], updateCache);
+      queryClient.setQueryData(["statuses-with-counts"], updateCache);
+
+      try {
+        const result = await _updateMultipleStatuses({ data: statuses });
+        return result;
+      } catch (error) {
+        queryClient.invalidateQueries({ queryKey: ["statuses"] });
+        queryClient.invalidateQueries({ queryKey: ["statuses-with-counts"] });
+        throw error;
+      } finally {
+        router.invalidate();
+      }
+    },
+    [router, queryClient, _updateMultipleStatuses]
   );
 }
 

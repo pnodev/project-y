@@ -74,6 +74,7 @@ export const statuses = createTable("status", {
   id: uuid("id").primaryKey(),
   name: varchar("name", { length: 256 }).notNull(),
   color: colorsEnum("color").notNull().default("neutral"),
+  order: integer("order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -118,5 +119,6 @@ export const insertStatusValidator = createInsertSchema(statuses, {
 export const updateStatusValidator = createInsertSchema(statuses, {
   id: (schema) => schema.optional(),
 });
+export const updateMultipleStatusesValidator = updateStatusValidator.array();
 export type CreateStatus = Omit<Status, "id" | "createdAt" | "updatedAt">;
 export type UpdateStatus = Omit<Status, "createdAt" | "updatedAt">;
