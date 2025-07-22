@@ -6,7 +6,7 @@ export function TaskLabel({
   className?: string;
 }) {
   return (
-    <span className={`"text-sm font-medium text-gray-800" ${className}`}>
+    <span className={`text-sm font-medium text-gray-700 ${className}`}>
       {children}
     </span>
   );

@@ -32,6 +32,8 @@ import { TaskLabel } from "./ui/TaskLabel";
 import { CommentInput } from "./CommentInput";
 import { useCreateCommentMutation } from "~/db/mutations/comments";
 import { Comments } from "./Comments";
+import { Calendar, CircleDashed, Flag, Users } from "lucide-react";
+import { PrioritySwitch } from "./PrioritySwitch";
 
 export function OpenTask({
   task,
@@ -111,7 +113,7 @@ export function OpenTask({
         </DialogHeader>
         {task && currentStatus ? (
           <div className="grid grid-cols-12 gap-3 content-stretch grow">
-            <div className="col-span-8 flex flex-col gap-5 pt-4 pl-6">
+            <div className="col-span-8 flex flex-col gap-5.5 pt-4 pl-6">
               <EditableDialogTitle
                 initialContent={task?.name || ""}
                 onBlur={handleUpdateTitle}
@@ -119,7 +121,7 @@ export function OpenTask({
               />
               <Labels task={task} labels={labels} />
               <DetailList>
-                <DetailListItem label="Status">
+                <DetailListItem label="Status" icon={CircleDashed}>
                   <StatusSwitch
                     status={currentStatus}
                     statuses={statuses}
@@ -128,17 +130,28 @@ export function OpenTask({
                     }}
                   />
                 </DetailListItem>
-                <DetailListItem label="Priority">
-                  {task?.priority}
+                <DetailListItem label="Priority" icon={Flag}>
+                  <PrioritySwitch
+                    priority={task?.priority}
+                    onValueChange={(priority) => {
+                      handleUpdateTask({
+                        id: task.id,
+                        priority,
+                      });
+                    }}
+                  />
                 </DetailListItem>
-                <DetailListItem label="Due">
+                <DetailListItem label="Due" icon={Calendar}>
                   {task?.deadline ? (
                     <DateDisplay date={task?.deadline} />
                   ) : (
                     "--"
                   )}
                 </DetailListItem>
-                <DetailListItem label="Assigned to"></DetailListItem>
+                <DetailListItem
+                  label="Assigned to"
+                  icon={Users}
+                ></DetailListItem>
               </DetailList>
               <hr />
               <RichtextEditor

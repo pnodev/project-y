@@ -25,21 +25,30 @@ export function Badge({
   size?: "small" | "large";
 }) {
   const colorClasses = {
-    red: "bg-red-100 text-red-700 [&_svg]:fill-red-500",
-    orange: "bg-orange-100 text-orange-700 [&_svg]:fill-orange-500",
-    yellow: "bg-yellow-100 text-yellow-800 [&_svg]:fill-yellow-500",
-    green: "bg-green-100 text-green-700 [&_svg]:fill-green-500",
-    emerald: "bg-emerald-100 text-emerald-700 [&_svg]:fill-emerald-500",
-    teal: "bg-teal-100 text-teal-700 [&_svg]:fill-teal-500",
-    cyan: "bg-cyan-100 text-cyan-700 [&_svg]:fill-cyan-500",
-    blue: "bg-blue-100 text-blue-700 [&_svg]:fill-blue-500",
-    indigo: "bg-indigo-100 text-indigo-700 [&_svg]:fill-indigo-500",
-    violet: "bg-violet-100 text-violet-700 [&_svg]:fill-violet-500",
-    purple: "bg-purple-100 text-purple-700 [&_svg]:fill-purple-500",
-    fuchsia: "bg-fuchsia-100 text-fuchsia-700 [&_svg]:fill-fuchsia-500",
-    pink: "bg-pink-100 text-pink-700 [&_svg]:fill-pink-500",
-    rose: "bg-rose-100 text-rose-700 [&_svg]:fill-rose-500",
-    neutral: "bg-neutral-100 text-neutral-700 [&_svg]:fill-neutral-500",
+    red: "bg-red-100 border border-red-200 text-red-700 [&_svg]:fill-red-500",
+    orange:
+      "bg-orange-100 border border-orange-200 text-orange-700 [&_svg]:fill-orange-500",
+    yellow:
+      "bg-yellow-100 border border-yellow-200 text-yellow-800 [&_svg]:fill-yellow-500",
+    green:
+      "bg-green-100 border border-green-200 text-green-700 [&_svg]:fill-green-500",
+    emerald:
+      "bg-emerald-100 border border-emerald-200 text-emerald-700 [&_svg]:fill-emerald-500",
+    teal: "bg-teal-100 border border-teal-200 text-teal-700 [&_svg]:fill-teal-500",
+    cyan: "bg-cyan-100 border border-cyan-200 text-cyan-700 [&_svg]:fill-cyan-500",
+    blue: "bg-blue-100 border border-blue-200 text-blue-700 [&_svg]:fill-blue-500",
+    indigo:
+      "bg-indigo-100 border border-indigo-200 text-indigo-700 [&_svg]:fill-indigo-500",
+    violet:
+      "bg-violet-100 border border-violet-200 text-violet-700 [&_svg]:fill-violet-500",
+    purple:
+      "bg-purple-100 border border-purple-200 text-purple-700 [&_svg]:fill-purple-500",
+    fuchsia:
+      "bg-fuchsia-100 border border-fuchsia-200 text-fuchsia-700 [&_svg]:fill-fuchsia-500",
+    pink: "bg-pink-100 border border-pink-200 text-pink-700 [&_svg]:fill-pink-500",
+    rose: "bg-rose-100 border border-rose-200 text-rose-700 [&_svg]:fill-rose-500",
+    neutral:
+      "bg-neutral-100 border border-neutral-200 text-neutral-700 [&_svg]:fill-neutral-500",
   };
 
   return (
