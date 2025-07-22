@@ -33,7 +33,7 @@ export const tasksQueryOptions = () =>
 
 export const fetchTask = createServerFn({ method: "GET" })
   .validator((d: string) => d)
-  .handler(async ({ data }): Promise<TaskWithLabels> => {
+  .handler(async ({ data }): Promise<TaskWithLabels | null> => {
     console.info("Fetching task...");
     const task = await db.query.tasks.findFirst({
       where(fields, operators) {
@@ -51,10 +51,11 @@ export const fetchTask = createServerFn({ method: "GET" })
 
     if (!task) return null;
 
+    const { labelsToTasks, ...taskWithoutLabelsToTasks } = task;
+
     return {
-      ...task,
-      labels: task.labelsToTasks.map((l) => l.label),
-      labelsToTasks: undefined,
+      ...taskWithoutLabelsToTasks,
+      labels: labelsToTasks.map((l) => l.label),
     };
   });
 
