@@ -11,7 +11,6 @@ import {
   integer,
   pgEnum,
   primaryKey,
-  pgTable,
   index,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
@@ -103,7 +102,7 @@ export const labels = createTable(
   (example) => [index("label_owner_idx").on(example.owner)]
 );
 
-export const labelsToTasks = pgTable(
+export const labelsToTasks = createTable(
   "labels_to_tasks",
   {
     labelId: uuid("label_id")
