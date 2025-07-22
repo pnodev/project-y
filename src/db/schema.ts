@@ -102,6 +102,31 @@ export const labels = createTable(
   (example) => [index("label_owner_idx").on(example.owner)]
 );
 
+export const comment = createTable(
+  "comment",
+  {
+    id: uuid("id").primaryKey(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id),
+    owner: varchar("owner", { length: 256 }).notNull(),
+    author: varchar("author", { length: 256 }).notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }),
+  },
+  (example) => [index("comment_owner_idx").on(example.owner)]
+);
+
+export const commentRelations = relations(comment, ({ one }) => ({
+  task: one(tasks, {
+    fields: [comment.taskId],
+    references: [tasks.id],
+  }),
+}));
+
 export const labelsToTasks = createTable(
   "labels_to_tasks",
   {
@@ -165,6 +190,20 @@ export type UpdateTask = {
   statusId?: string;
   priority?: "low" | "medium" | "high" | "critical";
   deadline?: Date;
+};
+
+export type Comment = typeof comment.$inferSelect;
+export const insertCommentValidator = createInsertSchema(comment, {
+  id: (schema) => schema.optional(),
+  owner: (schema) => schema.optional(),
+});
+export type CreateComment = Omit<
+  typeof comment.$inferInsert,
+  "id" | "createdAt" | "updatedAt" | "owner"
+>;
+export type UpdateComment = {
+  id: string;
+  content?: string;
 };
 
 export type Status = typeof statuses.$inferInsert;

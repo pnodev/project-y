@@ -16,11 +16,14 @@ import { PageLayout } from "~/components/PageLayout";
 import { tasksQueryOptions } from "~/db/queries/tasks";
 import { statusesQueryOptions } from "~/db/queries/statuses";
 import { labelsQueryOptions } from "~/db/queries/labels";
+import { commentsQueryOptions } from "~/db/queries/comments";
 
 export const Route = createFileRoute("/_signed-in/tasks/$")({
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData(tasksQueryOptions());
     await context.queryClient.ensureQueryData(statusesQueryOptions());
+    await context.queryClient.ensureQueryData(labelsQueryOptions());
+    await context.queryClient.ensureQueryData(commentsQueryOptions());
   },
   beforeLoad: async () => await authStateFn(),
   component: Home,
@@ -33,11 +36,13 @@ function Home() {
   const updateTask = useUpdateTaskMutation();
   const navigate = useNavigate();
   const params = useParams({ from: "/_signed-in/tasks/$" });
+  const commentsQuery = useSuspenseQuery(commentsQueryOptions(params._splat));
   const [openTask, setOpenTask] = useState<string | null>(null);
 
   useEffect(() => {
     if (params._splat) {
       setOpenTask(params._splat);
+      commentsQuery.refetch();
     } else {
       setOpenTask(null);
     }
@@ -69,6 +74,10 @@ function Home() {
           task={tasksQuery.data?.find((task) => task.id === openTask)}
           statuses={statusesQuery.data}
           labels={labelsQuery.data || []}
+          comments={commentsQuery.data?.map((comment) => ({
+            ...comment,
+            author: comment.author || "Unknown", // Default author to "Unknown" if null
+          }))}
         />
       </div>
     </PageLayout>
