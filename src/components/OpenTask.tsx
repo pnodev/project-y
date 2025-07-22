@@ -2,17 +2,20 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Label, Status, Task, TaskWithLabels, UpdateTask } from "~/db/schema";
 import { RichtextEditor } from "~/components/RichtextEditor/Editor";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useUpdateTaskMutation } from "~/db/mutations/tasks";
 import { DateDisplay } from "~/components/ui/date-display";
 import { DetailList, DetailListItem } from "~/components/ui/detail-list";
 import { StatusSwitch } from "./StatusSwitch";
 import { Labels } from "./Labels";
+import { ta } from "zod/v4/locales";
+import { EditableDialogTitle } from "./EditableDialogTitle";
 
 export function OpenTask({
   task,
@@ -24,6 +27,15 @@ export function OpenTask({
   labels: Label[];
 }) {
   const navigate = useNavigate();
+  const [timer, setTimer] = useState<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, []);
 
   const updateTask = useUpdateTaskMutation();
   const handleUpdateTask = useCallback(
@@ -36,6 +48,17 @@ export function OpenTask({
   );
   const currentStatus = statuses.find((status) => status.id === task?.statusId);
 
+  const handleUpdateTitle = useCallback(
+    async (content: string) => {
+      if (!task?.id) return;
+      await handleUpdateTask({
+        id: task?.id,
+        name: content,
+      });
+    },
+    [handleUpdateTask, task]
+  );
+
   return (
     <Dialog
       open={!!task}
@@ -43,9 +66,15 @@ export function OpenTask({
         navigate({ to: "/tasks/$", params: { _splat: "" } });
       }}
     >
-      <DialogContent size="large">
+      <DialogContent size="large" aria-describedby={`task-title-${task?.id}`}>
+        <DialogDescription className="sr-only">{task?.name}</DialogDescription>
         <DialogHeader>
-          <DialogTitle>{task?.name}</DialogTitle>
+          <EditableDialogTitle
+            id={`task-title-${task?.id}`}
+            initialContent={task?.name || ""}
+            onBlur={handleUpdateTitle}
+            onDebouncedUpdate={handleUpdateTitle}
+          />
         </DialogHeader>
         {task && currentStatus ? (
           <div className="grid grid-cols-12 gap-2">
