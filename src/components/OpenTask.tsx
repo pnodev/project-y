@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
@@ -16,6 +17,17 @@ import { StatusSwitch } from "./StatusSwitch";
 import { Labels } from "./Labels";
 import { ta } from "zod/v4/locales";
 import { EditableDialogTitle } from "./EditableDialogTitle";
+import { useOrganization } from "@clerk/tanstack-react-start";
+import { useCurrentOwningIdentity } from "~/hooks/use-current-owning-identity";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "./ui/breadcrumb";
+import { SimpleEditor } from "./tiptap-templates/simple/simple-editor";
+import { TaskLabel } from "./ui/TaskLabel";
+import { CommentInput } from "./CommentInput";
 
 export function OpenTask({
   task,
@@ -59,6 +71,8 @@ export function OpenTask({
     [handleUpdateTask, task]
   );
 
+  const owner = useCurrentOwningIdentity();
+
   return (
     <Dialog
       open={!!task}
@@ -66,22 +80,30 @@ export function OpenTask({
         navigate({ to: "/tasks/$", params: { _splat: "" } });
       }}
     >
-      <DialogContent size="large" aria-describedby={`task-title-${task?.id}`}>
+      <DialogContent
+        size="large"
+        aria-describedby={`task-title-${task?.id}`}
+        className="p-0 gap-0"
+      >
         <DialogDescription className="sr-only">{task?.name}</DialogDescription>
-        <DialogHeader>
-          <EditableDialogTitle
-            id={`task-title-${task?.id}`}
-            initialContent={task?.name || ""}
-            onBlur={handleUpdateTitle}
-            onDebouncedUpdate={handleUpdateTitle}
-          />
+        <DialogHeader className="border-b px-6 py-3">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>{owner.name}</BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>{task?.name}</BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         </DialogHeader>
         {task && currentStatus ? (
-          <div className="grid grid-cols-12 gap-2">
-            <div className="col-span-12">
+          <div className="grid grid-cols-12 gap-3 content-stretch grow">
+            <div className="col-span-8 flex flex-col gap-5 pt-4 pl-6">
+              <EditableDialogTitle
+                initialContent={task?.name || ""}
+                onBlur={handleUpdateTitle}
+                onDebouncedUpdate={handleUpdateTitle}
+              />
               <Labels task={task} labels={labels} />
-            </div>
-            <div className="col-span-8 flex flex-col gap-3">
               <DetailList>
                 <DetailListItem label="Status">
                   <StatusSwitch
@@ -104,6 +126,7 @@ export function OpenTask({
                 </DetailListItem>
                 <DetailListItem label="Assigned to"></DetailListItem>
               </DetailList>
+              <hr />
               <RichtextEditor
                 content={task?.description || ""}
                 onUpdate={(data) => {
@@ -111,6 +134,11 @@ export function OpenTask({
                   handleUpdateTask({ id: task.id, description: data.text });
                 }}
               />
+            </div>
+            <div className="col-span-4 bg-gray-100 py-4 px-6 flex flex-col gap-4">
+              <TaskLabel>Conversation</TaskLabel>
+              <div className="grow">foo</div>
+              <CommentInput />
             </div>
           </div>
         ) : null}

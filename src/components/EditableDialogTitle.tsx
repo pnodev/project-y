@@ -14,7 +14,6 @@ interface EditableDialogTitleProps {
   className?: string;
   placeholder?: string;
   debounceMs?: number;
-  id?: string;
 }
 
 export function EditableDialogTitle({
@@ -24,7 +23,6 @@ export function EditableDialogTitle({
   onFocus,
   onBlur,
   className = "",
-  id = "",
   placeholder = "Click to edit title...",
   debounceMs = 500,
 }: EditableDialogTitleProps) {
@@ -97,7 +95,7 @@ export function EditableDialogTitle({
         <div>
           <EditorContent
             editor={editor}
-            className={`font-semibold leading-none tracking-tight cursor-text ${className}`}
+            className={`font-bold text-2xl leading-none tracking-tight cursor-text ${className}`}
           />
         </div>
       </DialogTitle>
