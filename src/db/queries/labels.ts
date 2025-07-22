@@ -3,11 +3,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import { labels, labelsToTasks } from "~/db/schema";
 import { asc, eq, sql } from "drizzle-orm";
+import { getAuth } from "@clerk/tanstack-react-start/server";
+import { getWebRequest } from "@tanstack/react-start/server";
+import { getOwningIdentity } from "~/lib/utils";
 
 export const fetchLabels = createServerFn({ method: "GET" }).handler(
   async () => {
     console.info("Fetching labels...");
+    const user = await getAuth(getWebRequest());
     return await db.query.labels.findMany({
+      where: (model, { eq }) => eq(model.owner, getOwningIdentity(user)),
       orderBy: (fields, { asc }) => [asc(fields.order)],
     });
   }
@@ -23,6 +28,7 @@ export const fetchLabelsWithTaskCounts = createServerFn({
   method: "GET",
 }).handler(async () => {
   console.info("Fetching labels with task counts...");
+  const user = await getAuth(getWebRequest());
   const labelsWithCounts = await db
     .select({
       id: labels.id,
@@ -35,6 +41,7 @@ export const fetchLabelsWithTaskCounts = createServerFn({
     })
     .from(labels)
     .leftJoin(labelsToTasks, eq(labels.id, labelsToTasks.labelId))
+    .where(eq(labels.owner, getOwningIdentity(user)))
     .groupBy(labels.id)
     .orderBy(asc(labels.order));
 

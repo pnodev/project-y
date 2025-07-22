@@ -1,8 +1,9 @@
 {
-  "name": "tanstack-start-example-basic-react-query",
+  "name": "project-y",
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "version": "0.0.1",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build && tsc --noEmit",

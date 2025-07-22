@@ -5,7 +5,6 @@ import { relations, sql } from "drizzle-orm";
 import {
   pgTableCreator,
   uuid,
-  index,
   timestamp,
   varchar,
   text,
@@ -13,6 +12,7 @@ import {
   pgEnum,
   primaryKey,
   pgTable,
+  index,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 
@@ -62,37 +62,46 @@ export const tasks = createTable(
     statusId: uuid("status_id"),
     priority: priorityEnum("priority").notNull().default("medium"),
     deadline: timestamp("deadline", { withTimezone: true }),
+    owner: varchar("owner", { length: 256 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }),
-  }
-  // (example) => ({
-  //   ownerIndex: index("owner_idx").on(example.owner),
-  // })
+  },
+  (example) => [index("task_owner_idx").on(example.owner)]
 );
 
-export const statuses = createTable("status", {
-  id: uuid("id").primaryKey(),
-  name: varchar("name", { length: 256 }).notNull(),
-  color: colorsEnum("color").notNull().default("neutral"),
-  order: integer("order").notNull().default(0),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .default(sql`CURRENT_TIMESTAMP`)
-    .notNull(),
-  updatedAt: timestamp("updatedAt", { withTimezone: true }),
-});
+export const statuses = createTable(
+  "status",
+  {
+    id: uuid("id").primaryKey(),
+    name: varchar("name", { length: 256 }).notNull(),
+    color: colorsEnum("color").notNull().default("neutral"),
+    order: integer("order").notNull().default(0),
+    owner: varchar("owner", { length: 256 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }),
+  },
+  (example) => [index("status_owner_idx").on(example.owner)]
+);
 
-export const labels = createTable("label", {
-  id: uuid("id").primaryKey(),
-  name: varchar("name", { length: 256 }).notNull(),
-  color: colorsEnum("color").notNull().default("neutral"),
-  order: integer("order").notNull().default(0),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .default(sql`CURRENT_TIMESTAMP`)
-    .notNull(),
-  updatedAt: timestamp("updatedAt", { withTimezone: true }),
-});
+export const labels = createTable(
+  "label",
+  {
+    id: uuid("id").primaryKey(),
+    name: varchar("name", { length: 256 }).notNull(),
+    color: colorsEnum("color").notNull().default("neutral"),
+    order: integer("order").notNull().default(0),
+    owner: varchar("owner", { length: 256 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }),
+  },
+  (example) => [index("label_owner_idx").on(example.owner)]
+);
 
 export const labelsToTasks = pgTable(
   "labels_to_tasks",
@@ -136,6 +145,7 @@ export type TaskWithLabels = Task & {
 };
 export const insertTaskValidator = createInsertSchema(tasks, {
   id: (schema) => schema.optional(),
+  owner: (schema) => schema.optional(),
 });
 export const updateTaskValidator = createInsertSchema(tasks, {
   name: (schema) => schema.optional(),
@@ -143,10 +153,11 @@ export const updateTaskValidator = createInsertSchema(tasks, {
   statusId: (schema) => schema.optional(),
   priority: (schema) => schema.optional(),
   deadline: (schema) => schema.optional(),
+  owner: (schema) => schema.optional(),
 });
 export type CreateTask = Omit<
   typeof tasks.$inferInsert,
-  "id" | "createdAt" | "updatedAt"
+  "id" | "createdAt" | "updatedAt" | "owner"
 >;
 export type UpdateTask = {
   id: string;
@@ -160,21 +171,31 @@ export type UpdateTask = {
 export type Status = typeof statuses.$inferInsert;
 export const insertStatusValidator = createInsertSchema(statuses, {
   id: (schema) => schema.optional(),
+  owner: (schema) => schema.optional(),
 });
 export const updateStatusValidator = createInsertSchema(statuses, {
   id: (schema) => schema.optional(),
+  owner: (schema) => schema.optional(),
 });
 export const updateMultipleStatusesValidator = updateStatusValidator.array();
-export type CreateStatus = Omit<Status, "id" | "createdAt" | "updatedAt">;
-export type UpdateStatus = Omit<Status, "createdAt" | "updatedAt">;
+export type CreateStatus = Omit<
+  Status,
+  "id" | "createdAt" | "updatedAt" | "owner"
+>;
+export type UpdateStatus = Omit<Status, "createdAt" | "updatedAt" | "owner">;
 
 export type Label = typeof labels.$inferInsert;
 export const insertLabelValidator = createInsertSchema(labels, {
   id: (schema) => schema.optional(),
+  owner: (schema) => schema.optional(),
 });
 export const updateLabelValidator = createInsertSchema(labels, {
   id: (schema) => schema.optional(),
+  owner: (schema) => schema.optional(),
 });
 export const updateMultipleLabelsValidator = updateLabelValidator.array();
-export type CreateLabel = Omit<Status, "id" | "createdAt" | "updatedAt">;
-export type UpdateLabel = Omit<Status, "createdAt" | "updatedAt">;
+export type CreateLabel = Omit<
+  Label,
+  "id" | "createdAt" | "updatedAt" | "owner"
+>;
+export type UpdateLabel = Omit<Label, "createdAt" | "updatedAt" | "owner">;

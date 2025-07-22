@@ -1,3 +1,5 @@
+import { OrganizationSwitcher, UserButton } from "@clerk/tanstack-react-start";
+import { ClientOnly } from "@tanstack/react-router";
 import { SidebarIcon } from "lucide-react";
 
 import { SearchForm } from "~/components/search-form";
@@ -28,7 +30,7 @@ export function SiteHeader() {
           <SidebarIcon />
         </Button>
         <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb className="hidden sm:block">
+        {/* <Breadcrumb className="hidden sm:block">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink href="#">
@@ -40,8 +42,27 @@ export function SiteHeader() {
               <BreadcrumbPage>Data Fetching</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
-        </Breadcrumb>
+        </Breadcrumb> */}
+        <ClientOnly>
+          <OrganizationSwitcher
+            afterSelectOrganizationUrl="/tasks"
+            afterSelectPersonalUrl="/tasks"
+            afterCreateOrganizationUrl="/tasks"
+            afterLeaveOrganizationUrl="/tasks"
+          />
+        </ClientOnly>
         <SearchForm className="w-full sm:ml-auto sm:w-auto" />
+        <ClientOnly>
+          <UserButton
+            showName={false}
+            appearance={{
+              elements: {
+                avatarBox: "order-1",
+                userButtonOuterIdentifier: "order-2",
+              },
+            }}
+          />
+        </ClientOnly>
       </div>
     </header>
   );

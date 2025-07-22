@@ -31,6 +31,9 @@ import {
 } from "~/components/ui/sidebar";
 import { UserButton } from "@clerk/tanstack-react-start";
 import { ClientOnly } from "@tanstack/react-router";
+import { version } from "../../package.json";
+import { getAuth } from "@clerk/tanstack-react-start/server";
+import { getWebRequest } from "@tanstack/react-start/server";
 
 const data = {
   navMain: [
@@ -102,17 +105,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
-        <ClientOnly>
-          <UserButton
-            showName={true}
-            appearance={{
-              elements: {
-                avatarBox: "order-1",
-                userButtonOuterIdentifier: "order-2",
-              },
-            }}
-          />
-        </ClientOnly>
+        <p className="text-xs text-gray-500 text-center">v{version}</p>
       </SidebarFooter>
     </Sidebar>
   );

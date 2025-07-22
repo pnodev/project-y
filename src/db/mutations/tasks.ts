@@ -13,17 +13,23 @@ import { v7 as uuid } from "uuid";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import z from "zod";
+import { getAuth } from "@clerk/tanstack-react-start/server";
+import { getWebRequest } from "@tanstack/react-start/server";
+import { getOwningIdentity } from "~/lib/utils";
 
 const createTask = createServerFn({ method: "POST" })
   .validator(insertTaskValidator)
   .handler(async ({ data }) => {
+    const user = await getAuth(getWebRequest());
+
     await db.insert(tasks).values({
       id: uuid(),
       name: data.name,
       description: data.description,
       statusId: data.statusId,
+      owner: getOwningIdentity(user),
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -52,13 +58,16 @@ export function useCreateTaskMutation() {
 const updateTask = createServerFn({ method: "POST" })
   .validator(updateTaskValidator)
   .handler(async ({ data }) => {
+    const user = await getAuth(getWebRequest());
     await db
       .update(tasks)
       .set({
         ...data,
         updatedAt: new Date(),
       })
-      .where(eq(tasks.id, data.id!));
+      .where(
+        and(eq(tasks.id, data.id!), eq(tasks.owner, getOwningIdentity(user)))
+      );
   });
 
 export function useUpdateTaskMutation() {

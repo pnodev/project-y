@@ -21,14 +21,19 @@ import z from "zod";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { getOwningIdentity } from "~/lib/utils";
+import { getAuth } from "@clerk/tanstack-react-start/server";
+import { getWebRequest } from "@tanstack/react-start/server";
 
 const createLabel = createServerFn({ method: "POST" })
   .validator(insertLabelValidator)
   .handler(async ({ data }) => {
+    const user = await getAuth(getWebRequest());
     await db.insert(labels).values({
       ...data,
       id: uuid(),
+      owner: getOwningIdentity(user),
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -60,6 +65,8 @@ export function useCreateLabelMutation() {
 const updateLabel = createServerFn({ method: "POST" })
   .validator(updateLabelValidator)
   .handler(async ({ data }) => {
+    const user = await getAuth(getWebRequest());
+
     await db
       .update(labels)
       .set({
@@ -68,7 +75,9 @@ const updateLabel = createServerFn({ method: "POST" })
         order: data.order,
         updatedAt: new Date(),
       })
-      .where(eq(labels.id, data.id!));
+      .where(
+        and(eq(labels.id, data.id!), eq(labels.owner, getOwningIdentity(user)))
+      );
   });
 
 export function useUpdateLabelMutation() {
@@ -97,6 +106,8 @@ export function useUpdateLabelMutation() {
 const updateMultipleLabels = createServerFn({ method: "POST" })
   .validator(updateMultipleLabelsValidator)
   .handler(async ({ data }) => {
+    const user = await getAuth(getWebRequest());
+
     await Promise.all(
       data.map(async (entry) => {
         return await db
@@ -107,7 +118,12 @@ const updateMultipleLabels = createServerFn({ method: "POST" })
             order: entry.order,
             updatedAt: new Date(),
           })
-          .where(eq(labels.id, entry.id!));
+          .where(
+            and(
+              eq(labels.id, entry.id!),
+              eq(labels.owner, getOwningIdentity(user))
+            )
+          );
       })
     );
   });
@@ -151,11 +167,13 @@ export function useUpdateMultipleLabelsMutation() {
 const deleteLabel = createServerFn({ method: "POST" })
   .validator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    // await db
-    // .update(tasks)
-    // .set({ labelId: null })
-    // .where(eq(tasks.statusId, data.id));
-    await db.delete(labels).where(eq(labels.id, data.id));
+    const user = await getAuth(getWebRequest());
+
+    await db
+      .delete(labels)
+      .where(
+        and(eq(labels.id, data.id), eq(labels.owner, getOwningIdentity(user)))
+      );
   });
 
 export function useDeleteLabelMutation() {
