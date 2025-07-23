@@ -17,7 +17,6 @@ type TaskViewProps = {
   statuses: Status[];
   priorityOrder: Priority[];
   updateTask: (task: UpdateTask) => Promise<void>;
-  onOpenTask?: (task: TaskWithLabels) => void;
 };
 
 export const BoardView = ({
@@ -26,7 +25,6 @@ export const BoardView = ({
   statuses,
   priorityOrder,
   updateTask,
-  onOpenTask,
 }: TaskViewProps) => {
   const [activeTask, setActiveTask] = useState<TaskWithLabels | null>(null);
 
@@ -99,13 +97,7 @@ export const BoardView = ({
                   (a.deadline?.getTime() || 0) - (b.deadline?.getTime() || 0)
               )
               .map((task) => {
-                return (
-                  <TaskCard
-                    onClick={() => onOpenTask?.(task)}
-                    key={task.id}
-                    task={task}
-                  />
-                );
+                return <TaskCard key={task.id} task={task} />;
               })}
           </TaskColumn>
         ) : null}
@@ -130,13 +122,7 @@ export const BoardView = ({
                         (b.deadline?.getTime() || 0)
                     )
                     .map((task) => {
-                      return (
-                        <TaskCard
-                          onClick={() => onOpenTask?.(task)}
-                          key={task.id}
-                          task={task}
-                        />
-                      );
+                      return <TaskCard key={task.id} task={task} />;
                     })
                 : null}
             </TaskColumn>

@@ -1,9 +1,5 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import {
-  createFileRoute,
-  useNavigate,
-  useParams,
-} from "@tanstack/react-router";
+import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 
 import { useUpdateTaskMutation } from "~/db/mutations/tasks";
@@ -40,7 +36,6 @@ function Home() {
   const statusesQuery = useSuspenseQuery(statusesQueryOptions());
   const labelsQuery = useSuspenseQuery(labelsQueryOptions());
   const updateTask = useUpdateTaskMutation();
-  const navigate = useNavigate();
   const commentsQuery = useSuspenseQuery(commentsQueryOptions(params._splat));
   const [openTask, setOpenTask] = useState<string | null>(null);
 
@@ -83,9 +78,6 @@ function Home() {
           projectId={params.projectId}
           statuses={statusesQuery.data}
           updateTask={handleUpdateTask}
-          onOpenTask={(task) =>
-            navigate({ to: `/projects/${params.projectId}/tasks/${task.id}` })
-          }
         />
         <OpenTask
           task={tasksQuery.data?.find((task) => task.id === openTask)}
