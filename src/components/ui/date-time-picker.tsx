@@ -42,9 +42,11 @@ export function DateTimePicker({
               mode="single"
               selected={date}
               captionLayout="dropdown"
-              onSelect={(date) => {
-                setDate(date);
-                setOpen(false);
+              onSelect={(selectedDate) => {
+                if (setDate) {
+                  setDate(selectedDate);
+                  setOpen(false);
+                }
               }}
             />
           </PopoverContent>
