@@ -1,3 +1,5 @@
+import { cn } from "~/lib/utils";
+
 export function TaskLabel({
   children,
   className,
@@ -6,7 +8,7 @@ export function TaskLabel({
   className?: string;
 }) {
   return (
-    <span className={`text-sm font-medium text-gray-700 ${className}`}>
+    <span className={cn("text-sm font-semibold text-gray-700", className)}>
       {children}
     </span>
   );

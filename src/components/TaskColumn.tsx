@@ -50,8 +50,7 @@ export default function TaskColumn({
     >
       <h2
         className={cn(
-          "mx-2 mt-2 px-1 font-semibold py-1 rounded-sm text-sm flex items-center"
-          // colorClasses[status?.color || "neutral"]
+          "mx-2 mt-1 px-1 font-semibold py-1 rounded-sm text-sm flex items-center"
         )}
       >
         <span
@@ -70,7 +69,7 @@ export default function TaskColumn({
           {numberOfTasks}
         </span>
       </h2>
-      <div className="px-1.5 flex flex-col gap-1.5 overflow-y-auto flex-1">
+      <div className="px-1.5 pt-1 flex flex-col gap-1.5 overflow-y-auto flex-1">
         {children}
       </div>
       {status ? (

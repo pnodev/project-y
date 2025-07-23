@@ -142,7 +142,15 @@ export function OpenTask({
                     }}
                   />
                 </DetailListItem>
-                <DetailListItem label="Due" icon={Calendar}>
+                <DetailListItem
+                  label="Due"
+                  icon={Calendar}
+                  statusColor={
+                    task.deadline && task.deadline < new Date()
+                      ? "text-red-500"
+                      : undefined
+                  }
+                >
                   <DateTimePicker
                     date={task?.deadline || undefined}
                     setDate={(date) => {

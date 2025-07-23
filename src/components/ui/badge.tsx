@@ -22,7 +22,7 @@ export function Badge({
     | "rose"
     | "neutral";
   children: React.ReactNode;
-  size?: "small" | "large";
+  size?: "small" | "large" | "very-small";
 }) {
   const colorClasses = {
     red: "bg-red-100 border border-red-200 text-red-700 [&_svg]:fill-red-500",
@@ -55,6 +55,9 @@ export function Badge({
     <span
       className={cn(
         "inline-flex items-center rounded font-medium",
+        size === "very-small"
+          ? "gap-x-1 px-1 py-0.5 text-[10px] [&_svg]:size-1"
+          : "",
         size === "small"
           ? "gap-x-1.5 px-1.5 py-0.5 text-xs [&_svg]:size-1.5"
           : "",

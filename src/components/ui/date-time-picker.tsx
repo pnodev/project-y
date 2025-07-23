@@ -19,6 +19,28 @@ export function DateTimePicker({
   setDate?: (date: Date | undefined) => void;
 }) {
   const [open, setOpen] = React.useState(false);
+  const [time, setTime] = React.useState(
+    date ? date.toTimeString().slice(0, 5) : "10:30"
+  );
+
+  const handleTimeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const [hours, minutes] = event.target.value.split(":").map(Number);
+    if (date) {
+      const updatedDate = new Date(date);
+      updatedDate.setHours(hours, minutes);
+      setDate?.(updatedDate);
+    }
+    setTime(event.target.value);
+  };
+
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    if (selectedDate) {
+      const [hours, minutes] = time.split(":").map(Number);
+      selectedDate.setHours(hours, minutes);
+    }
+    setDate?.(selectedDate);
+    setOpen(false);
+  };
 
   return (
     <div className="flex gap-1">
@@ -31,9 +53,16 @@ export function DateTimePicker({
             <Button
               variant="outline"
               id="date-picker"
-              className="w-32 justify-between font-normal"
+              className="w-36 justify-between font-normal"
             >
-              {date ? date.toLocaleDateString() : "Select date"}
+              {date
+                ? new Intl.DateTimeFormat("de-DE", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    weekday: "short",
+                  }).format(date)
+                : "Select date"}
               <ChevronDownIcon />
             </Button>
           </PopoverTrigger>
@@ -42,12 +71,7 @@ export function DateTimePicker({
               mode="single"
               selected={date}
               captionLayout="dropdown"
-              onSelect={(selectedDate) => {
-                if (setDate) {
-                  setDate(selectedDate);
-                  setOpen(false);
-                }
-              }}
+              onSelect={handleDateSelect}
             />
           </PopoverContent>
         </Popover>
@@ -59,8 +83,9 @@ export function DateTimePicker({
         <Input
           type="time"
           id="time-picker"
-          step="1"
-          defaultValue="10:30:00"
+          step="60"
+          value={time}
+          onChange={handleTimeChange}
           className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
         />
       </div>
