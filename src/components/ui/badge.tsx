@@ -56,13 +56,13 @@ export function Badge({
       className={cn(
         "inline-flex items-center rounded font-medium",
         size === "very-small"
-          ? "gap-x-1 px-1 py-0.5 text-[10px] [&_svg]:size-1"
+          ? "gap-x-1 px-1 py-0.5 text-[10px] [&_svg]:size-1!"
           : "",
         size === "small"
-          ? "gap-x-1.5 px-1.5 py-0.5 text-xs [&_svg]:size-1.5"
+          ? "gap-x-1.5 px-1.5 py-0.5 text-xs [&_svg]:size-1.5!"
           : "",
         size === "large"
-          ? "gap-x-2.5 px-2.5 py-1.5 text-sm [&_svg]:size-2"
+          ? "gap-x-2.5 px-2.5 py-1.5 text-sm [&_svg]:size-2!"
           : "",
         colorClasses[color]
       )}

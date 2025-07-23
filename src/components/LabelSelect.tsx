@@ -74,7 +74,9 @@ export function LabelSelect({
                     }
                   }}
                 >
-                  <Badge color={label.color || "neutral"}>{label.name}</Badge>
+                  <Badge size="small" color={label.color || "neutral"}>
+                    {label.name}
+                  </Badge>
                   <Check
                     className={cn(
                       "ml-auto",
