@@ -1,6 +1,6 @@
 "use client";
 
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronRight, type LucideIcon } from "lucide-react";
 
 import {
@@ -35,6 +35,7 @@ export function NavMain({
     }[];
   }[];
 }) {
+  const routerState = useRouterState();
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Tasks</SidebarGroupLabel>
@@ -42,7 +43,11 @@ export function NavMain({
         {items.map((item) => (
           <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={item.title}>
+              <SidebarMenuButton
+                asChild
+                tooltip={item.title}
+                isActive={routerState.location.pathname === item.url}
+              >
                 <Link to={item.url}>
                   <item.icon />
                   <span>{item.title}</span>
@@ -60,7 +65,12 @@ export function NavMain({
                     <SidebarMenuSub>
                       {item.items?.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild>
+                          <SidebarMenuSubButton
+                            isActive={
+                              routerState.location.pathname === subItem.url
+                            }
+                            asChild
+                          >
                             <Link to={subItem.url}>
                               {typeof subItem.icon === "string" ? (
                                 <img

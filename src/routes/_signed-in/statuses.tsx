@@ -21,7 +21,7 @@ import { PageLayout } from "~/components/PageLayout";
 
 export const Route = createFileRoute("/_signed-in/statuses")({
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(statusesQueryOptions());
+    await context.queryClient.ensureQueryData(statusesWithCountsQueryOptions());
   },
   head: () => ({
     meta: [{ title: "Statuses" }],

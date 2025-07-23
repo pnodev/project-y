@@ -7,7 +7,6 @@ import {
 import { useCallback, useEffect, useState } from "react";
 
 import { useUpdateTaskMutation } from "~/db/mutations/tasks";
-import { authStateFn } from "~/db/queries";
 
 import { BoardView } from "~/components/views/BoardView";
 import { Priority, UpdateTask } from "~/db/schema";
@@ -17,17 +16,19 @@ import { tasksQueryOptions } from "~/db/queries/tasks";
 import { statusesQueryOptions } from "~/db/queries/statuses";
 import { labelsQueryOptions } from "~/db/queries/labels";
 import { commentsQueryOptions } from "~/db/queries/comments";
+import { projectQueryOptions } from "~/db/queries/projects";
+import { EndlessLoadingSpinner } from "~/components/EndlessLoadingSpinner";
 
 export const Route = createFileRoute("/_signed-in/projects/$projectId/tasks/$")(
   {
     loader: async ({ context, params }) => {
       const { projectId } = params;
+      await context.queryClient.ensureQueryData(projectQueryOptions(projectId));
       await context.queryClient.ensureQueryData(tasksQueryOptions(projectId));
       await context.queryClient.ensureQueryData(statusesQueryOptions());
       await context.queryClient.ensureQueryData(labelsQueryOptions());
       await context.queryClient.ensureQueryData(commentsQueryOptions());
     },
-    beforeLoad: async () => await authStateFn(),
     component: Home,
   }
 );
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/_signed-in/projects/$projectId/tasks/$")(
 function Home() {
   const params = useParams({ from: "/_signed-in/projects/$projectId/tasks/$" });
   const tasksQuery = useSuspenseQuery(tasksQueryOptions(params.projectId));
+  const projectQuery = useSuspenseQuery(projectQueryOptions(params.projectId));
   const statusesQuery = useSuspenseQuery(statusesQueryOptions());
   const labelsQuery = useSuspenseQuery(labelsQueryOptions());
   const updateTask = useUpdateTaskMutation();
@@ -64,8 +66,16 @@ function Home() {
 
   const priorityOrder: Priority[] = ["low", "medium", "high", "critical"];
 
+  if (tasksQuery.isFetching || projectQuery.isFetching) {
+    return <EndlessLoadingSpinner centered={true} />;
+  }
+
   return (
-    <PageLayout title="Tasks">
+    <PageLayout
+      title={
+        projectQuery.data?.name ? `${projectQuery.data.name} - Tasks` : "Tasks"
+      }
+    >
       <div className="flex flex-col gap-2 h-full grow-0">
         <BoardView
           priorityOrder={priorityOrder}

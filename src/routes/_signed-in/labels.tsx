@@ -4,18 +4,8 @@ import { FormEvent, useCallback } from "react";
 import { ColorSelect, selectableColorClasses } from "~/components/ColorSelect";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import {
-  useCreateStatusMutation,
-  useDeleteStatusMutation,
-  useUpdateMultipleStatusesMutation,
-  useUpdateStatusMutation,
-} from "~/db/mutations/statuses";
-import {
-  statusesQueryOptions,
-  statusesWithCountsQueryOptions,
-} from "~/db/queries/statuses";
 import { Color, COLOR_VALUES } from "~/db/schema";
-import { Flag, Tag } from "lucide-react";
+import { Tag } from "lucide-react";
 import { EntityList, EntityListItem } from "~/components/EntityList";
 import { PageLayout } from "~/components/PageLayout";
 import {
@@ -31,7 +21,7 @@ import {
 
 export const Route = createFileRoute("/_signed-in/labels")({
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(labelsQueryOptions());
+    await context.queryClient.ensureQueryData(labelsWithCountsQueryOptions());
   },
   head: () => ({
     meta: [{ title: "Labels" }],
