@@ -1,25 +1,8 @@
 import * as React from "react";
-import {
-  BookOpen,
-  Bot,
-  Command,
-  Flag,
-  Folder,
-  Frame,
-  LifeBuoy,
-  List,
-  Map,
-  PieChart,
-  Send,
-  Settings2,
-  SquareTerminal,
-  Tag,
-} from "lucide-react";
+import { Flag, Folder, FolderPlus, LucideIcon, Tag } from "lucide-react";
 
 import { NavMain } from "~/components/nav-main";
 import { NavSettings } from "~/components/nav-settings";
-import { NavSecondary } from "~/components/nav-secondary";
-import { NavUser } from "~/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -29,11 +12,15 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "~/components/ui/sidebar";
-import { UserButton } from "@clerk/tanstack-react-start";
-import { ClientOnly } from "@tanstack/react-router";
 import { version } from "../../package.json";
-import { getAuth } from "@clerk/tanstack-react-start/server";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { projectsQueryOptions } from "~/db/queries/projects";
+
+type NavItem = {
+  title: string;
+  url: string;
+  icon?: LucideIcon | string;
+};
 
 const data = {
   navMain: [
@@ -44,10 +31,11 @@ const data = {
       isActive: true,
       items: [
         {
-          title: "All",
-          url: "/tasks",
+          title: "Add Project",
+          url: "/projects/new",
+          icon: FolderPlus,
         },
-      ],
+      ] as NavItem[],
     },
   ],
   // navSecondary: [
@@ -77,6 +65,26 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const projectsQuery = useSuspenseQuery(projectsQueryOptions());
+
+  data.navMain[0].items = [];
+  data.navMain[0].items.push({
+    title: "All",
+    url: "/tasks",
+    icon: Folder,
+  });
+  projectsQuery.data.forEach((project) => {
+    data.navMain[0].items.push({
+      title: project.name,
+      url: `/tasks/${project.id}`,
+      icon: project.logo || Folder,
+    });
+  });
+  data.navMain[0].items.push({
+    title: "Add Project",
+    url: "/projects/new",
+    icon: FolderPlus,
+  });
   return (
     <Sidebar
       className="top-(--header-height) h-[calc(100svh-var(--header-height))]!"

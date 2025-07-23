@@ -15,7 +15,7 @@ export const fetchCommentsForTask = createServerFn({ method: "GET" })
     }
     console.info(`Fetching comments for... ${data}`);
     const user = await getAuth(getWebRequest());
-    const rawData = await db.query.comment.findMany({
+    const rawData = await db.query.comments.findMany({
       where: (model, { eq }) =>
         and(eq(model.owner, getOwningIdentity(user)), eq(model.taskId, data)),
       orderBy: (fields, { asc }) => [asc(fields.createdAt)],

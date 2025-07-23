@@ -42,7 +42,7 @@ export default function TaskColumn({
   return (
     <div
       className={cn(
-        "rounded-sm h-full border flex flex-col gap-1.5 flex-1 min-w-[250px] max-w-[450px]",
+        "rounded-sm h-full border flex flex-col gap-1.5 flex-1 min-w-[350px] max-w-[450px]",
         status ? "bg-slate-50" : "bg-yellow-100 border-yellow-300"
       )}
       ref={setNodeRef}

@@ -62,6 +62,7 @@ export const tasks = createTable(
     priority: priorityEnum("priority").notNull().default("medium"),
     deadline: timestamp("deadline", { withTimezone: true }),
     owner: varchar("owner", { length: 256 }).notNull(),
+    projectId: uuid("project_id"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -102,7 +103,23 @@ export const labels = createTable(
   (example) => [index("label_owner_idx").on(example.owner)]
 );
 
-export const comment = createTable(
+export const projects = createTable(
+  "project",
+  {
+    id: uuid("id").primaryKey(),
+    name: varchar("name", { length: 256 }).notNull(),
+    description: text("description"),
+    owner: varchar("owner", { length: 256 }).notNull(),
+    logo: varchar("logo", { length: 256 }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }),
+  },
+  (example) => [index("project_owner_idx").on(example.owner)]
+);
+
+export const comments = createTable(
   "comment",
   {
     id: uuid("id").primaryKey(),
@@ -120,9 +137,9 @@ export const comment = createTable(
   (example) => [index("comment_owner_idx").on(example.owner)]
 );
 
-export const commentRelations = relations(comment, ({ one }) => ({
+export const commentRelations = relations(comments, ({ one }) => ({
   task: one(tasks, {
-    fields: [comment.taskId],
+    fields: [comments.taskId],
     references: [tasks.id],
   }),
 }));
@@ -157,9 +174,13 @@ export const taskRelations = relations(tasks, ({ one, many }) => ({
     references: [statuses.id],
   }),
   labelsToTasks: many(labelsToTasks),
+  project: one(projects, {
+    fields: [tasks.projectId],
+    references: [projects.id],
+  }),
 }));
 
-export const labelRelations = relations(labels, ({ one, many }) => ({
+export const labelRelations = relations(labels, ({ many }) => ({
   labelsToTasks: many(labelsToTasks),
 }));
 
@@ -192,16 +213,30 @@ export type UpdateTask = {
   deadline?: Date;
 };
 
-export type Comment = typeof comment.$inferSelect;
-export const insertCommentValidator = createInsertSchema(comment, {
+export type Comment = typeof comments.$inferSelect;
+export const insertCommentValidator = createInsertSchema(comments, {
   id: (schema) => schema.optional(),
   owner: (schema) => schema.optional(),
 });
 export type CreateComment = Omit<
-  typeof comment.$inferInsert,
+  typeof comments.$inferInsert,
   "id" | "createdAt" | "updatedAt" | "owner"
 >;
 export type UpdateComment = {
+  id: string;
+  content?: string;
+};
+
+export type Project = typeof projects.$inferSelect;
+export const insertProjectValidator = createInsertSchema(projects, {
+  id: (schema) => schema.optional(),
+  owner: (schema) => schema.optional(),
+});
+export type CreateProject = Omit<
+  typeof projects.$inferInsert,
+  "id" | "createdAt" | "updatedAt" | "owner"
+>;
+export type UpdateProject = {
   id: string;
   content?: string;
 };

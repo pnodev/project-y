@@ -31,6 +31,7 @@ export function NavMain({
     items?: {
       title: string;
       url: string;
+      icon?: LucideIcon | string;
     }[];
   }[];
 }) {
@@ -61,6 +62,15 @@ export function NavMain({
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton asChild>
                             <Link to={subItem.url}>
+                              {typeof subItem.icon === "string" ? (
+                                <img
+                                  src={subItem.icon}
+                                  className="size-4 block"
+                                  alt={subItem.title}
+                                />
+                              ) : (
+                                subItem.icon && <subItem.icon />
+                              )}
                               <span>{subItem.title}</span>
                             </Link>
                           </SidebarMenuSubButton>
