@@ -34,6 +34,7 @@ import { useCreateCommentMutation } from "~/db/mutations/comments";
 import { Comments } from "./Comments";
 import { Calendar, CircleDashed, Flag, Users } from "lucide-react";
 import { PrioritySwitch } from "./PrioritySwitch";
+import { DateTimePicker } from "./ui/date-time-picker";
 
 export function OpenTask({
   task,
@@ -142,11 +143,13 @@ export function OpenTask({
                   />
                 </DetailListItem>
                 <DetailListItem label="Due" icon={Calendar}>
-                  {task?.deadline ? (
-                    <DateDisplay date={task?.deadline} />
-                  ) : (
-                    "--"
-                  )}
+                  <DateTimePicker
+                    date={task?.deadline || undefined}
+                    setDate={(date) => {
+                      if (!task) return;
+                      handleUpdateTask({ id: task.id, deadline: date });
+                    }}
+                  />
                 </DetailListItem>
                 <DetailListItem
                   label="Assigned to"
