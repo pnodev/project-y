@@ -8,10 +8,12 @@ import { useState } from "react";
 
 export default function TaskColumn({
   status,
+  projectId,
   numberOfTasks,
   children,
 }: {
   status?: Status;
+  projectId: string;
   numberOfTasks?: number;
   children: React.ReactNode;
 }) {
@@ -76,6 +78,7 @@ export default function TaskColumn({
         <div className="p-2 gap-1 flex flex-col">
           <TaskQuickCreate
             status={status.id}
+            projectId={projectId}
             isOpen={quickCreateOpen}
             onClose={() => setQuickCreateOpen(false)}
           />

@@ -7,10 +7,12 @@ import { useCreateTaskMutation } from "~/db/mutations/tasks";
 export default function TaskQuickCreate({
   isOpen,
   status,
+  projectId,
   onClose,
 }: {
   isOpen: boolean;
   status: string;
+  projectId: string;
   onClose: () => void;
 }) {
   const createTask = useCreateTaskMutation();
@@ -31,7 +33,7 @@ export default function TaskQuickCreate({
       return;
     }
 
-    await createTask({ name, statusId: status });
+    await createTask({ name, statusId: status, projectId });
     onClose();
   };
 

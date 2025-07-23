@@ -29,6 +29,7 @@ const createTask = createServerFn({ method: "POST" })
       name: data.name,
       description: data.description,
       statusId: data.statusId,
+      projectId: data.projectId,
       owner: getOwningIdentity(user),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -46,7 +47,7 @@ export function useCreateTaskMutation() {
 
       router.invalidate();
       queryClient.invalidateQueries({
-        queryKey: ["tasks"],
+        queryKey: ["tasks", task.projectId],
       });
 
       return result;
@@ -78,19 +79,23 @@ export function useUpdateTaskMutation() {
   return useCallback(
     async (task: UpdateTask) => {
       // Optimistically update the task in the cache
-      queryClient.setQueryData(["tasks"], (oldData: Task[] | undefined) => {
-        if (!oldData) return oldData;
-        return oldData.map((t) =>
-          t.id === task.id ? { ...t, ...task, updatedAt: new Date() } : t
-        );
-      });
+      console.info("Optimistically updating task in cache", task.projectId);
+      queryClient.setQueryData(
+        ["tasks", task.projectId],
+        (oldData: Task[] | undefined) => {
+          if (!oldData) return oldData;
+          return oldData.map((t) =>
+            t.id === task.id ? { ...t, ...task, updatedAt: new Date() } : t
+          );
+        }
+      );
 
       try {
         const result = await _updateTask({ data: task });
         return result;
       } catch (error) {
         // If the mutation fails, roll back to the previous state
-        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        queryClient.invalidateQueries({ queryKey: ["tasks", task.projectId] });
         throw error;
       } finally {
         router.invalidate();
@@ -128,12 +133,12 @@ export function useSetLabelsForTaskMutation() {
   const _setLabelsForTask = useServerFn(setLabelsForTask);
 
   return useCallback(
-    async (taskId: string, labelIds: string[]) => {
-      await _setLabelsForTask({ data: { taskId, labelIds } });
+    async (task: Task, labelIds: string[]) => {
+      await _setLabelsForTask({ data: { taskId: task.id, labelIds } });
 
       router.invalidate();
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["tasks", taskId] });
+      queryClient.invalidateQueries({ queryKey: ["tasks", task.projectId] });
     },
     [router, queryClient, _setLabelsForTask]
   );

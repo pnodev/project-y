@@ -62,7 +62,7 @@ export const tasks = createTable(
     priority: priorityEnum("priority").notNull().default("medium"),
     deadline: timestamp("deadline", { withTimezone: true }),
     owner: varchar("owner", { length: 256 }).notNull(),
-    projectId: uuid("project_id"),
+    projectId: uuid("project_id").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -211,6 +211,7 @@ export type UpdateTask = {
   statusId?: string;
   priority?: "low" | "medium" | "high" | "critical";
   deadline?: Date;
+  projectId: string;
 };
 
 export type Comment = typeof comments.$inferSelect;

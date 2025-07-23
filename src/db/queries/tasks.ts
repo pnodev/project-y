@@ -6,11 +6,13 @@ import { getAuth } from "@clerk/tanstack-react-start/server";
 import { getWebRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
 
-export const fetchTasks = createServerFn({ method: "GET" }).handler(
-  async (): Promise<TaskWithLabels[]> => {
+export const fetchTasks = createServerFn({ method: "GET" })
+  .validator((d: { projectId: string }) => d)
+  .handler(async ({ data: { projectId } }): Promise<TaskWithLabels[]> => {
     const user = await getAuth(getWebRequest());
     console.log("Fetching tasks for user:", getOwningIdentity(user));
-    console.info("Fetching tasks...");
+    console.info("Fetching tasks for project:", projectId);
+
     const rawTasks = await db.query.tasks.findMany({
       with: {
         status: true,
@@ -20,7 +22,11 @@ export const fetchTasks = createServerFn({ method: "GET" }).handler(
           },
         },
       },
-      where: (model, { eq }) => eq(model.owner, getOwningIdentity(user)),
+      where: (model, { eq, and }) =>
+        and(
+          eq(model.owner, getOwningIdentity(user)),
+          eq(model.projectId, projectId)
+        ),
     });
 
     return rawTasks.map((task) => ({
@@ -28,13 +34,12 @@ export const fetchTasks = createServerFn({ method: "GET" }).handler(
       labels: task.labelsToTasks.map((l) => l.label),
       labelsToTasks: undefined,
     }));
-  }
-);
+  });
 
-export const tasksQueryOptions = () =>
+export const tasksQueryOptions = (projectId: string) =>
   queryOptions({
-    queryKey: ["tasks"],
-    queryFn: () => fetchTasks(),
+    queryKey: ["tasks", projectId],
+    queryFn: () => fetchTasks({ data: { projectId } }),
   });
 
 export const fetchTask = createServerFn({ method: "GET" })

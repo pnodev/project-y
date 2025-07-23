@@ -13,6 +13,7 @@ import { Priority, Status, TaskWithLabels, UpdateTask } from "~/db/schema";
 
 type TaskViewProps = {
   tasks: TaskWithLabels[];
+  projectId: string;
   statuses: Status[];
   priorityOrder: Priority[];
   updateTask: (task: UpdateTask) => Promise<void>;
@@ -21,6 +22,7 @@ type TaskViewProps = {
 
 export const BoardView = ({
   tasks,
+  projectId,
   statuses,
   priorityOrder,
   updateTask,
@@ -32,9 +34,12 @@ export const BoardView = ({
     setActiveTask(null);
     const taskId = (e.active.id as string).split(":")[1];
     const statusId = (e.over?.id as string).split(":")[1];
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task || !statusId || !task.projectId) return;
     updateTask({
       id: taskId,
       statusId,
+      projectId: task.projectId,
     });
   };
   const sensors = useSensors(
@@ -79,6 +84,7 @@ export const BoardView = ({
       <div className="flex overflow-x-auto gap-3 h-px grow">
         {tasksByStatus["unassigned"] ? (
           <TaskColumn
+            projectId={projectId}
             key="unassigned"
             numberOfTasks={tasksByStatus["unassigned"]?.length || 0}
           >
@@ -106,6 +112,7 @@ export const BoardView = ({
         {[...statuses].map((status) => {
           return (
             <TaskColumn
+              projectId={projectId}
               key={status.id}
               status={status}
               numberOfTasks={tasksByStatus[status.id]?.length || 0}

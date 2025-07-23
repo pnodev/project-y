@@ -76,7 +76,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   projectsQuery.data.forEach((project) => {
     data.navMain[0].items.push({
       title: project.name,
-      url: `/tasks/${project.id}`,
+      url: `/projects/${project.id}/tasks`,
       icon: project.logo || Folder,
     });
   });

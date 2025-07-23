@@ -18,24 +18,27 @@ import { statusesQueryOptions } from "~/db/queries/statuses";
 import { labelsQueryOptions } from "~/db/queries/labels";
 import { commentsQueryOptions } from "~/db/queries/comments";
 
-export const Route = createFileRoute("/_signed-in/tasks/$")({
-  loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(tasksQueryOptions());
-    await context.queryClient.ensureQueryData(statusesQueryOptions());
-    await context.queryClient.ensureQueryData(labelsQueryOptions());
-    await context.queryClient.ensureQueryData(commentsQueryOptions());
-  },
-  beforeLoad: async () => await authStateFn(),
-  component: Home,
-});
+export const Route = createFileRoute("/_signed-in/projects/$projectId/tasks/$")(
+  {
+    loader: async ({ context, params }) => {
+      const { projectId } = params;
+      await context.queryClient.ensureQueryData(tasksQueryOptions(projectId));
+      await context.queryClient.ensureQueryData(statusesQueryOptions());
+      await context.queryClient.ensureQueryData(labelsQueryOptions());
+      await context.queryClient.ensureQueryData(commentsQueryOptions());
+    },
+    beforeLoad: async () => await authStateFn(),
+    component: Home,
+  }
+);
 
 function Home() {
-  const tasksQuery = useSuspenseQuery(tasksQueryOptions());
+  const params = useParams({ from: "/_signed-in/projects/$projectId/tasks/$" });
+  const tasksQuery = useSuspenseQuery(tasksQueryOptions(params.projectId));
   const statusesQuery = useSuspenseQuery(statusesQueryOptions());
   const labelsQuery = useSuspenseQuery(labelsQueryOptions());
   const updateTask = useUpdateTaskMutation();
   const navigate = useNavigate();
-  const params = useParams({ from: "/_signed-in/tasks/$" });
   const commentsQuery = useSuspenseQuery(commentsQueryOptions(params._splat));
   const [openTask, setOpenTask] = useState<string | null>(null);
 
@@ -53,6 +56,7 @@ function Home() {
       await updateTask({
         id: id,
         statusId,
+        projectId: params.projectId,
       });
     },
     [updateTask]
@@ -66,9 +70,12 @@ function Home() {
         <BoardView
           priorityOrder={priorityOrder}
           tasks={tasksQuery.data}
+          projectId={params.projectId}
           statuses={statusesQuery.data}
           updateTask={handleUpdateTask}
-          onOpenTask={(task) => navigate({ to: `/tasks/${task.id}` })}
+          onOpenTask={(task) =>
+            navigate({ to: `/projects/${params.projectId}/tasks/${task.id}` })
+          }
         />
         <OpenTask
           task={tasksQuery.data?.find((task) => task.id === openTask)}

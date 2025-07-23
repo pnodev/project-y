@@ -19,7 +19,7 @@ export const Labels = ({
   const setLabelsForTask = useSetLabelsForTaskMutation();
   const handleSetLabels = async (labelIds: string[]) => {
     if (!task) return;
-    await setLabelsForTask(task.id, labelIds);
+    await setLabelsForTask(task, labelIds);
   };
 
   return (

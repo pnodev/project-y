@@ -64,10 +64,11 @@ export function OpenTask({
 
   const handleUpdateTitle = useCallback(
     async (content: string) => {
-      if (!task?.id) return;
+      if (!task?.id || !task.projectId) return;
       await handleUpdateTask({
         id: task?.id,
         name: content,
+        projectId: task.projectId,
       });
     },
     [handleUpdateTask, task]
@@ -91,7 +92,10 @@ export function OpenTask({
     <Dialog
       open={!!task}
       onOpenChange={() => {
-        navigate({ to: "/tasks/$", params: { _splat: "" } });
+        navigate({
+          to: `/projects/${task?.projectId}/tasks/$`,
+          params: { _splat: "" },
+        });
       }}
     >
       <DialogContent
@@ -127,7 +131,11 @@ export function OpenTask({
                     status={currentStatus}
                     statuses={statuses}
                     onValueChange={(statusId) => {
-                      handleUpdateTask({ id: task.id, statusId });
+                      handleUpdateTask({
+                        id: task.id,
+                        statusId,
+                        projectId: task.projectId,
+                      });
                     }}
                   />
                 </DetailListItem>
@@ -138,6 +146,7 @@ export function OpenTask({
                       handleUpdateTask({
                         id: task.id,
                         priority,
+                        projectId: task.projectId,
                       });
                     }}
                   />
@@ -155,7 +164,11 @@ export function OpenTask({
                     date={task?.deadline || undefined}
                     setDate={(date) => {
                       if (!task) return;
-                      handleUpdateTask({ id: task.id, deadline: date });
+                      handleUpdateTask({
+                        id: task.id,
+                        deadline: date,
+                        projectId: task.projectId,
+                      });
                     }}
                   />
                 </DetailListItem>
@@ -169,7 +182,11 @@ export function OpenTask({
                 content={task?.description || ""}
                 onUpdate={(data) => {
                   if (!task) return;
-                  handleUpdateTask({ id: task.id, description: data.text });
+                  handleUpdateTask({
+                    id: task.id,
+                    description: data.text,
+                    projectId: task.projectId,
+                  });
                 }}
               />
             </div>
