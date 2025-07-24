@@ -84,9 +84,14 @@ export function useUpdateTaskMutation() {
         ["tasks", task.projectId],
         (oldData: Task[] | undefined) => {
           if (!oldData) return oldData;
-          return oldData.map((t) =>
-            t.id === task.id ? { ...t, ...task, updatedAt: new Date() } : t
-          );
+          return oldData.map((t) => (t.id === task.id ? { ...t, ...task } : t));
+        }
+      );
+      queryClient.setQueryData(
+        ["tasks", task.id],
+        (oldData: Task | undefined) => {
+          if (!oldData) return oldData;
+          return { ...oldData, ...task };
         }
       );
 
@@ -96,6 +101,7 @@ export function useUpdateTaskMutation() {
       } catch (error) {
         // If the mutation fails, roll back to the previous state
         queryClient.invalidateQueries({ queryKey: ["tasks", task.projectId] });
+        queryClient.invalidateQueries({ queryKey: ["tasks", task.id] });
         throw error;
       } finally {
         router.invalidate();
@@ -139,6 +145,7 @@ export function useSetLabelsForTaskMutation() {
       router.invalidate();
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["tasks", task.projectId] });
+      queryClient.invalidateQueries({ queryKey: ["tasks", task.id] });
     },
     [router, queryClient, _setLabelsForTask]
   );
