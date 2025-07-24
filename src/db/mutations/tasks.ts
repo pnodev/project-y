@@ -114,6 +114,36 @@ export function useUpdateTaskMutation() {
   );
 }
 
+const deleteTask = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string() }))
+  .handler(async ({ data }) => {
+    await db.delete(tasks).where(eq(tasks.id, data.id));
+    await sync(`task-delete`, { data });
+  });
+
+export function useDeleteTaskMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _deleteTask = useServerFn(deleteTask);
+
+  return useCallback(
+    async (id: string) => {
+      const result = await _deleteTask({ data: { id } });
+
+      router.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", id],
+      });
+
+      return result;
+    },
+    [router, queryClient, _deleteTask]
+  );
+}
+
 const setLabelsForTask = createServerFn({ method: "POST" })
   .validator(
     z.object({

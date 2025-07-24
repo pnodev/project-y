@@ -14,7 +14,10 @@ import {
 } from "~/db/schema";
 import { RichtextEditor } from "~/components/RichtextEditor/Editor";
 import { useCallback } from "react";
-import { useUpdateTaskMutation } from "~/db/mutations/tasks";
+import {
+  useDeleteTaskMutation,
+  useUpdateTaskMutation,
+} from "~/db/mutations/tasks";
 import { DetailList, DetailListItem } from "~/components/ui/detail-list";
 import { StatusSwitch } from "./StatusSwitch";
 import { Labels } from "./Labels";
@@ -31,9 +34,28 @@ import { TaskLabel } from "./ui/TaskLabel";
 import { CommentInput } from "./CommentInput";
 import { useCreateCommentMutation } from "~/db/mutations/comments";
 import { Comments } from "./Comments";
-import { Calendar, CircleDashed, Flag, Users } from "lucide-react";
+import {
+  Calendar,
+  CircleDashed,
+  Ellipsis,
+  EllipsisIcon,
+  EllipsisVertical,
+  Flag,
+  Trash,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { PrioritySwitch } from "./PrioritySwitch";
 import { DateTimePicker } from "./ui/date-time-picker";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 export function OpenTask({
   task,
@@ -50,6 +72,7 @@ export function OpenTask({
 
   const updateTask = useUpdateTaskMutation();
   const createComment = useCreateCommentMutation();
+  const deleteTask = useDeleteTaskMutation();
   const currentUser = useAuth();
   const handleUpdateTask = useCallback(
     async (data: UpdateTask) => {
@@ -93,7 +116,6 @@ export function OpenTask({
       onOpenChange={() => {
         navigate({
           to: `/projects/${task?.projectId}/tasks/$`,
-          params: { _splat: "" },
         });
       }}
     >
@@ -104,16 +126,50 @@ export function OpenTask({
       >
         <DialogDescription className="sr-only">{task?.name}</DialogDescription>
         <DialogHeader className="border-b px-6 py-3">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem className="gap-2.5">
-                <img src={owner.avatar} className="h-5 w-5 rounded" />
-                <span>{owner.name}</span>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>{task?.name}</BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
+          <div className="flex justify-between items-center pr-6">
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="gap-2.5">
+                  <img src={owner.avatar} className="h-5 w-5 rounded" />
+                  <span>{owner.name}</span>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>{task?.name}</BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="cursor-pointer">
+                <Ellipsis className="h-6 w-6 text-gray-500" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>Task Options</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <ConfirmDialog
+                  title="Confirm Deletion"
+                  description={`Are you sure you want to delete this task? This action cannot be undone.`}
+                  onConfirm={async () => {
+                    if (!task) return;
+                    await deleteTask(task.id);
+                    navigate({
+                      to: `/projects/${task.projectId}/tasks`,
+                    });
+                  }}
+                  confirmText="Delete"
+                  cancelText="Cancel"
+                >
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault(); // Prevent the dropdown from closing immediately
+                    }}
+                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                  >
+                    <Trash2 className="text-red-600" />
+                    Delete
+                  </DropdownMenuItem>
+                </ConfirmDialog>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </DialogHeader>
         {task && currentStatus ? (
           <div className="grid grid-cols-12 gap-3 content-stretch grow">
