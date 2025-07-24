@@ -1,6 +1,6 @@
 import { cn } from "~/lib/utils";
 
-export function EndlessLoadingSpinner({ centered }: { centered: boolean }) {
+export function EndlessLoadingSpinner({ centered }: { centered?: boolean }) {
   return (
     <div
       role="status"

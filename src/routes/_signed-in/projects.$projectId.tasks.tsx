@@ -43,10 +43,6 @@ function Home() {
 
   const priorityOrder: Priority[] = ["low", "medium", "high", "critical"];
 
-  if (tasksQuery.isFetching || projectQuery.isFetching) {
-    return <EndlessLoadingSpinner centered={true} />;
-  }
-
   return (
     <PageLayout
       title={
@@ -64,7 +60,7 @@ function Home() {
         <Suspense
           fallback={
             <div className="flex h-full items-center justify-center">
-              <EndlessLoadingSpinner centered={true} />
+              <EndlessLoadingSpinner centered />
             </div>
           }
         >
