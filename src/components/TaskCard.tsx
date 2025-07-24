@@ -40,8 +40,8 @@ export const TaskCardComponent = ({ task }: { task: TaskWithLabels }) => {
   const assignee = useUser();
   return (
     <Link
-      to="/projects/$projectId/tasks/$"
-      params={{ projectId: task.projectId, _splat: task.id }}
+      to="/projects/$projectId/tasks/$taskId"
+      params={{ projectId: task.projectId, taskId: task.id }}
     >
       <Card
         className={cn(
