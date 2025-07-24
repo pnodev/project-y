@@ -1,10 +1,10 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { OpenTask } from "~/components/OpenTask";
-import { commentsQueryOptions } from "~/db/queries/comments";
-import { labelsQueryOptions } from "~/db/queries/labels";
-import { statusesQueryOptions } from "~/db/queries/statuses";
-import { taskQueryOptions } from "~/db/queries/tasks";
+import { commentsQueryOptions, useCommentsQuery } from "~/db/queries/comments";
+import { labelsQueryOptions, useLabelsQuery } from "~/db/queries/labels";
+import { statusesQueryOptions, useStatusesQuery } from "~/db/queries/statuses";
+import { taskQueryOptions, useTaskQuery } from "~/db/queries/tasks";
 
 export const Route = createFileRoute(
   "/_signed-in/projects/$projectId/tasks/$taskId"
@@ -20,10 +20,10 @@ export const Route = createFileRoute(
 
 function RouteComponent() {
   const params = useParams({ from: Route.id });
-  const taskQuery = useSuspenseQuery(taskQueryOptions(params.taskId));
-  const labelsQuery = useSuspenseQuery(labelsQueryOptions());
-  const commentsQuery = useSuspenseQuery(commentsQueryOptions(params.taskId));
-  const statusesQuery = useSuspenseQuery(statusesQueryOptions());
+  const taskQuery = useTaskQuery(params.taskId);
+  const labelsQuery = useLabelsQuery();
+  const commentsQuery = useCommentsQuery(params.taskId);
+  const statusesQuery = useStatusesQuery();
 
   if (!taskQuery.data) {
     return <p>Loading</p>;

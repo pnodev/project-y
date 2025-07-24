@@ -1,4 +1,3 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { Outlet, createFileRoute } from "@tanstack/react-router";
 import { FormEvent, useCallback } from "react";
 import { ColorSelect, selectableColorClasses } from "~/components/ColorSelect";
@@ -11,8 +10,8 @@ import {
   useUpdateStatusMutation,
 } from "~/db/mutations/statuses";
 import {
-  statusesQueryOptions,
   statusesWithCountsQueryOptions,
+  useStatusesWithCountsQuery,
 } from "~/db/queries/statuses";
 import { Color, COLOR_VALUES } from "~/db/schema";
 import { Flag } from "lucide-react";
@@ -30,7 +29,7 @@ export const Route = createFileRoute("/_signed-in/statuses")({
 });
 
 function StatusesComponent() {
-  const statusesQuery = useSuspenseQuery(statusesWithCountsQueryOptions());
+  const statusesQuery = useStatusesWithCountsQuery();
   const createStatus = useCreateStatusMutation();
   const deleteStatus = useDeleteStatusMutation();
   const updateStatus = useUpdateStatusMutation();

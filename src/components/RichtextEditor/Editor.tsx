@@ -233,6 +233,7 @@ export const RichtextEditor = ({
   return (
     <div className="richtext-editor min-h-[220px] w-full rounded-md border border-input bg-transparent text-base">
       <EditorProvider
+        key={content}
         slotBefore={<MenuBar />}
         extensions={extensions}
         content={content}

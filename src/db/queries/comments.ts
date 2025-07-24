@@ -4,8 +4,9 @@ import { getWebRequest } from "@tanstack/react-start/server";
 import { db } from "..";
 import { getOwningIdentity } from "~/lib/utils";
 import { and } from "drizzle-orm";
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { clerkClient } from "@clerk/clerk-sdk-node";
+import { useEventSource } from "~/hooks/use-event-source";
 
 export const fetchCommentsForTask = createServerFn({ method: "GET" })
   .validator((data?: string) => data)
@@ -36,3 +37,19 @@ export const commentsQueryOptions = (taskId?: string) =>
     queryKey: ["comments", taskId],
     queryFn: () => fetchCommentsForTask({ data: taskId }),
   });
+
+export const useCommentsQuery = (taskId: string) => {
+  const queryData = useSuspenseQuery(commentsQueryOptions(taskId));
+
+  useEventSource({
+    topics: [
+      "comment-create",
+      ...queryData.data.map((t) => `comment-update-${t.id}`),
+    ],
+    callback: () => {
+      queryData.refetch();
+    },
+  });
+
+  return { ...queryData };
+};

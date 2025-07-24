@@ -1,12 +1,13 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import { TaskWithLabels } from "../schema";
 import { getAuth } from "@clerk/tanstack-react-start/server";
 import { getWebRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
+import { useEventSource } from "~/hooks/use-event-source";
 
-export const fetchTasks = createServerFn({ method: "GET" })
+const fetchTasks = createServerFn({ method: "GET" })
   .validator((d: { projectId: string }) => d)
   .handler(async ({ data: { projectId } }): Promise<TaskWithLabels[]> => {
     const user = await getAuth(getWebRequest());
@@ -41,6 +42,23 @@ export const tasksQueryOptions = (projectId: string) =>
     queryKey: ["tasks", projectId],
     queryFn: () => fetchTasks({ data: { projectId } }),
   });
+
+export const useTasksQuery = (projectId: string) => {
+  const queryData = useSuspenseQuery(tasksQueryOptions(projectId));
+
+  useEventSource({
+    topics: [
+      "task-create",
+      "task-delete",
+      ...queryData.data.map((t) => `task-update-${t.id}`),
+    ],
+    callback: () => {
+      queryData.refetch();
+    },
+  });
+
+  return { ...queryData };
+};
 
 export const fetchTask = createServerFn({ method: "GET" })
   .validator((d: string) => d)
@@ -79,3 +97,16 @@ export const taskQueryOptions = (id: string) =>
     queryKey: ["tasks", id],
     queryFn: () => fetchTask({ data: id }),
   });
+
+export const useTaskQuery = (taskId: string) => {
+  const queryData = useSuspenseQuery(taskQueryOptions(taskId));
+
+  useEventSource({
+    topics: [`task-update-${taskId}`],
+    callback: () => {
+      queryData.refetch();
+    },
+  });
+
+  return { ...queryData };
+};

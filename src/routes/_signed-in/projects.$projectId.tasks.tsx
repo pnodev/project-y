@@ -7,10 +7,10 @@ import { useUpdateTaskMutation } from "~/db/mutations/tasks";
 import { BoardView } from "~/components/views/BoardView";
 import { Priority, UpdateTask } from "~/db/schema";
 import { PageLayout } from "~/components/PageLayout";
-import { tasksQueryOptions } from "~/db/queries/tasks";
-import { statusesQueryOptions } from "~/db/queries/statuses";
-import { projectQueryOptions } from "~/db/queries/projects";
+import { statusesQueryOptions, useStatusesQuery } from "~/db/queries/statuses";
+import { projectQueryOptions, useProjectQuery } from "~/db/queries/projects";
 import { EndlessLoadingSpinner } from "~/components/EndlessLoadingSpinner";
+import { tasksQueryOptions, useTasksQuery } from "~/db/queries/tasks";
 
 export const Route = createFileRoute("/_signed-in/projects/$projectId/tasks")({
   loader: async ({ context, params }) => {
@@ -24,9 +24,9 @@ export const Route = createFileRoute("/_signed-in/projects/$projectId/tasks")({
 
 function Home() {
   const params = useParams({ from: Route.id });
-  const tasksQuery = useSuspenseQuery(tasksQueryOptions(params.projectId));
-  const projectQuery = useSuspenseQuery(projectQueryOptions(params.projectId));
-  const statusesQuery = useSuspenseQuery(statusesQueryOptions());
+  const tasksQuery = useTasksQuery(params.projectId);
+  const projectQuery = useProjectQuery(params.projectId);
+  const statusesQuery = useStatusesQuery();
 
   const updateTask = useUpdateTaskMutation();
 

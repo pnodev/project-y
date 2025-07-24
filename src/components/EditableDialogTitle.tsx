@@ -27,6 +27,7 @@ export function EditableDialogTitle({
   debounceMs = 500,
 }: EditableDialogTitleProps) {
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const hasInitialized = useRef(false);
 
   const debouncedUpdate = useCallback(
     (content: string) => {
@@ -56,6 +57,12 @@ export function EditableDialogTitle({
       shouldRerenderOnTransaction: false, // Reduce re-renders
       onUpdate: ({ editor }) => {
         const textContent = editor.getText();
+
+        if (!hasInitialized.current) {
+          hasInitialized.current = true;
+          return; // Skip updates on first render
+        }
+
         onUpdate?.(textContent);
         debouncedUpdate(textContent);
       },
@@ -69,6 +76,7 @@ export function EditableDialogTitle({
           clearTimeout(debounceRef.current);
           debounceRef.current = null;
         }
+        if (!hasInitialized.current) return;
         onDebouncedUpdate?.(textContent);
         onBlur?.(textContent);
       },

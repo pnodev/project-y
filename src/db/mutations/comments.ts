@@ -8,6 +8,7 @@ import { getOwningIdentity } from "~/lib/utils";
 import { useCallback } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { sync } from "./sync";
 
 const createComment = createServerFn({ method: "POST" })
   .validator(insertCommentValidator)
@@ -21,6 +22,8 @@ const createComment = createServerFn({ method: "POST" })
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+
+    await sync("comment-create", { data });
   });
 
 export function useCreateCommentMutation() {

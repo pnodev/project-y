@@ -18,6 +18,7 @@ import z from "zod";
 import { getAuth } from "@clerk/tanstack-react-start/server";
 import { getWebRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
+import { sync } from "./sync";
 
 const createTask = createServerFn({ method: "POST" })
   .validator(insertTaskValidator)
@@ -34,6 +35,7 @@ const createTask = createServerFn({ method: "POST" })
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+    await sync(`task-create`, { data });
   });
 
 export function useCreateTaskMutation() {
@@ -69,6 +71,7 @@ const updateTask = createServerFn({ method: "POST" })
       .where(
         and(eq(tasks.id, data.id!), eq(tasks.owner, getOwningIdentity(user)))
       );
+    await sync(`task-update-${data.id}`, { data });
   });
 
 export function useUpdateTaskMutation() {
@@ -131,6 +134,8 @@ const setLabelsForTask = createServerFn({ method: "POST" })
         }))
       );
     }
+
+    await sync(`task-update-${data.taskId}`, { data });
   });
 
 export function useSetLabelsForTaskMutation() {

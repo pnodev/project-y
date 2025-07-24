@@ -14,7 +14,7 @@ import {
 } from "~/components/ui/sidebar";
 import { version } from "../../package.json";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { projectsQueryOptions } from "~/db/queries/projects";
+import { projectsQueryOptions, useProjectsQuery } from "~/db/queries/projects";
 
 type NavItem = {
   title: string;
@@ -65,7 +65,7 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const projectsQuery = useSuspenseQuery(projectsQueryOptions());
+  const projectsQuery = useProjectsQuery();
 
   data.navMain[0].items = [];
   data.navMain[0].items.push({

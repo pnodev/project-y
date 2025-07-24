@@ -9,8 +9,8 @@ import { Tag } from "lucide-react";
 import { EntityList, EntityListItem } from "~/components/EntityList";
 import { PageLayout } from "~/components/PageLayout";
 import {
-  labelsQueryOptions,
   labelsWithCountsQueryOptions,
+  useLabelsWithCountsQuery,
 } from "~/db/queries/labels";
 import {
   useCreateLabelMutation,
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_signed-in/labels")({
 });
 
 function LabelsComponent() {
-  const labelsQuery = useSuspenseQuery(labelsWithCountsQueryOptions());
+  const labelsQuery = useLabelsWithCountsQuery();
   const createLabel = useCreateLabelMutation();
   const deleteLabel = useDeleteLabelMutation();
   const updateLabel = useUpdateLabelMutation();

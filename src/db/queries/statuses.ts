@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import { statuses, tasks } from "~/db/schema";
@@ -6,6 +6,7 @@ import { asc, eq, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/tanstack-react-start/server";
 import { getWebRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
+import { useEventSource } from "~/hooks/use-event-source";
 
 export const fetchStatuses = createServerFn({ method: "GET" }).handler(
   async () => {
@@ -24,6 +25,23 @@ export const statusesQueryOptions = () =>
     queryKey: ["statuses"],
     queryFn: () => fetchStatuses(),
   });
+
+export const useStatusesQuery = () => {
+  const queryData = useSuspenseQuery(statusesQueryOptions());
+
+  useEventSource({
+    topics: [
+      "status-create",
+      "status-delete",
+      ...queryData.data.map((t) => `status-update-${t.id}`),
+    ],
+    callback: () => {
+      queryData.refetch();
+    },
+  });
+
+  return { ...queryData };
+};
 
 export const fetchStatusesWithTaskCounts = createServerFn({
   method: "GET",
@@ -55,3 +73,20 @@ export const statusesWithCountsQueryOptions = () =>
     queryKey: ["statuses-with-counts"],
     queryFn: () => fetchStatusesWithTaskCounts(),
   });
+
+export const useStatusesWithCountsQuery = () => {
+  const queryData = useSuspenseQuery(statusesWithCountsQueryOptions());
+
+  useEventSource({
+    topics: [
+      "status-create",
+      "status-delete",
+      ...queryData.data.map((t) => `status-update-${t.id}`),
+    ],
+    callback: () => {
+      queryData.refetch();
+    },
+  });
+
+  return { ...queryData };
+};

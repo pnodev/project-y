@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import { labels, labelsToTasks } from "~/db/schema";
@@ -6,6 +6,7 @@ import { asc, eq, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/tanstack-react-start/server";
 import { getWebRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
+import { useEventSource } from "~/hooks/use-event-source";
 
 export const fetchLabels = createServerFn({ method: "GET" }).handler(
   async () => {
@@ -23,6 +24,23 @@ export const labelsQueryOptions = () =>
     queryKey: ["labels"],
     queryFn: () => fetchLabels(),
   });
+
+export const useLabelsQuery = () => {
+  const queryData = useSuspenseQuery(labelsQueryOptions());
+
+  useEventSource({
+    topics: [
+      "label-create",
+      "label-delete",
+      ...queryData.data.map((t) => `label-update-${t.id}`),
+    ],
+    callback: () => {
+      queryData.refetch();
+    },
+  });
+
+  return { ...queryData };
+};
 
 export const fetchLabelsWithTaskCounts = createServerFn({
   method: "GET",
@@ -53,3 +71,20 @@ export const labelsWithCountsQueryOptions = () =>
     queryKey: ["labels-with-counts"],
     queryFn: () => fetchLabelsWithTaskCounts(),
   });
+
+export const useLabelsWithCountsQuery = () => {
+  const queryData = useSuspenseQuery(labelsWithCountsQueryOptions());
+
+  useEventSource({
+    topics: [
+      "label-create",
+      "label-delete",
+      ...queryData.data.map((t) => `label-update-${t.id}`),
+    ],
+    callback: () => {
+      queryData.refetch();
+    },
+  });
+
+  return { ...queryData };
+};

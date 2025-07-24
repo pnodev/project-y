@@ -25,6 +25,7 @@ import { and, eq } from "drizzle-orm";
 import { getOwningIdentity } from "~/lib/utils";
 import { getAuth } from "@clerk/tanstack-react-start/server";
 import { getWebRequest } from "@tanstack/react-start/server";
+import { sync } from "./sync";
 
 const createLabel = createServerFn({ method: "POST" })
   .validator(insertLabelValidator)
@@ -37,6 +38,7 @@ const createLabel = createServerFn({ method: "POST" })
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+    await sync("label-create", { data });
   });
 
 export function useCreateLabelMutation() {
@@ -78,6 +80,8 @@ const updateLabel = createServerFn({ method: "POST" })
       .where(
         and(eq(labels.id, data.id!), eq(labels.owner, getOwningIdentity(user)))
       );
+
+    await sync(`label-update-${data.id}`, { data });
   });
 
 export function useUpdateLabelMutation() {
@@ -125,6 +129,9 @@ const updateMultipleLabels = createServerFn({ method: "POST" })
             )
           );
       })
+    );
+    await Promise.all(
+      data.map((s) => sync(`label-update-${s.id}`, { data: { ...s } }))
     );
   });
 
@@ -174,6 +181,8 @@ const deleteLabel = createServerFn({ method: "POST" })
       .where(
         and(eq(labels.id, data.id), eq(labels.owner, getOwningIdentity(user)))
       );
+
+    await sync(`label-update-${data.id}`, { data });
   });
 
 export function useDeleteLabelMutation() {

@@ -15,7 +15,6 @@ import {
 import { RichtextEditor } from "~/components/RichtextEditor/Editor";
 import { useCallback } from "react";
 import { useUpdateTaskMutation } from "~/db/mutations/tasks";
-import { DateDisplay } from "~/components/ui/date-display";
 import { DetailList, DetailListItem } from "~/components/ui/detail-list";
 import { StatusSwitch } from "./StatusSwitch";
 import { Labels } from "./Labels";

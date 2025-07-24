@@ -18,6 +18,7 @@ import { and, eq } from "drizzle-orm";
 import { getAuth } from "@clerk/tanstack-react-start/server";
 import { getWebRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
+import { sync } from "./sync";
 
 const createStatus = createServerFn({ method: "POST" })
   .validator(insertStatusValidator)
@@ -31,6 +32,7 @@ const createStatus = createServerFn({ method: "POST" })
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+    await sync(`status-create`, { data });
   });
 
 export function useCreateStatusMutation() {
@@ -75,6 +77,7 @@ const updateStatus = createServerFn({ method: "POST" })
           eq(statuses.owner, getOwningIdentity(user))
         )
       );
+    await sync(`status-update-${data.id}`, { data });
   });
 
 export function useUpdateStatusMutation() {
@@ -122,6 +125,9 @@ const updateMultipleStatuses = createServerFn({ method: "POST" })
             )
           );
       })
+    );
+    await Promise.all(
+      data.map((s) => sync(`status-update-${s.id}`, { data: { ...s } }))
     );
   });
 
@@ -183,6 +189,7 @@ const deleteStatus = createServerFn({ method: "POST" })
           eq(statuses.owner, getOwningIdentity(user))
         )
       );
+    await sync("status-delete", { data });
   });
 
 export function useDeleteStatusMutation() {
