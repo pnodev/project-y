@@ -29,12 +29,7 @@ export default function TaskCard({
         {...listeners}
         {...attributes}
       >
-        <Link
-          to="/projects/$projectId/tasks/$"
-          params={{ projectId: task.projectId, _splat: task.id }}
-        >
-          <TaskCardComponent task={task} key={task.id} />
-        </Link>
+        <TaskCardComponent task={task} key={task.id} />
       </div>
     </ClientOnly>
   );
