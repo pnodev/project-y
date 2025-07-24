@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useParams } from "@tanstack/react-router";
-import { useCallback } from "react";
+import { Suspense, useCallback } from "react";
 
 import { useUpdateTaskMutation } from "~/db/mutations/tasks";
 
@@ -61,7 +61,15 @@ function Home() {
           statuses={statusesQuery.data}
           updateTask={handleUpdateTask}
         />
-        <Outlet />
+        <Suspense
+          fallback={
+            <div className="flex h-full items-center justify-center">
+              <EndlessLoadingSpinner centered={true} />
+            </div>
+          }
+        >
+          <Outlet />
+        </Suspense>
       </div>
     </PageLayout>
   );
