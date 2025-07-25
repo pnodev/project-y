@@ -40,7 +40,6 @@ function RouteComponent() {
       task={taskQuery.data}
       statuses={statusesQuery.data}
       labels={labelsQuery.data || []}
-      attachments={attachmentsQuery.data || []}
       comments={commentsQuery.data?.map((comment) => ({
         ...comment,
         author: comment.author || "Unknown", // Default author to "Unknown" if null
