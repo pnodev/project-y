@@ -6,6 +6,7 @@ import {
   DialogHeader,
 } from "~/components/ui/dialog";
 import {
+  Attachment,
   Comment,
   Label,
   Status,
@@ -38,10 +39,7 @@ import {
   Calendar,
   CircleDashed,
   Ellipsis,
-  EllipsisIcon,
-  EllipsisVertical,
   Flag,
-  Trash,
   Trash2,
   Users,
 } from "lucide-react";
@@ -56,22 +54,29 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { UploadDropzone } from "~/utils/uploadthing";
+import { useCreateAttachmentMutation } from "~/db/mutations/attachments";
+import { AttachmentItem } from "./AttachmentItem";
+import { AttachmentArea } from "./AttachmentArea";
 
 export function OpenTask({
   task,
   statuses,
   labels,
   comments,
+  attachments,
 }: {
   task?: TaskWithLabels;
   statuses: Status[];
   labels: Label[];
   comments: Comment[];
+  attachments: Attachment[];
 }) {
   const navigate = useNavigate();
 
   const updateTask = useUpdateTaskMutation();
   const createComment = useCreateCommentMutation();
+  const createAttachment = useCreateAttachmentMutation();
   const deleteTask = useDeleteTaskMutation();
   const currentUser = useAuth();
   const handleUpdateTask = useCallback(
@@ -106,6 +111,35 @@ export function OpenTask({
       });
     },
     [createComment, task]
+  );
+
+  const handleUpload = useCallback(
+    async (
+      data: {
+        name: string;
+        ufsUrl: string;
+        key: string;
+        size: number;
+        type: string;
+        serverData: { uploadedBy: string | null };
+      }[]
+    ) => {
+      if (!task?.id || !currentUser.userId) return;
+      await Promise.all(
+        data.map(async (attachment) => {
+          await createAttachment({
+            taskId: task.id,
+            providerFileId: attachment.key,
+            url: attachment.ufsUrl,
+            name: attachment.name,
+            size: attachment.size,
+            type: attachment.type,
+            uploadedBy: attachment.serverData.uploadedBy as string,
+          });
+        })
+      );
+    },
+    [createAttachment, task]
   );
 
   const owner = useCurrentOwningIdentity();
@@ -172,8 +206,8 @@ export function OpenTask({
           </div>
         </DialogHeader>
         {task && currentStatus ? (
-          <div className="grid grid-cols-12 gap-3 content-stretch grow">
-            <div className="col-span-8 flex flex-col gap-5.5 pt-4 pl-6">
+          <div className="grid grid-cols-12 content-stretch grow">
+            <div className="col-span-8 flex flex-col gap-5.5 py-4 pl-6 pr-5.5 overflow-auto h-[calc(100vh-6rem-51px)]">
               <EditableDialogTitle
                 initialContent={task?.name || ""}
                 onBlur={handleUpdateTitle}
@@ -244,8 +278,13 @@ export function OpenTask({
                   });
                 }}
               />
+
+              <AttachmentArea
+                attachments={attachments}
+                onUpload={handleUpload}
+              />
             </div>
-            <div className="col-span-4 bg-gray-100 py-4 px-6 flex flex-col gap-4">
+            <div className="col-span-4 bg-gray-100 py-4 px-6 flex flex-col gap-4 h-[calc(100vh-6rem-51px)]">
               <TaskLabel>Conversation</TaskLabel>
               <Comments
                 className="grow"

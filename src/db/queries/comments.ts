@@ -8,7 +8,7 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import { useEventSource } from "~/hooks/use-event-source";
 
-export const fetchCommentsForTask = createServerFn({ method: "GET" })
+const fetchCommentsForTask = createServerFn({ method: "GET" })
   .validator((data?: string) => data)
   .handler(async ({ data }) => {
     if (!data) {

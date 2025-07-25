@@ -137,6 +137,35 @@ export const comments = createTable(
   (example) => [index("comment_owner_idx").on(example.owner)]
 );
 
+export const attachments = createTable(
+  "attachment",
+  {
+    id: uuid("id").primaryKey(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id),
+    owner: varchar("owner", { length: 256 }).notNull(),
+    name: varchar("name", { length: 256 }).notNull(),
+    size: integer("size").notNull(),
+    type: varchar("type", { length: 256 }).notNull(),
+    uploadedBy: varchar("uploaded_by", { length: 256 }).notNull(),
+    providerFileId: varchar("provider_file_id", { length: 256 }).notNull(),
+    url: varchar("url", { length: 256 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }),
+  },
+  (example) => [index("attachment_owner_idx").on(example.owner)]
+);
+
+export const attachmentRelations = relations(attachments, ({ one }) => ({
+  task: one(tasks, {
+    fields: [attachments.taskId],
+    references: [tasks.id],
+  }),
+}));
+
 export const commentRelations = relations(comments, ({ one }) => ({
   task: one(tasks, {
     fields: [comments.taskId],
@@ -224,6 +253,20 @@ export type CreateComment = Omit<
   "id" | "createdAt" | "updatedAt" | "owner"
 >;
 export type UpdateComment = {
+  id: string;
+  content?: string;
+};
+
+export type Attachment = typeof attachments.$inferSelect;
+export const insertAttachmentValidator = createInsertSchema(attachments, {
+  id: (schema) => schema.optional(),
+  owner: (schema) => schema.optional(),
+});
+export type CreateAttachment = Omit<
+  typeof attachments.$inferInsert,
+  "id" | "createdAt" | "updatedAt" | "owner"
+>;
+export type UpdateAttachment = {
   id: string;
   content?: string;
 };
