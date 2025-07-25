@@ -10,7 +10,7 @@ import {
   Comment,
   Label,
   Status,
-  TaskWithLabels,
+  TaskWithRelations,
   UpdateTask,
 } from "~/db/schema";
 import { RichtextEditor } from "~/components/RichtextEditor/Editor";
@@ -54,9 +54,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { UploadDropzone } from "~/utils/uploadthing";
 import { useCreateAttachmentMutation } from "~/db/mutations/attachments";
-import { AttachmentItem } from "./AttachmentItem";
 import { AttachmentArea } from "./AttachmentArea";
 
 export function OpenTask({
@@ -64,13 +62,11 @@ export function OpenTask({
   statuses,
   labels,
   comments,
-  attachments,
 }: {
-  task?: TaskWithLabels;
+  task?: TaskWithRelations;
   statuses: Status[];
   labels: Label[];
   comments: Comment[];
-  attachments: Attachment[];
 }) {
   const navigate = useNavigate();
 
@@ -280,7 +276,7 @@ export function OpenTask({
               />
 
               <AttachmentArea
-                attachments={attachments}
+                attachments={task.attachments}
                 onUpload={handleUpload}
               />
             </div>

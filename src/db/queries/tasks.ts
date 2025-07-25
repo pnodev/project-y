@@ -1,7 +1,7 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
-import { TaskWithLabels } from "../schema";
+import { attachments, TaskWithRelations } from "../schema";
 import { getAuth } from "@clerk/tanstack-react-start/server";
 import { getWebRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
@@ -9,7 +9,7 @@ import { useEventSource } from "~/hooks/use-event-source";
 
 const fetchTasks = createServerFn({ method: "GET" })
   .validator((d: { projectId: string }) => d)
-  .handler(async ({ data: { projectId } }): Promise<TaskWithLabels[]> => {
+  .handler(async ({ data: { projectId } }): Promise<TaskWithRelations[]> => {
     const user = await getAuth(getWebRequest());
     console.log("Fetching tasks for user:", getOwningIdentity(user));
     console.info("Fetching tasks for project:", projectId);
@@ -20,6 +20,11 @@ const fetchTasks = createServerFn({ method: "GET" })
         labelsToTasks: {
           with: {
             label: true,
+          },
+        },
+        attachments: {
+          with: {
+            task: true,
           },
         },
       },
@@ -62,7 +67,7 @@ export const useTasksQuery = (projectId: string) => {
 
 export const fetchTask = createServerFn({ method: "GET" })
   .validator((d: string) => d)
-  .handler(async ({ data }): Promise<TaskWithLabels | null> => {
+  .handler(async ({ data }): Promise<TaskWithRelations | null> => {
     console.info("Fetching task...");
     const user = await getAuth(getWebRequest());
     const task = await db.query.tasks.findFirst({
@@ -79,6 +84,7 @@ export const fetchTask = createServerFn({ method: "GET" })
             label: true,
           },
         },
+        attachments: true,
       },
     });
 

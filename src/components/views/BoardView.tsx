@@ -9,10 +9,10 @@ import {
 import { useState } from "react";
 import TaskCard, { TaskCardComponent } from "~/components/TaskCard";
 import TaskColumn from "~/components/TaskColumn";
-import { Priority, Status, TaskWithLabels, UpdateTask } from "~/db/schema";
+import { Priority, Status, TaskWithRelations, UpdateTask } from "~/db/schema";
 
 type TaskViewProps = {
-  tasks: TaskWithLabels[];
+  tasks: TaskWithRelations[];
   projectId: string;
   statuses: Status[];
   priorityOrder: Priority[];
@@ -26,7 +26,7 @@ export const BoardView = ({
   priorityOrder,
   updateTask,
 }: TaskViewProps) => {
-  const [activeTask, setActiveTask] = useState<TaskWithLabels | null>(null);
+  const [activeTask, setActiveTask] = useState<TaskWithRelations | null>(null);
 
   const handleDrop = (e: DragEndEvent) => {
     setActiveTask(null);
@@ -63,7 +63,7 @@ export const BoardView = ({
       ...acc,
       [status.id]: [...(acc[status.id] || []), task],
     };
-  }, {} as Record<string, TaskWithLabels[]>);
+  }, {} as Record<string, TaskWithRelations[]>);
 
   return (
     <DndContext

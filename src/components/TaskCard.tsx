@@ -1,11 +1,11 @@
-import { TaskWithLabels } from "~/db/schema";
+import { TaskWithRelations } from "~/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { useDraggable } from "@dnd-kit/core";
 import { ClientOnly, Link } from "@tanstack/react-router";
 import { Badge } from "./ui/badge";
 import { cn } from "~/lib/utils";
 import { DetailList, DetailListItem } from "./ui/detail-list";
-import { Calendar, Flag, TextIcon, Users } from "lucide-react";
+import { Calendar, Flag, Paperclip, TextIcon, Users } from "lucide-react";
 import { DateDisplay } from "./ui/date-display";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useUser } from "@clerk/tanstack-react-start";
@@ -14,7 +14,7 @@ export default function TaskCard({
   task,
   onClick,
 }: {
-  task: TaskWithLabels;
+  task: TaskWithRelations;
   onClick?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -35,7 +35,7 @@ export default function TaskCard({
   );
 }
 
-export const TaskCardComponent = ({ task }: { task: TaskWithLabels }) => {
+export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
   const isOverdue = task.deadline && task.deadline < new Date();
   const assignee = useUser();
   return (
@@ -66,9 +66,10 @@ export const TaskCardComponent = ({ task }: { task: TaskWithLabels }) => {
           <CardTitle>{task.name}</CardTitle>
         </CardHeader>
         <CardContent>
-          {task.description ? (
-            <TextIcon className="text-gray-400 mb-2 size-4" />
-          ) : null}
+          <div className="[&>svg]:text-gray-400 [&>svg]:mb-2 [&>svg]:size-3.5 flex gap-2">
+            {task.description ? <TextIcon /> : null}
+            {task.attachments.length > 0 ? <Paperclip /> : null}
+          </div>
           <DetailList size="small">
             <DetailListItem label="Assigned to:" icon={Users}>
               <Avatar className="size-6 my-0">

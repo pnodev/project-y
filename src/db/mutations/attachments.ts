@@ -30,6 +30,7 @@ const createAttachment = createServerFn({ method: "POST" })
     });
 
     await sync("attachment-create", { data });
+    await sync("task-update", { data: { taskId: data.taskId } });
   });
 
 export function useCreateAttachmentMutation() {
@@ -45,6 +46,9 @@ export function useCreateAttachmentMutation() {
       queryClient.invalidateQueries({
         queryKey: ["attachments", attachmentData.taskId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", attachmentData.taskId],
+      });
 
       return result;
     },
@@ -57,6 +61,10 @@ const deleteAttachment = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const user = await getAuth(getWebRequest());
 
+    const attachment = await db.query.attachments.findFirst({
+      where: (model, { eq, and }) =>
+        and(eq(model.id, data.id), eq(model.owner, getOwningIdentity(user))),
+    });
     await db
       .delete(attachments)
       .where(
@@ -67,6 +75,9 @@ const deleteAttachment = createServerFn({ method: "POST" })
       );
 
     await sync(`attachment-update-${data.id}`, { data });
+    await sync(`task-update-${attachment?.taskId}`, { data });
+
+    return { id: data.id, taskId: attachment?.taskId };
   });
 
 export function useDeleteAttachmentMutation() {
@@ -84,6 +95,9 @@ export function useDeleteAttachmentMutation() {
       });
       queryClient.invalidateQueries({
         queryKey: ["attachments", id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", result.taskId],
       });
 
       return result;

@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 import { Button } from "./ui/button";
-import { Label, Task, TaskWithLabels } from "~/db/schema";
+import { Label, Task, TaskWithRelations } from "~/db/schema";
 import { LabelSelect } from "./LabelSelect";
 import {
   useSetLabelsForTaskMutation,
@@ -13,7 +13,7 @@ export const Labels = ({
   task,
   labels,
 }: {
-  task?: TaskWithLabels;
+  task?: TaskWithRelations;
   labels: Label[];
 }) => {
   const setLabelsForTask = useSetLabelsForTaskMutation();

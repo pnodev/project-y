@@ -207,6 +207,7 @@ export const taskRelations = relations(tasks, ({ one, many }) => ({
     fields: [tasks.projectId],
     references: [projects.id],
   }),
+  attachments: many(attachments),
 }));
 
 export const labelRelations = relations(labels, ({ many }) => ({
@@ -214,8 +215,9 @@ export const labelRelations = relations(labels, ({ many }) => ({
 }));
 
 export type Task = typeof tasks.$inferSelect;
-export type TaskWithLabels = Task & {
+export type TaskWithRelations = Task & {
   labels: (typeof labels.$inferSelect)[];
+  attachments: (typeof attachments.$inferSelect)[];
 };
 export const insertTaskValidator = createInsertSchema(tasks, {
   id: (schema) => schema.optional(),
