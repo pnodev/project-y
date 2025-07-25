@@ -49,9 +49,9 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
           isOverdue ? " outline-2 bg-red-50 outline-red-400" : ""
         )}
       >
-        <CardHeader>
+        <CardHeader className="p-3 -mt-1">
           {task.labels.length ? (
-            <div className="-mt-2 mb-4 flex flex-wrap gap-1">
+            <div className="mb-4 flex flex-wrap gap-1">
               {task.labels.map((label) => (
                 <Badge
                   key={label.id}
@@ -65,7 +65,7 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
           ) : null}
           <CardTitle>{task.name}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3">
           <div className="[&>svg]:text-gray-400 [&>svg]:mb-2 [&>svg]:size-3.5 flex gap-2">
             {task.description ? <TextIcon /> : null}
             {task.attachments.length > 0 ? <Paperclip /> : null}

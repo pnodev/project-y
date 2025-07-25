@@ -209,7 +209,7 @@ export function OpenTask({
         </DialogHeader>
         {task && currentStatus ? (
           <div className="grid grid-cols-12 content-stretch grow">
-            <div className="col-span-8 flex flex-col gap-5.5 py-4 pl-6 pr-5.5 overflow-auto h-[calc(100vh-6rem-51px)]">
+            <div className="col-span-8 flex flex-col gap-5.5 pt-4 pb-6 pl-6 pr-5.5 overflow-auto h-[calc(100vh-6rem-51px)]">
               <EditableDialogTitle
                 initialContent={task?.name || ""}
                 onBlur={handleUpdateTitle}
@@ -286,7 +286,7 @@ export function OpenTask({
                 onUpload={handleUpload}
               />
             </div>
-            <div className="col-span-4 bg-gray-100 py-4 px-6 flex flex-col gap-4 h-[calc(100vh-6rem-51px)]">
+            <div className="col-span-4 bg-gray-100 border-l py-4 px-6 flex flex-col gap-4 h-[calc(100vh-6rem-51px)]">
               <TaskLabel>Conversation</TaskLabel>
               <Comments
                 className="grow"
