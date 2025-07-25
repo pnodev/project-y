@@ -27,6 +27,7 @@ const fetchTasks = createServerFn({ method: "GET" })
             task: true,
           },
         },
+        project: true,
       },
       where: (model, { eq, and }) =>
         and(
@@ -85,6 +86,7 @@ export const fetchTask = createServerFn({ method: "GET" })
           },
         },
         attachments: true,
+        project: true,
       },
     });
 

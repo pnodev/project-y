@@ -218,6 +218,7 @@ export type Task = typeof tasks.$inferSelect;
 export type TaskWithRelations = Task & {
   labels: (typeof labels.$inferSelect)[];
   attachments: (typeof attachments.$inferSelect)[];
+  project: Project;
 };
 export const insertTaskValidator = createInsertSchema(tasks, {
   id: (schema) => schema.optional(),

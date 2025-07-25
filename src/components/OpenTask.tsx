@@ -164,6 +164,8 @@ export function OpenTask({
                   <span>{owner.name}</span>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
+                <BreadcrumbItem>{task?.project.name}</BreadcrumbItem>
+                <BreadcrumbSeparator />
                 <BreadcrumbItem>{task?.name}</BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
