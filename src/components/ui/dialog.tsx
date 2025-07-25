@@ -3,6 +3,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { XIcon } from "lucide-react";
 
 import { cn } from "~/lib/utils";
+import { EndlessLoadingSpinner } from "../EndlessLoadingSpinner";
 
 function Dialog({
   ...props
@@ -49,10 +50,12 @@ function DialogContent({
   children,
   showCloseButton = true,
   size = "normal",
+  isLoading,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
   size?: "large" | "normal";
+  isLoading?: boolean;
 }) {
   return (
     <DialogPortal data-slot="dialog-portal">
@@ -69,6 +72,7 @@ function DialogContent({
         style={{ gridTemplateRows: "auto 1fr auto" }}
         {...props}
       >
+        <EndlessLoadingSpinner isActive={!!isLoading} centered hasBackdrop />
         {children}
         {showCloseButton && (
           <DialogPrimitive.Close

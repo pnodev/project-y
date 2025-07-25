@@ -3,7 +3,7 @@ export const LoadingSpinner = ({
   className,
 }: {
   isActive: boolean;
-  className: string;
+  className?: string;
 }) => {
   if (!isActive) return null;
   return (

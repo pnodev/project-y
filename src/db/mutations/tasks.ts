@@ -19,6 +19,7 @@ import { getAuth } from "@clerk/tanstack-react-start/server";
 import { getWebRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
+import { deleteAttachment } from "./attachments";
 
 const createTask = createServerFn({ method: "POST" })
   .validator(insertTaskValidator)
@@ -117,6 +118,25 @@ export function useUpdateTaskMutation() {
 const deleteTask = createServerFn({ method: "POST" })
   .validator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
+    const user = await getAuth(getWebRequest());
+    const task = await db.query.tasks.findFirst({
+      with: {
+        attachments: true,
+      },
+      where: (model, { eq, and }) =>
+        and(eq(model.id, data.id), eq(model.owner, getOwningIdentity(user))),
+    });
+    if (!task) return;
+    await Promise.all(
+      task.attachments.map((attachment) =>
+        deleteAttachment({ data: { id: attachment.id } })
+      )
+    );
+    await db
+      .delete(tasks)
+      .where(
+        and(eq(tasks.id, data.id), eq(tasks.owner, getOwningIdentity(user)))
+      );
     await db.delete(tasks).where(eq(tasks.id, data.id));
     await sync(`task-delete`, { data });
   });

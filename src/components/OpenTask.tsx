@@ -14,7 +14,7 @@ import {
   UpdateTask,
 } from "~/db/schema";
 import { RichtextEditor } from "~/components/RichtextEditor/Editor";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   useDeleteTaskMutation,
   useUpdateTaskMutation,
@@ -84,6 +84,7 @@ export function OpenTask({
     [updateTask]
   );
   const currentStatus = statuses.find((status) => status.id === task?.statusId);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleUpdateTitle = useCallback(
     async (content: string) => {
@@ -152,6 +153,7 @@ export function OpenTask({
       <DialogContent
         size="large"
         aria-describedby={`task-title-${task?.id}`}
+        isLoading={isDeleting}
         className="p-0 gap-0"
       >
         <DialogDescription className="sr-only">{task?.name}</DialogDescription>
@@ -181,7 +183,9 @@ export function OpenTask({
                   description={`Are you sure you want to delete this task? This action cannot be undone.`}
                   onConfirm={async () => {
                     if (!task) return;
+                    setIsDeleting(true);
                     await deleteTask(task.id);
+                    setIsDeleting(false);
                     navigate({
                       to: `/projects/${task.projectId}/tasks`,
                     });

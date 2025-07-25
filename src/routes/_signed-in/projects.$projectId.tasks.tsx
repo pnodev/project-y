@@ -60,7 +60,7 @@ function Home() {
         <Suspense
           fallback={
             <div className="flex h-full items-center justify-center">
-              <EndlessLoadingSpinner centered />
+              <EndlessLoadingSpinner centered isActive={true} />
             </div>
           }
         >

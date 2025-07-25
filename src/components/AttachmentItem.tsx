@@ -1,8 +1,52 @@
 import { Attachment } from "~/db/schema";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { EllipsisVertical, Trash2 } from "lucide-react";
+import { ConfirmDialog } from "./ConfirmDialog";
+import { useDeleteAttachmentMutation } from "~/db/mutations/attachments";
+import { useState } from "react";
+import { EndlessLoadingSpinner } from "./EndlessLoadingSpinner";
 
 export function AttachmentItem({ attachment }: { attachment: Attachment }) {
+  const deleteAttachment = useDeleteAttachmentMutation();
+  const [isDeleting, setIsDeleting] = useState(false);
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 shadow relative rounded-sm border bg-card p-2">
+      <EndlessLoadingSpinner isActive={isDeleting} centered hasBackdrop />
+      <div className="absolute right-3 top-3 flex h-7 rounded shadow bg-white">
+        <DropdownMenu>
+          <DropdownMenuTrigger className="cursor-pointer">
+            <EllipsisVertical className="size-5" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <ConfirmDialog
+              title="Confirm Deletion"
+              description={`Are you sure you want to delete this attachment? This action cannot be undone.`}
+              onConfirm={async () => {
+                setIsDeleting(true);
+                await deleteAttachment(attachment.id);
+                setIsDeleting(false);
+              }}
+              confirmText="Delete"
+              cancelText="Cancel"
+            >
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault(); // Prevent the dropdown from closing immediately
+                }}
+                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+              >
+                <Trash2 className="text-red-600" />
+                Delete
+              </DropdownMenuItem>
+            </ConfirmDialog>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       {attachment.type.includes("image") ? (
         <img
           src={attachment.url}

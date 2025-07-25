@@ -15,6 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { sync } from "./sync";
 import z from "zod";
 import { and, eq } from "drizzle-orm";
+import { UTApi } from "uploadthing/server";
 
 const createAttachment = createServerFn({ method: "POST" })
   .validator(insertAttachmentValidator)
@@ -56,7 +57,7 @@ export function useCreateAttachmentMutation() {
   );
 }
 
-const deleteAttachment = createServerFn({ method: "POST" })
+export const deleteAttachment = createServerFn({ method: "POST" })
   .validator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
     const user = await getAuth(getWebRequest());
@@ -65,6 +66,9 @@ const deleteAttachment = createServerFn({ method: "POST" })
       where: (model, { eq, and }) =>
         and(eq(model.id, data.id), eq(model.owner, getOwningIdentity(user))),
     });
+    if (!attachment) return;
+    const utapi = new UTApi();
+    utapi.deleteFiles([attachment?.providerFileId]);
     await db
       .delete(attachments)
       .where(
@@ -96,9 +100,11 @@ export function useDeleteAttachmentMutation() {
       queryClient.invalidateQueries({
         queryKey: ["attachments", id],
       });
-      queryClient.invalidateQueries({
-        queryKey: ["tasks", result.taskId],
-      });
+      if (result) {
+        queryClient.invalidateQueries({
+          queryKey: ["tasks", result.taskId],
+        });
+      }
 
       return result;
     },
