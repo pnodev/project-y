@@ -8,7 +8,7 @@ export const SimpleCard = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-sm border bg-card text-card-foreground p-2 flex flex-col gap-2 shadow",
+      "rounded-sm border bg-card text-card-foreground p-2 flex flex-col gap-1 shadow",
       className
     )}
     {...props}
