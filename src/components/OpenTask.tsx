@@ -56,6 +56,7 @@ import {
 import { ConfirmDialog } from "./ConfirmDialog";
 import { useCreateAttachmentMutation } from "~/db/mutations/attachments";
 import { AttachmentArea } from "./AttachmentArea";
+import { UserSelect } from "./UserSelect";
 
 export function OpenTask({
   task,
@@ -263,10 +264,9 @@ export function OpenTask({
                     }}
                   />
                 </DetailListItem>
-                <DetailListItem
-                  label="Assigned to"
-                  icon={Users}
-                ></DetailListItem>
+                <DetailListItem label="Assigned to" icon={Users}>
+                  <UserSelect user={task.owner} onValueChange={() => {}} />
+                </DetailListItem>
               </DetailList>
               <hr />
               <RichtextEditor
