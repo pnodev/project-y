@@ -20,7 +20,7 @@ export function DateTimePicker({
 }) {
   const [open, setOpen] = React.useState(false);
   const [time, setTime] = React.useState(
-    date ? date.toTimeString().slice(0, 5) : "10:30"
+    date ? date.toTimeString().slice(0, 5) : "0:00"
   );
 
   const handleTimeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
