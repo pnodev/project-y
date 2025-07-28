@@ -218,11 +218,14 @@ export const labelRelations = relations(labels, ({ many }) => ({
   labelsToTasks: many(labelsToTasks),
 }));
 
-export type Task = typeof tasks.$inferSelect;
+export type Task = typeof tasks.$inferSelect & {
+  assignees: string[];
+};
 export type TaskWithRelations = Task & {
   labels: (typeof labels.$inferSelect)[];
   attachments: (typeof attachments.$inferSelect)[];
   project: Project;
+  assignees: string[];
 };
 export const insertTaskValidator = createInsertSchema(tasks, {
   id: (schema) => schema.optional(),
@@ -237,7 +240,9 @@ export const updateTaskValidator = createInsertSchema(tasks, {
   owner: (schema) => schema.optional(),
 });
 export type CreateTask = Omit<
-  typeof tasks.$inferInsert,
+  typeof tasks.$inferInsert & {
+    assignees: string[];
+  },
   "id" | "createdAt" | "updatedAt" | "owner"
 >;
 export type UpdateTask = {
