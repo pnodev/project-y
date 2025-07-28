@@ -64,7 +64,9 @@ export const BoardView = ({
 
     return {
       ...acc,
-      [status.id]: [...(acc[status.id] || []), task],
+      [status.id]: [...(acc[status.id] || []), task].sort(
+        (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+      ),
     };
   }, {} as Record<string, TaskWithRelations[]>);
 

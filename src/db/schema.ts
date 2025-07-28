@@ -237,6 +237,7 @@ export const updateTaskValidator = createInsertSchema(tasks, {
   statusId: (schema) => schema.optional(),
   priority: (schema) => schema.optional(),
   deadline: (schema) => schema.optional(),
+  projectId: (schema) => schema.optional(),
   owner: (schema) => schema.optional(),
 });
 export type CreateTask = Omit<
@@ -253,7 +254,7 @@ export type UpdateTask = {
   statusId?: string;
   priority?: "low" | "medium" | "high" | "critical";
   deadline?: Date;
-  projectId: string;
+  projectId?: string;
 };
 
 export type Comment = typeof comments.$inferSelect;

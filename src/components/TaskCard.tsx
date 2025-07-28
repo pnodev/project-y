@@ -9,6 +9,9 @@ import { Calendar, Flag, Paperclip, TextIcon, Users } from "lucide-react";
 import { DateDisplay } from "./ui/date-display";
 import { Avatar, AvatarFallback, AvatarImage, AvatarList } from "./ui/avatar";
 import { useUsersQuery } from "~/db/queries/users";
+import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/tanstack-react-start";
+import { useUpdateTaskMutation } from "~/db/mutations/tasks";
 
 export default function TaskCard({ task }: { task: TaskWithRelations }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -32,6 +35,34 @@ export default function TaskCard({ task }: { task: TaskWithRelations }) {
 export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
   const isOverdue = task.deadline && task.deadline < new Date();
   const usersQuery = useUsersQuery();
+  const currentUser = useAuth();
+  const updateTask = useUpdateTaskMutation();
+
+  const [isHovered, setIsHovered] = useState(false);
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (currentUser && currentUser.userId && isHovered && event.key === "m") {
+        if (task.assignees.includes(currentUser.userId)) {
+          updateTask({
+            id: task.id,
+            assignees: task.assignees.filter((assigneeId) => {
+              return assigneeId !== currentUser.userId;
+            }),
+          });
+        } else {
+          updateTask({
+            id: task.id,
+            assignees: [...task.assignees, currentUser.userId],
+          });
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [isHovered, task]);
 
   return (
     <Link
@@ -43,6 +74,8 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
           "cursor-pointer",
           isOverdue ? " outline-2 bg-red-50 outline-red-400" : ""
         )}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         <CardHeader className="p-3 -mt-1">
           {task.labels.length ? (
