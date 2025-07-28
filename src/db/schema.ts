@@ -66,7 +66,7 @@ export const tasks = createTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull(),
   },
   (example) => [index("task_owner_idx").on(example.owner)]
 );

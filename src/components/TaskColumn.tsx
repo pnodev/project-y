@@ -4,7 +4,7 @@ import { cn } from "~/lib/utils";
 import { Button } from "./ui/button";
 import { PlusIcon } from "lucide-react";
 import TaskQuickCreate from "./TaskQuickCreate";
-import { useState } from "react";
+import { BoardViewStore } from "./views/board-view-store";
 
 export default function TaskColumn({
   status,
@@ -17,7 +17,6 @@ export default function TaskColumn({
   numberOfTasks?: number;
   children: React.ReactNode;
 }) {
-  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const { isOver, setNodeRef } = useDroppable({
     id: status ? `status:${status.id}` : "status-unassigned",
   });
@@ -44,7 +43,7 @@ export default function TaskColumn({
   return (
     <div
       className={cn(
-        "rounded-sm h-full border flex flex-col gap-1.5 flex-1 min-w-[350px] max-w-[450px]",
+        "rounded-sm max-h-full border flex flex-col gap-1.5 flex-1 min-w-[350px] max-w-[450px]",
         status ? "bg-slate-50" : "bg-yellow-100 border-yellow-300"
       )}
       ref={setNodeRef}
@@ -79,14 +78,21 @@ export default function TaskColumn({
           <TaskQuickCreate
             status={status.id}
             projectId={projectId}
-            isOpen={quickCreateOpen}
-            onClose={() => setQuickCreateOpen(false)}
+            onClose={() =>
+              BoardViewStore.setState((state) => {
+                return { ...state, quickCreateOpenFor: null };
+              })
+            }
           />
           <Button
             size={"sm"}
             variant={"background"}
             type="button"
-            onClick={() => setQuickCreateOpen(true)}
+            onClick={() =>
+              BoardViewStore.setState((state) => {
+                return { ...state, quickCreateOpenFor: status.id };
+              })
+            }
           >
             <PlusIcon />
             Add Task

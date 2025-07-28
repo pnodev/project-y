@@ -10,6 +10,9 @@ import { useState } from "react";
 import TaskCard, { TaskCardComponent } from "~/components/TaskCard";
 import TaskColumn from "~/components/TaskColumn";
 import { Priority, Status, TaskWithRelations, UpdateTask } from "~/db/schema";
+import { ScrollArea } from "../ui/scroll-area";
+import { useStore } from "@tanstack/react-store";
+import { BoardViewStore } from "./board-view-store";
 
 type TaskViewProps = {
   tasks: TaskWithRelations[];
@@ -65,6 +68,33 @@ export const BoardView = ({
     };
   }, {} as Record<string, TaskWithRelations[]>);
 
+  const sortBy = useStore(BoardViewStore, (state) => state.sortBy);
+  const sortDirection = useStore(
+    BoardViewStore,
+    (state) => state.sortDirection
+  );
+  const taskComparator = (): ((
+    a: TaskWithRelations,
+    b: TaskWithRelations
+  ) => number) => {
+    const directionMultiplier = sortDirection === "asc" ? 1 : -1;
+
+    switch (sortBy) {
+      case "due":
+        return (a, b) =>
+          directionMultiplier *
+          ((a.deadline?.getTime() || 0) - (b.deadline?.getTime() || 0));
+      case "created":
+        return (a, b) =>
+          directionMultiplier * (a.createdAt.getTime() - b.createdAt.getTime());
+      case "updated":
+        return (a, b) =>
+          directionMultiplier * (a.updatedAt.getTime() - b.updatedAt.getTime());
+      default:
+        return () => 0; // No sorting
+    }
+  };
+
   return (
     <DndContext
       onDragEnd={handleDrop}
@@ -79,55 +109,51 @@ export const BoardView = ({
       {/* Without some kind of concrete height, the flex-grow doesn't work */}
       {/* Doesn't really matter what the height is, as long as it's not a percentage */}
       {/* TODO: It could make sense to set a fixed height on the view container */}
-      <div className="flex overflow-x-auto gap-3 h-px grow">
-        {tasksByStatus["unassigned"] ? (
-          <TaskColumn
-            projectId={projectId}
-            key="unassigned"
-            numberOfTasks={tasksByStatus["unassigned"]?.length || 0}
-          >
-            {[...tasksByStatus["unassigned"]]
-              .sort(
-                (a, b) =>
-                  priorityOrder.indexOf(b.priority) -
-                  priorityOrder.indexOf(a.priority)
-              )
-              .sort(
-                (a, b) =>
-                  (a.deadline?.getTime() || 0) - (b.deadline?.getTime() || 0)
-              )
-              .map((task) => {
-                return <TaskCard key={task.id} task={task} />;
-              })}
-          </TaskColumn>
-        ) : null}
-        {[...statuses].map((status) => {
-          return (
+      <div className="h-px grow pb-3">
+        <div className="flex gap-3 h-full">
+          {tasksByStatus["unassigned"] ? (
             <TaskColumn
               projectId={projectId}
-              key={status.id}
-              status={status}
-              numberOfTasks={tasksByStatus[status.id]?.length || 0}
+              key="unassigned"
+              numberOfTasks={tasksByStatus["unassigned"]?.length || 0}
             >
-              {tasksByStatus[status.id]
-                ? [...tasksByStatus[status.id]]
-                    .sort(
-                      (a, b) =>
-                        priorityOrder.indexOf(b.priority) -
-                        priorityOrder.indexOf(a.priority)
-                    )
-                    .sort(
-                      (a, b) =>
-                        (a.deadline?.getTime() || 0) -
-                        (b.deadline?.getTime() || 0)
-                    )
-                    .map((task) => {
-                      return <TaskCard key={task.id} task={task} />;
-                    })
-                : null}
+              {[...tasksByStatus["unassigned"]]
+                .sort(
+                  (a, b) =>
+                    priorityOrder.indexOf(b.priority) -
+                    priorityOrder.indexOf(a.priority)
+                )
+                .sort(taskComparator())
+                .map((task) => {
+                  return <TaskCard key={task.id} task={task} />;
+                })}
             </TaskColumn>
-          );
-        })}
+          ) : null}
+          {[...statuses].map((status) => {
+            return (
+              <TaskColumn
+                projectId={projectId}
+                key={status.id}
+                status={status}
+                numberOfTasks={tasksByStatus[status.id]?.length || 0}
+              >
+                {tasksByStatus[status.id]
+                  ? [...tasksByStatus[status.id]]
+                      .sort(
+                        (a, b) =>
+                          priorityOrder.indexOf(b.priority) -
+                          priorityOrder.indexOf(a.priority)
+                      )
+                      .sort(taskComparator())
+                      .map((task) => {
+                        return <TaskCard key={task.id} task={task} />;
+                      })
+                  : null}
+              </TaskColumn>
+            );
+          })}
+          <div className="min-w-3 h-px"></div>
+        </div>
       </div>
       <DragOverlay dropAnimation={null}>
         {activeTask && <TaskCardComponent task={activeTask} />}

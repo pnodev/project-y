@@ -11,6 +11,27 @@ import { statusesQueryOptions, useStatusesQuery } from "~/db/queries/statuses";
 import { projectQueryOptions, useProjectQuery } from "~/db/queries/projects";
 import { EndlessLoadingSpinner } from "~/components/EndlessLoadingSpinner";
 import { tasksQueryOptions, useTasksQuery } from "~/db/queries/tasks";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+import { Button } from "~/components/ui/button";
+import {
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
+  ArrowUpWideNarrow,
+} from "lucide-react";
+import { useStore } from "@tanstack/react-store";
+import {
+  BoardViewStore,
+  SortByType,
+} from "~/components/views/board-view-store";
+import { ButtonGroup } from "~/components/ui/button-group";
 
 export const Route = createFileRoute("/_signed-in/projects/$projectId/tasks")({
   loader: async ({ context, params }) => {
@@ -42,11 +63,76 @@ function Home() {
   );
 
   const priorityOrder: Priority[] = ["low", "medium", "high", "critical"];
-
+  const sortBy = useStore(BoardViewStore, (state) => state.sortBy);
+  const sortDirection = useStore(
+    BoardViewStore,
+    (state) => state.sortDirection
+  );
+  const sortLabels = {
+    due: "Due Date",
+    created: "Created",
+    updated: "Updated",
+  };
   return (
     <PageLayout
       title={
         projectQuery.data?.name ? `${projectQuery.data.name} - Tasks` : "Tasks"
+      }
+      actions={
+        <div>
+          <DropdownMenu>
+            <ButtonGroup>
+              <Button
+                size={"sm"}
+                variant="outline"
+                title={
+                  sortDirection === "asc" ? "Sort Ascending" : "Sort Descending"
+                }
+                onClick={() =>
+                  BoardViewStore.setState((state) => {
+                    return {
+                      ...state,
+                      sortDirection: sortDirection === "asc" ? "desc" : "asc",
+                    };
+                  })
+                }
+              >
+                {sortDirection === "desc" ? (
+                  <ArrowDownWideNarrow />
+                ) : (
+                  <ArrowUpNarrowWide />
+                )}
+              </Button>
+              <DropdownMenuTrigger asChild>
+                <Button size={"sm"} variant="outline">
+                  {sortLabels[sortBy]}
+                </Button>
+              </DropdownMenuTrigger>
+            </ButtonGroup>
+            <DropdownMenuContent className="w-56">
+              <DropdownMenuLabel>Sort Tasks by</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup
+                value={sortBy}
+                onValueChange={(value) =>
+                  BoardViewStore.setState((state) => {
+                    return { ...state, sortBy: value as SortByType };
+                  })
+                }
+              >
+                <DropdownMenuRadioItem value="due">
+                  Due Date
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="created">
+                  Created Date
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="updated">
+                  Updated Date
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       }
     >
       <div className="flex flex-col gap-2 h-full grow-0">
