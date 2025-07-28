@@ -265,7 +265,17 @@ export function OpenTask({
                   />
                 </DetailListItem>
                 <DetailListItem label="Assigned to" icon={Users}>
-                  <UserSelect user={task.owner} onValueChange={() => {}} />
+                  <UserSelect
+                    selectedUserIds={task.assignees as string[]}
+                    onValueChange={(ids) => {
+                      if (!task) return;
+                      handleUpdateTask({
+                        id: task.id,
+                        assignees: ids,
+                        projectId: task.projectId,
+                      });
+                    }}
+                  />
                 </DetailListItem>
               </DetailList>
               <hr />

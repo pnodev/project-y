@@ -1,7 +1,7 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
-import { attachments, TaskWithRelations } from "../schema";
+import { TaskWithRelations } from "../schema";
 import { getAuth } from "@clerk/tanstack-react-start/server";
 import { getWebRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";

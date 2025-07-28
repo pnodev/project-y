@@ -3,12 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { useDraggable } from "@dnd-kit/core";
 import { ClientOnly, Link } from "@tanstack/react-router";
 import { Badge } from "./ui/badge";
-import { cn } from "~/lib/utils";
+import { cn, getInitials } from "~/lib/utils";
 import { DetailList, DetailListItem } from "./ui/detail-list";
 import { Calendar, Flag, Paperclip, TextIcon, Users } from "lucide-react";
 import { DateDisplay } from "./ui/date-display";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage, AvatarList } from "./ui/avatar";
 import { useUser } from "@clerk/tanstack-react-start";
+import { useUsersQuery } from "~/db/queries/users";
 
 export default function TaskCard({
   task,
@@ -37,6 +38,7 @@ export default function TaskCard({
 
 export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
   const isOverdue = task.deadline && task.deadline < new Date();
+  const usersQuery = useUsersQuery();
   const assignee = useUser();
   return (
     <Link
@@ -72,10 +74,22 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
           </div>
           <DetailList size="small">
             <DetailListItem label="Assigned to:" icon={Users}>
-              <Avatar className="size-6 my-0">
-                <AvatarImage src={assignee.user?.imageUrl} />
-                <AvatarFallback>PN</AvatarFallback>
-              </Avatar>
+              <AvatarList>
+                {(task.assignees as string[]).map((assigneeId) => {
+                  const assignee = usersQuery.data.find(
+                    (u) => u.id === assigneeId
+                  );
+                  if (!assignee) return null;
+                  return (
+                    <Avatar key={assignee.id} className="size-5 my-0">
+                      <AvatarImage src={assignee.avatar} alt={assignee.name} />
+                      <AvatarFallback>
+                        {getInitials(assignee.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  );
+                })}
+              </AvatarList>
             </DetailListItem>
             <DetailListItem
               label="Priority:"

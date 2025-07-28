@@ -14,3 +14,12 @@ export function getOwningIdentity(user: {
   }
   return user.userId as string;
 }
+
+export const getInitials = (name: string | undefined) => {
+  if (!name) return "";
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+};

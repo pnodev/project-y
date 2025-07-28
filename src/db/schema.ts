@@ -12,6 +12,7 @@ import {
   pgEnum,
   primaryKey,
   index,
+  json,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 
@@ -63,10 +64,13 @@ export const tasks = createTable(
     deadline: timestamp("deadline", { withTimezone: true }),
     owner: varchar("owner", { length: 256 }).notNull(),
     projectId: uuid("project_id").notNull(),
+    assignees: json("assignees")
+      .notNull()
+      .default(sql`'[]'::json`), // New field added
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },
   (example) => [index("task_owner_idx").on(example.owner)]
 );
@@ -240,6 +244,7 @@ export type UpdateTask = {
   id: string;
   name?: string;
   description?: string;
+  assignees?: string[];
   statusId?: string;
   priority?: "low" | "medium" | "high" | "critical";
   deadline?: Date;
