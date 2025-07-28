@@ -24,9 +24,7 @@ function PathlessLayoutComponent() {
         <div className="flex flex-1">
           <AppSidebar />
           <SidebarInset>
-            <div className="flex flex-1 flex-col gap-4 py-4 px-6">
-              <Outlet />
-            </div>
+            <Outlet />
           </SidebarInset>
         </div>
       </SidebarProvider>

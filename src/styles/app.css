@@ -136,3 +136,5 @@
   animation: progress 1s infinite linear;
   transform-origin: left;
 }
+
+@plugin 'tailwind-scrollbar';

@@ -46,7 +46,9 @@ export function useCreateTaskMutation() {
 
   return useCallback(
     async (task: CreateTask) => {
-      const result = await _createTask({ data: task });
+      const result = await _createTask({
+        data: { ...task, updatedAt: new Date() },
+      });
 
       router.invalidate();
       queryClient.invalidateQueries({
@@ -67,7 +69,6 @@ const updateTask = createServerFn({ method: "POST" })
       .update(tasks)
       .set({
         ...data,
-        updatedAt: new Date(),
       })
       .where(
         and(eq(tasks.id, data.id!), eq(tasks.owner, getOwningIdentity(user)))
@@ -100,7 +101,9 @@ export function useUpdateTaskMutation() {
       );
 
       try {
-        const result = await _updateTask({ data: task });
+        const result = await _updateTask({
+          data: { ...task, updatedAt: new Date() },
+        });
         return result;
       } catch (error) {
         // If the mutation fails, roll back to the previous state

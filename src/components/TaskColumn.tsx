@@ -4,8 +4,6 @@ import { cn } from "~/lib/utils";
 import { Button } from "./ui/button";
 import { PlusIcon } from "lucide-react";
 import TaskQuickCreate from "./TaskQuickCreate";
-import { useState } from "react";
-import { useStore } from "@tanstack/react-store";
 import { BoardViewStore } from "./views/board-view-store";
 
 export default function TaskColumn({
