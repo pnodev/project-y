@@ -16,7 +16,9 @@ import {
 import { RichtextEditor } from "~/components/RichtextEditor/Editor";
 import { useCallback, useState } from "react";
 import {
+  useAssignTaskMutation,
   useDeleteTaskMutation,
+  useUnassignTaskMutation,
   useUpdateTaskMutation,
 } from "~/db/mutations/tasks";
 import { DetailList, DetailListItem } from "~/components/ui/detail-list";
@@ -57,6 +59,7 @@ import { ConfirmDialog } from "./ConfirmDialog";
 import { useCreateAttachmentMutation } from "~/db/mutations/attachments";
 import { AttachmentArea } from "./AttachmentArea";
 import { UserSelect } from "./UserSelect";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
 export function OpenTask({
   task,
@@ -72,6 +75,9 @@ export function OpenTask({
   const navigate = useNavigate();
 
   const updateTask = useUpdateTaskMutation();
+  const assignTask = useAssignTaskMutation();
+  const unassignTask = useUnassignTaskMutation();
+  const [isAssigning, setIsAssigning] = useState(false);
   const createComment = useCreateCommentMutation();
   const createAttachment = useCreateAttachmentMutation();
   const deleteTask = useDeleteTaskMutation();
@@ -266,14 +272,28 @@ export function OpenTask({
                 </DetailListItem>
                 <DetailListItem label="Assigned to" icon={Users}>
                   <UserSelect
-                    selectedUserIds={task.assignees as string[]}
-                    onValueChange={(ids) => {
+                    isAssigning={isAssigning}
+                    selectedUserIds={task.assignees.map(
+                      (assignee) => assignee.userId
+                    )}
+                    onValueChange={async (ids) => {
                       if (!task) return;
-                      handleUpdateTask({
-                        id: task.id,
-                        assignees: ids,
-                        projectId: task.projectId,
-                      });
+                      setIsAssigning(true);
+                      const add = ids.filter(
+                        (id) =>
+                          !task.assignees.find(
+                            (assignee) => assignee.userId === id
+                          )
+                      );
+                      const remove = task.assignees
+                        .map((a) => a.userId)
+                        .filter((assignee) => !ids.includes(assignee));
+
+                      await Promise.all([
+                        await assignTask(task, add),
+                        await unassignTask(task, remove),
+                      ]);
+                      setIsAssigning(false);
                     }}
                   />
                 </DetailListItem>
@@ -291,10 +311,19 @@ export function OpenTask({
                 }}
               />
 
-              <AttachmentArea
-                attachments={task.attachments}
-                onUpload={handleUpload}
-              />
+              <Tabs defaultValue="attachments">
+                <TabsList>
+                  <TabsTrigger value="attachments">Attachments</TabsTrigger>
+                  <TabsTrigger value="subtasks">Subtasks</TabsTrigger>
+                </TabsList>
+                <TabsContent value="attachments">
+                  <AttachmentArea
+                    attachments={task.attachments}
+                    onUpload={handleUpload}
+                  />
+                </TabsContent>
+                <TabsContent value="subtasks">test</TabsContent>
+              </Tabs>
             </div>
             <div className="col-span-4 bg-gray-100 border-l py-4 px-6 flex flex-col gap-4 h-[calc(100vh-6rem-51px)]">
               <TaskLabel>Conversation</TaskLabel>

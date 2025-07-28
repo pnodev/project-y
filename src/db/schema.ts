@@ -13,6 +13,7 @@ import {
   primaryKey,
   index,
   json,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 
@@ -64,15 +65,30 @@ export const tasks = createTable(
     deadline: timestamp("deadline", { withTimezone: true }),
     owner: varchar("owner", { length: 256 }).notNull(),
     projectId: uuid("project_id").notNull(),
-    assignees: json("assignees")
-      .notNull()
-      .default(sql`'[]'::json`), // New field added
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },
   (example) => [index("task_owner_idx").on(example.owner)]
+);
+
+export const taskAssignees = createTable(
+  "task_assignees",
+  {
+    id: uuid("id").primaryKey(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    owner: varchar("owner", { length: 256 }).notNull(),
+    userId: varchar("user_id", { length: 256 }).notNull(),
+    assignedAt: timestamp("assigned_at").defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+  },
+  (example) => [index("task_assignees_owner_idx").on(example.owner)]
 );
 
 export const statuses = createTable(
@@ -212,20 +228,26 @@ export const taskRelations = relations(tasks, ({ one, many }) => ({
     references: [projects.id],
   }),
   attachments: many(attachments),
+  assignees: many(taskAssignees),
+}));
+
+export const taskAssigneesRelations = relations(taskAssignees, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskAssignees.taskId],
+    references: [tasks.id],
+  }),
 }));
 
 export const labelRelations = relations(labels, ({ many }) => ({
   labelsToTasks: many(labelsToTasks),
 }));
 
-export type Task = typeof tasks.$inferSelect & {
-  assignees: string[];
-};
+export type Task = typeof tasks.$inferSelect;
 export type TaskWithRelations = Task & {
   labels: (typeof labels.$inferSelect)[];
   attachments: (typeof attachments.$inferSelect)[];
   project: Project;
-  assignees: string[];
+  assignees: (typeof taskAssignees.$inferSelect)[];
 };
 export const insertTaskValidator = createInsertSchema(tasks, {
   id: (schema) => schema.optional(),
@@ -241,21 +263,29 @@ export const updateTaskValidator = createInsertSchema(tasks, {
   owner: (schema) => schema.optional(),
 });
 export type CreateTask = Omit<
-  typeof tasks.$inferInsert & {
-    assignees: string[];
-  },
+  typeof tasks.$inferInsert,
   "id" | "createdAt" | "updatedAt" | "owner"
 >;
 export type UpdateTask = {
   id: string;
   name?: string;
   description?: string;
-  assignees?: string[];
   statusId?: string;
   priority?: "low" | "medium" | "high" | "critical";
   deadline?: Date;
   projectId?: string;
 };
+
+export const assignTaskValidator = createInsertSchema(taskAssignees, {
+  id: (schema) => schema.optional(),
+  owner: (schema) => schema.optional(),
+  assignedAt: (schema) => schema.optional(),
+  updatedAt: (schema) => schema.optional(),
+});
+export type AssignTask = Omit<
+  typeof taskAssignees.$inferInsert,
+  "id" | "createdAt" | "updatedAt" | "owner"
+>;
 
 export type Comment = typeof comments.$inferSelect;
 export const insertCommentValidator = createInsertSchema(comments, {

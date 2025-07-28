@@ -1,10 +1,12 @@
 import { createServerFn, useServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import {
+  assignTaskValidator,
   CreateTask,
   insertTaskValidator,
   labelsToTasks,
   Task,
+  taskAssignees,
   tasks,
   UpdateTask,
   updateTaskValidator,
@@ -13,7 +15,7 @@ import { v7 as uuid } from "uuid";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import z from "zod";
 import { getAuth } from "@clerk/tanstack-react-start/server";
 import { getWebRequest } from "@tanstack/react-start/server";
@@ -58,6 +60,108 @@ export function useCreateTaskMutation() {
       return result;
     },
     [router, queryClient, _createTask]
+  );
+}
+
+// First, update the validator schema in assignTask
+const assignTask = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      taskId: z.string(),
+      userIds: z.array(z.string()), // Changed from userId to userIds array
+    })
+  )
+  .handler(async ({ data }) => {
+    const user = await getAuth(getWebRequest());
+
+    // Get existing assignees for this task
+    const existingAssignees = await db.query.taskAssignees.findMany({
+      where: (model, { eq }) => eq(model.taskId, data.taskId),
+    });
+
+    // Filter out users that are already assigned
+    const newUserIds = data.userIds.filter(
+      (userId) => !existingAssignees.some((a) => a.userId === userId)
+    );
+
+    if (newUserIds.length > 0) {
+      await db.insert(taskAssignees).values(
+        newUserIds.map((userId) => ({
+          id: uuid(),
+          taskId: data.taskId,
+          owner: getOwningIdentity(user),
+          userId: userId,
+          assignedAt: new Date(),
+          updatedAt: new Date(),
+        }))
+      );
+    }
+
+    await sync(`task-update-${data.taskId}`, { data });
+  });
+
+// Update the unassign mutation similarly
+const unassignTask = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      taskId: z.string(),
+      userIds: z.array(z.string()), // Changed from userId to userIds array
+    })
+  )
+  .handler(async ({ data }) => {
+    const user = await getAuth(getWebRequest());
+    await db
+      .delete(taskAssignees)
+      .where(
+        and(
+          eq(taskAssignees.taskId, data.taskId),
+          inArray(taskAssignees.userId, data.userIds),
+          eq(taskAssignees.owner, getOwningIdentity(user))
+        )
+      );
+    await sync(`task-update-${data.taskId}`, { data });
+  });
+
+// Update the hook interfaces
+export function useAssignTaskMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _assignTask = useServerFn(assignTask);
+
+  return useCallback(
+    async (task: Task, userIds: string[]) => {
+      await _assignTask({ data: { taskId: task.id, userIds } });
+
+      router.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", task.projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", task.id],
+      });
+    },
+    [router, queryClient, _assignTask]
+  );
+}
+
+export function useUnassignTaskMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _unassignTask = useServerFn(unassignTask);
+
+  return useCallback(
+    async (task: Task, userIds: string[]) => {
+      await _unassignTask({ data: { taskId: task.id, userIds } });
+
+      router.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", task.projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", task.id],
+      });
+    },
+    [router, queryClient, _unassignTask]
   );
 }
 

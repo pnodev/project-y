@@ -11,7 +11,11 @@ import { Avatar, AvatarFallback, AvatarImage, AvatarList } from "./ui/avatar";
 import { useUsersQuery } from "~/db/queries/users";
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/tanstack-react-start";
-import { useUpdateTaskMutation } from "~/db/mutations/tasks";
+import {
+  useAssignTaskMutation,
+  useUnassignTaskMutation,
+  useUpdateTaskMutation,
+} from "~/db/mutations/tasks";
 import { EndlessLoadingSpinner } from "./EndlessLoadingSpinner";
 
 export default function TaskCard({ task }: { task: TaskWithRelations }) {
@@ -37,7 +41,8 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
   const isOverdue = task.deadline && task.deadline < new Date();
   const usersQuery = useUsersQuery();
   const currentUser = useAuth();
-  const updateTask = useUpdateTaskMutation();
+  const assignTask = useAssignTaskMutation();
+  const unassignTask = useUnassignTaskMutation();
   const [isAssigning, setIsAssigning] = useState(false);
 
   const [isHovered, setIsHovered] = useState(false);
@@ -45,18 +50,14 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
     const handleKeyPress = async (event: KeyboardEvent) => {
       if (currentUser && currentUser.userId && isHovered && event.key === "m") {
         setIsAssigning(true);
-        if (task.assignees.includes(currentUser.userId)) {
-          await updateTask({
-            id: task.id,
-            assignees: task.assignees.filter((assigneeId) => {
-              return assigneeId !== currentUser.userId;
-            }),
-          });
+        if (
+          task.assignees.find(
+            (assignee) => assignee.userId === currentUser.userId
+          )
+        ) {
+          await unassignTask(task, [currentUser.userId]);
         } else {
-          await updateTask({
-            id: task.id,
-            assignees: [...task.assignees, currentUser.userId],
-          });
+          await assignTask(task, [currentUser.userId]);
         }
         setIsAssigning(false);
       }
@@ -106,13 +107,13 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
             <DetailListItem label="Assigned to:" icon={Users}>
               <EndlessLoadingSpinner
                 isActive={isAssigning}
-                className="size-4"
+                spinnerClassName="size-4"
               />
               {!isAssigning ? (
                 <AvatarList>
-                  {(task.assignees as string[]).map((assigneeId) => {
+                  {task.assignees.map((taskAssignee) => {
                     const assignee = usersQuery.data.find(
-                      (u) => u.id === assigneeId
+                      (u) => u.id === taskAssignee.userId
                     );
                     if (!assignee) return null;
                     return (

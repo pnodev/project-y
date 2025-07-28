@@ -28,6 +28,7 @@ const fetchTasks = createServerFn({ method: "GET" })
           },
         },
         project: true,
+        assignees: true,
       },
       where: (model, { eq, and }) =>
         and(
@@ -38,7 +39,6 @@ const fetchTasks = createServerFn({ method: "GET" })
 
     return rawTasks.map((task) => ({
       ...task,
-      assignees: task.assignees as string[],
       labels: task.labelsToTasks.map((l) => l.label),
       labelsToTasks: undefined,
     }));
@@ -88,6 +88,7 @@ export const fetchTask = createServerFn({ method: "GET" })
         },
         attachments: true,
         project: true,
+        assignees: true,
       },
     });
 
@@ -97,7 +98,6 @@ export const fetchTask = createServerFn({ method: "GET" })
 
     return {
       ...taskWithoutLabelsToTasks,
-      assignees: task.assignees as string[],
       labels: labelsToTasks.map((l) => l.label),
     };
   });

@@ -24,6 +24,7 @@ import {
 } from "./ui/command";
 import { cn, getInitials } from "~/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage, AvatarList } from "./ui/avatar";
+import { EndlessLoadingSpinner } from "./EndlessLoadingSpinner";
 
 type User = {
   id: string;
@@ -33,9 +34,11 @@ type User = {
 
 export function UserSelect({
   selectedUserIds,
+  isAssigning,
   onValueChange,
 }: {
   selectedUserIds: string[];
+  isAssigning: boolean;
   onValueChange: (userIds: string[]) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -68,6 +71,10 @@ export function UserSelect({
                     );
                   })
                 : "Select an assignee..."}
+              <EndlessLoadingSpinner
+                isActive={isAssigning}
+                spinnerClassName="size-7"
+              />
             </AvatarList>
           </Button>
         </PopoverTrigger>
