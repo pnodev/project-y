@@ -12,6 +12,7 @@ import { useUsersQuery } from "~/db/queries/users";
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { useUpdateTaskMutation } from "~/db/mutations/tasks";
+import { EndlessLoadingSpinner } from "./EndlessLoadingSpinner";
 
 export default function TaskCard({ task }: { task: TaskWithRelations }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -37,24 +38,27 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
   const usersQuery = useUsersQuery();
   const currentUser = useAuth();
   const updateTask = useUpdateTaskMutation();
+  const [isAssigning, setIsAssigning] = useState(false);
 
   const [isHovered, setIsHovered] = useState(false);
   useEffect(() => {
-    const handleKeyPress = (event: KeyboardEvent) => {
+    const handleKeyPress = async (event: KeyboardEvent) => {
       if (currentUser && currentUser.userId && isHovered && event.key === "m") {
+        setIsAssigning(true);
         if (task.assignees.includes(currentUser.userId)) {
-          updateTask({
+          await updateTask({
             id: task.id,
             assignees: task.assignees.filter((assigneeId) => {
               return assigneeId !== currentUser.userId;
             }),
           });
         } else {
-          updateTask({
+          await updateTask({
             id: task.id,
             assignees: [...task.assignees, currentUser.userId],
           });
         }
+        setIsAssigning(false);
       }
     };
 
@@ -100,22 +104,31 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
           </div>
           <DetailList size="small">
             <DetailListItem label="Assigned to:" icon={Users}>
-              <AvatarList>
-                {(task.assignees as string[]).map((assigneeId) => {
-                  const assignee = usersQuery.data.find(
-                    (u) => u.id === assigneeId
-                  );
-                  if (!assignee) return null;
-                  return (
-                    <Avatar key={assignee.id} className="size-5 my-0">
-                      <AvatarImage src={assignee.avatar} alt={assignee.name} />
-                      <AvatarFallback>
-                        {getInitials(assignee.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                  );
-                })}
-              </AvatarList>
+              <EndlessLoadingSpinner
+                isActive={isAssigning}
+                className="size-4"
+              />
+              {!isAssigning ? (
+                <AvatarList>
+                  {(task.assignees as string[]).map((assigneeId) => {
+                    const assignee = usersQuery.data.find(
+                      (u) => u.id === assigneeId
+                    );
+                    if (!assignee) return null;
+                    return (
+                      <Avatar key={assignee.id} className="size-5 my-0">
+                        <AvatarImage
+                          src={assignee.avatar}
+                          alt={assignee.name}
+                        />
+                        <AvatarFallback>
+                          {getInitials(assignee.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                    );
+                  })}
+                </AvatarList>
+              ) : null}
             </DetailListItem>
             <DetailListItem
               label="Priority:"

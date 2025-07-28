@@ -17,6 +17,7 @@ export function EndlessLoadingSpinner({
     <div
       role="status"
       className={cn(
+        "size-8",
         centered ? "w-full h-full flex justify-center items-center" : "",
         hasBackdrop ? "absolute z-20 top-0 left-0 bg-indigo-200/40" : "",
         className
@@ -24,7 +25,7 @@ export function EndlessLoadingSpinner({
     >
       <svg
         aria-hidden="true"
-        className="w-8 h-8 text-indigo-200 animate-spin dark:text-gray-600 fill-indigo-600"
+        className="h-full w-full text-indigo-200 animate-spin dark:text-gray-600 fill-indigo-600"
         viewBox="0 0 100 101"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
