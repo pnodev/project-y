@@ -8,16 +8,9 @@ import { DetailList, DetailListItem } from "./ui/detail-list";
 import { Calendar, Flag, Paperclip, TextIcon, Users } from "lucide-react";
 import { DateDisplay } from "./ui/date-display";
 import { Avatar, AvatarFallback, AvatarImage, AvatarList } from "./ui/avatar";
-import { useUser } from "@clerk/tanstack-react-start";
 import { useUsersQuery } from "~/db/queries/users";
 
-export default function TaskCard({
-  task,
-  onClick,
-}: {
-  task: TaskWithRelations;
-  onClick?: () => void;
-}) {
+export default function TaskCard({ task }: { task: TaskWithRelations }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `task:${task.id}`,
   });
@@ -39,7 +32,7 @@ export default function TaskCard({
 export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
   const isOverdue = task.deadline && task.deadline < new Date();
   const usersQuery = useUsersQuery();
-  const assignee = useUser();
+
   return (
     <Link
       to="/projects/$projectId/tasks/$taskId"
