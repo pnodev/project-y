@@ -110,7 +110,7 @@ export const BoardView = ({
       {/* Doesn't really matter what the height is, as long as it's not a percentage */}
       {/* TODO: It could make sense to set a fixed height on the view container */}
       <div className="h-px grow pb-3">
-        <div className="flex gap-3">
+        <div className="flex gap-3 h-full">
           {tasksByStatus["unassigned"] ? (
             <TaskColumn
               projectId={projectId}
