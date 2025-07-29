@@ -90,7 +90,11 @@ export const fetchTask = createServerFn({ method: "GET" })
         attachments: true,
         project: true,
         assignees: true,
-        subTasks: true,
+        subTasks: {
+          with: {
+            assignees: true,
+          },
+        },
       },
     });
 

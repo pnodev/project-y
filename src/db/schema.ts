@@ -304,7 +304,7 @@ export type TaskWithRelations = Task & {
   attachments: (typeof attachments.$inferSelect)[];
   project: Project;
   assignees: (typeof taskAssignees.$inferSelect)[];
-  subTasks: (typeof subTasks.$inferSelect)[];
+  subTasks: SubTask[];
 };
 export const insertTaskValidator = createInsertSchema(tasks, {
   id: (schema) => schema.optional(),
@@ -333,7 +333,9 @@ export type UpdateTask = {
   projectId?: string;
 };
 
-export type SubTask = typeof subTasks.$inferSelect;
+export type SubTask = typeof subTasks.$inferSelect & {
+  assignees: (typeof subTaskAssignees.$inferSelect)[];
+};
 export const insertSubTaskValidator = createInsertSchema(subTasks, {
   id: (schema) => schema.optional(),
   owner: (schema) => schema.optional(),

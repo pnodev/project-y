@@ -1,9 +1,15 @@
-import { Circle, CircleCheck, Pencil } from "lucide-react";
+import { Circle, CircleCheck, Pencil, Trash2, UserPlus } from "lucide-react";
 import { SubTask } from "~/db/schema";
 import { Input } from "./ui/input";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
-import { useUpdateSubTaskMutation } from "~/db/mutations/sub-tasks";
+import {
+  useAssignSubTaskMutation,
+  useDeleteSubTaskMutation,
+  useUnassignSubTaskMutation,
+  useUpdateSubTaskMutation,
+} from "~/db/mutations/sub-tasks";
+import { UserSelect } from "./UserSelect";
 
 export function SubTaskItem({
   subTask,
@@ -16,6 +22,11 @@ export function SubTaskItem({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const updateSubTask = useUpdateSubTaskMutation();
+  const deleteSubTask = useDeleteSubTaskMutation();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const assignSubTask = useAssignSubTaskMutation();
+  const unassignSubTask = useUnassignSubTaskMutation();
   const ref = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -87,14 +98,56 @@ export function SubTaskItem({
       ) : (
         <span className="flex items-center w-full grow text-sm text-gray-900">
           <span className="grow block">{subTask.description}</span>
+          <UserSelect
+            selectedUserIds={subTask.assignees.map((a) => a.userId)}
+            isAssigning={isAssigning}
+            emptyTriggerComponent={
+              <UserPlus className="h-5 w-5 text-gray-500 group-hover:text-accent-foreground" />
+            }
+            size={"sm"}
+            onValueChange={async (ids) => {
+              if (!subTask) return;
+              setIsAssigning(true);
+              const add = ids.filter(
+                (id) =>
+                  !subTask.assignees.find((assignee) => assignee.userId === id)
+              );
+              const remove = subTask.assignees
+                .map((a) => a.userId)
+                .filter((assignee) => !ids.includes(assignee));
+
+              await Promise.all([
+                await assignSubTask(subTask, add),
+                await unassignSubTask(subTask, remove),
+              ]);
+              setIsAssigning(false);
+            }}
+          />
           <Button
             variant={"sunken"}
             size={"sm"}
             type="button"
             onClick={() => setIsEditing(true)}
             title="Edit"
+            className="text-gray-500"
           >
             <Pencil className="h-5 w-5" />
+          </Button>
+          <Button
+            loading={isDeleting}
+            hideContentWhenLoading={true}
+            variant={"sunken"}
+            size={"sm"}
+            type="button"
+            onClick={async () => {
+              setIsDeleting(true);
+              await deleteSubTask(subTask.id);
+              setIsDeleting(false);
+            }}
+            title="Delete"
+            className="text-gray-500"
+          >
+            <Trash2 className="h-5 w-5" />
           </Button>
         </span>
       )}

@@ -1,19 +1,8 @@
-import {
-  useOrganization,
-  useOrganizationList,
-} from "@clerk/tanstack-react-start";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
 import { useUsersQuery } from "~/db/queries/users";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -36,13 +25,19 @@ export function UserSelect({
   selectedUserIds,
   isAssigning,
   onValueChange,
+  emptyTriggerComponent,
+  size = "md",
 }: {
   selectedUserIds: string[];
   isAssigning: boolean;
   onValueChange: (userIds: string[]) => void;
+  emptyTriggerComponent?: React.ReactNode;
+  size?: "sm" | "md";
 }) {
   const [open, setOpen] = useState(false);
   const usersQuery = useUsersQuery();
+
+  const avatarSize = size === "sm" ? "size-5" : "size-7";
 
   return (
     <>
@@ -54,7 +49,7 @@ export function UserSelect({
             type="button"
             role="combobox"
             aria-expanded={open}
-            className="cursor-pointer"
+            className="cursor-pointer group"
           >
             <AvatarList>
               {selectedUserIds.length > 0
@@ -62,7 +57,7 @@ export function UserSelect({
                     const user = usersQuery.data.find((u) => u.id === userId);
                     if (!user) return null;
                     return (
-                      <Avatar key={user.id} className="size-7">
+                      <Avatar key={user.id} className={avatarSize}>
                         <AvatarImage src={user.avatar} alt={user.name} />
                         <AvatarFallback>
                           {getInitials(user.name)}
@@ -70,10 +65,10 @@ export function UserSelect({
                       </Avatar>
                     );
                   })
-                : "Select an assignee..."}
+                : emptyTriggerComponent || "Select an assignee..."}
               <EndlessLoadingSpinner
                 isActive={isAssigning}
-                spinnerClassName="size-7"
+                spinnerClassName={avatarSize}
               />
             </AvatarList>
           </Button>

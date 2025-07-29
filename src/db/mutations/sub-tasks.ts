@@ -2,6 +2,8 @@ import { createServerFn, useServerFn } from "@tanstack/react-start";
 import {
   CreateSubTask,
   insertSubTaskValidator,
+  SubTask,
+  subTaskAssignees,
   subTasks,
   UpdateSubTask,
   updateSubTaskValidator,
@@ -15,7 +17,8 @@ import { sync } from "./sync";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
+import z from "zod";
 
 const createSubTask = createServerFn({ method: "POST" })
   .validator(insertSubTaskValidator)
@@ -113,5 +116,170 @@ export function useUpdateSubTaskMutation() {
       }
     },
     [router, queryClient, _updateSubTask]
+  );
+}
+
+const deleteSubTask = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string() }))
+  .handler(async ({ data }) => {
+    const user = await getAuth(getWebRequest());
+
+    const subTask = await db.query.subTasks.findFirst({
+      where(fields, operators) {
+        return operators.and(
+          operators.eq(fields.id, data.id),
+          operators.eq(fields.owner, getOwningIdentity(user))
+        );
+      },
+    });
+    await db
+      .delete(subTasks)
+      .where(
+        and(
+          eq(subTasks.id, data.id),
+          eq(subTasks.owner, getOwningIdentity(user))
+        )
+      );
+
+    await sync(`task-update-${data.id}`, { data });
+    return subTask;
+  });
+
+export function useDeleteSubTaskMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _deleteSubTask = useServerFn(deleteSubTask);
+
+  return useCallback(
+    async (subTaskId: string) => {
+      const result = await _deleteSubTask({ data: { id: subTaskId } });
+
+      if (!result) return;
+      router.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", result.projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", result.taskId],
+      });
+
+      return result;
+    },
+    [router, queryClient, _deleteSubTask]
+  );
+}
+
+const unassignSubTask = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      subTaskId: z.string(),
+      userIds: z.array(z.string()),
+    })
+  )
+  .handler(async ({ data }) => {
+    const user = await getAuth(getWebRequest());
+    const subTask = await db.query.subTasks.findFirst({
+      where(fields, operators) {
+        return operators.and(
+          operators.eq(fields.id, data.subTaskId),
+          operators.eq(fields.owner, getOwningIdentity(user))
+        );
+      },
+    });
+    await db
+      .delete(subTaskAssignees)
+      .where(
+        and(
+          eq(subTaskAssignees.subTaskId, data.subTaskId),
+          inArray(subTaskAssignees.userId, data.userIds),
+          eq(subTaskAssignees.owner, getOwningIdentity(user))
+        )
+      );
+    await sync(`task-update-${subTask?.taskId}`, { data });
+  });
+
+export function useUnassignSubTaskMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _unassignSubTask = useServerFn(unassignSubTask);
+
+  return useCallback(
+    async (subTask: SubTask, userIds: string[]) => {
+      await _unassignSubTask({ data: { subTaskId: subTask.id, userIds } });
+
+      router.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", subTask.taskId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", subTask.projectId],
+      });
+    },
+    [router, queryClient, _unassignSubTask]
+  );
+}
+
+const assignSubTask = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      subTaskId: z.string(),
+      userIds: z.array(z.string()),
+    })
+  )
+  .handler(async ({ data }) => {
+    const user = await getAuth(getWebRequest());
+    const subTask = await db.query.subTasks.findFirst({
+      where(fields, operators) {
+        return operators.and(
+          operators.eq(fields.id, data.subTaskId),
+          operators.eq(fields.owner, getOwningIdentity(user))
+        );
+      },
+    });
+
+    // Get existing assignees for this task
+    const existingAssignees = await db.query.subTaskAssignees.findMany({
+      where: (model, { eq }) => eq(model.subTaskId, data.subTaskId),
+    });
+
+    // Filter out users that are already assigned
+    const newUserIds = data.userIds.filter(
+      (userId) => !existingAssignees.some((a) => a.userId === userId)
+    );
+
+    if (newUserIds.length > 0) {
+      await db.insert(subTaskAssignees).values(
+        newUserIds.map((userId) => ({
+          id: uuid(),
+          subTaskId: data.subTaskId,
+          owner: getOwningIdentity(user),
+          userId: userId,
+          assignedAt: new Date(),
+          updatedAt: new Date(),
+        }))
+      );
+    }
+
+    await sync(`task-update-${subTask?.taskId}`, { data });
+  });
+
+export function useAssignSubTaskMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _assignSubTask = useServerFn(assignSubTask);
+
+  return useCallback(
+    async (subTask: SubTask, userIds: string[]) => {
+      await _assignSubTask({ data: { subTaskId: subTask.id, userIds } });
+
+      router.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", subTask.taskId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", subTask.projectId],
+      });
+    },
+    [router, queryClient, _assignSubTask]
   );
 }

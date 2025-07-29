@@ -105,7 +105,7 @@ const unassignTask = createServerFn({ method: "POST" })
   .validator(
     z.object({
       taskId: z.string(),
-      userIds: z.array(z.string()), // Changed from userId to userIds array
+      userIds: z.array(z.string()),
     })
   )
   .handler(async ({ data }) => {

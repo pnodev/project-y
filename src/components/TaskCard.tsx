@@ -1,5 +1,11 @@
 import { TaskWithRelations } from "~/db/schema";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { useDraggable } from "@dnd-kit/core";
 import { ClientOnly, Link } from "@tanstack/react-router";
 import { LabelBadge } from "./ui/label-badge";
@@ -17,6 +23,7 @@ import {
   useUpdateTaskMutation,
 } from "~/db/mutations/tasks";
 import { EndlessLoadingSpinner } from "./EndlessLoadingSpinner";
+import { Progress } from "./ui/progress";
 
 export default function TaskCard({ task }: { task: TaskWithRelations }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -69,6 +76,10 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
     };
   }, [isHovered, task]);
 
+  const percentageComplete = Math.round(
+    (task.subTasks.filter((t) => t.done).length / task.subTasks.length) * 100
+  );
+
   return (
     <Link
       to="/projects/$projectId/tasks/$taskId"
@@ -99,6 +110,13 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
           <CardTitle>{task.name}</CardTitle>
         </CardHeader>
         <CardContent className="p-3">
+          {task.subTasks.length ? (
+            <Progress
+              value={percentageComplete}
+              className="-mt-4 mb-2"
+              variant="card-progress"
+            />
+          ) : null}
           <div className="[&>svg]:text-gray-400 [&>svg]:mb-2 [&>svg]:size-3.5 flex gap-2">
             {task.description ? <TextIcon /> : null}
             {task.attachments.length > 0 ? <Paperclip /> : null}
