@@ -29,7 +29,11 @@ const fetchTasks = createServerFn({ method: "GET" })
         },
         project: true,
         assignees: true,
-        subTasks: true,
+        subTasks: {
+          with: {
+            assignees: true,
+          },
+        },
       },
       where: (model, { eq, and }) =>
         and(
