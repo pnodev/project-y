@@ -25,10 +25,10 @@ export function SiteHeader() {
 
         <ClientOnly>
           <OrganizationSwitcher
-            afterSelectOrganizationUrl="/tasks"
-            afterSelectPersonalUrl="/tasks"
-            afterCreateOrganizationUrl="/tasks"
-            afterLeaveOrganizationUrl="/tasks"
+            afterSelectOrganizationUrl="/dashboard"
+            afterSelectPersonalUrl="/dashboard"
+            afterCreateOrganizationUrl="/dashboard"
+            afterLeaveOrganizationUrl="/dashboard"
           />
         </ClientOnly>
         <SearchForm className="w-full sm:ml-auto sm:w-auto" />
