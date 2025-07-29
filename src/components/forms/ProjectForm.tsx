@@ -13,6 +13,8 @@ import {
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { CreateProject } from "~/db/schema";
+import { UploadButton } from "~/utils/uploadthing";
+import { useEffect, useState } from "react";
 
 // Create a form-specific schema based on your CreateProject type
 const formSchema = z.object({
@@ -39,6 +41,14 @@ export function ProjectForm({
     onSubmit(data);
     form.reset(); // Reset the form after submission
   };
+
+  const [logoUrl, setLogoUrl] = useState("");
+
+  useEffect(() => {
+    if (logoUrl) {
+      form.setValue("logo", logoUrl);
+    }
+  }, [logoUrl]);
 
   return (
     <Form {...form}>
@@ -80,15 +90,22 @@ export function ProjectForm({
           name="logo"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Logo URL</FormLabel>
+              <FormLabel>Logo</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="https://example.com/logo.png"
-                  {...field}
-                  value={field.value ?? ""}
-                />
+                <Input type="hidden" {...field} />
               </FormControl>
               <FormMessage />
+              {field.value ? (
+                <img src={field.value} className="h-16 w-16" />
+              ) : null}
+              <UploadButton
+                endpoint={"projectLogoUploader"}
+                config={{ mode: "auto" }}
+                onClientUploadComplete={(data) => {
+                  const [file] = data;
+                  form.setValue("logo", file.ufsUrl);
+                }}
+              />
             </FormItem>
           )}
         />

@@ -13,8 +13,7 @@ import {
   SidebarMenuItem,
 } from "~/components/ui/sidebar";
 import { version } from "../../package.json";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { projectsQueryOptions, useProjectsQuery } from "~/db/queries/projects";
+import { useProjectsQuery } from "~/db/queries/projects";
 
 type NavItem = {
   title: string;
@@ -95,7 +94,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <a href="#">
-                <div className="bg-indigo-700 text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded">
+                <div className="bg-[#093148] font-bold text-[#ffe50a] flex aspect-square size-8 items-center justify-center rounded font-mono">
                   PY
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">

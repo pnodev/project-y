@@ -15,6 +15,34 @@ export const uploadRouter = {
        * @see https://docs.uploadthing.com/file-routes#route-config
        */
       maxFileSize: "4MB",
+      maxFileCount: 10,
+    },
+  })
+    // Set permissions and file types for this FileRoute
+    .middleware(async () => {
+      // This code runs on your server before upload
+      const user = await getAuth(getWebRequest());
+
+      // If you throw, the user will not be able to upload
+      if (!user) throw new UploadThingError("Unauthorized");
+
+      // Whatever is returned here is accessible in onUploadComplete as `metadata`
+      return { uploadedBy: user.userId };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      // This code RUNS ON YOUR SERVER after upload
+      // !!! Whatever is returned here is sent to the clientside `onClientUploadComplete` callback
+      return {
+        uploadedBy: metadata.uploadedBy,
+      };
+    }),
+  projectLogoUploader: f({
+    image: {
+      /**
+       * For full list of options and defaults, see the File Route API reference
+       * @see https://docs.uploadthing.com/file-routes#route-config
+       */
+      maxFileSize: "4MB",
       maxFileCount: 1,
     },
   })
