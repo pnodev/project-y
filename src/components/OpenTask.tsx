@@ -150,6 +150,7 @@ export function OpenTask({
   );
 
   const owner = useCurrentOwningIdentity();
+  const [preventClose, setPreventClose] = useState(false);
 
   return (
     <Dialog
@@ -165,6 +166,11 @@ export function OpenTask({
         aria-describedby={`task-title-${task?.id}`}
         isLoading={isDeleting}
         className="p-0 gap-0"
+        onEscapeKeyDown={(e) => {
+          if (preventClose) {
+            e.preventDefault();
+          }
+        }}
       >
         <DialogDescription className="sr-only">{task?.name}</DialogDescription>
         <DialogHeader className="border-b px-6 py-3">
@@ -346,7 +352,7 @@ export function OpenTask({
                   />
                 </TabsContent>
                 <TabsContent value="subtasks">
-                  <SubTasks task={task} />
+                  <SubTasks task={task} setPreventClose={setPreventClose} />
                 </TabsContent>
               </Tabs>
             </div>
