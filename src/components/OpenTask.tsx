@@ -60,6 +60,9 @@ import { useCreateAttachmentMutation } from "~/db/mutations/attachments";
 import { AttachmentArea } from "./AttachmentArea";
 import { UserSelect } from "./UserSelect";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { SubTasks } from "./SubTasks";
+import { LabelBadge } from "./ui/label-badge";
+import { Badge } from "./ui/badge";
 
 export function OpenTask({
   task,
@@ -311,10 +314,30 @@ export function OpenTask({
                 }}
               />
 
-              <Tabs defaultValue="attachments">
+              <Tabs
+                defaultValue={
+                  task.subTasks.length > 0 ? "subtasks" : "attachments"
+                }
+              >
                 <TabsList>
-                  <TabsTrigger value="attachments">Attachments</TabsTrigger>
-                  <TabsTrigger value="subtasks">Subtasks</TabsTrigger>
+                  <TabsTrigger value="attachments">
+                    Attachments
+                    <Badge
+                      variant={"secondary"}
+                      className="h-5 min-w-5 rounded-full px-1 font-mono tabular-nums"
+                    >
+                      {task.attachments.length}
+                    </Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="subtasks">
+                    Subtasks
+                    <Badge
+                      variant={"secondary"}
+                      className="h-5 min-w-5 rounded-full px-1 font-mono tabular-nums"
+                    >
+                      {task.subTasks.length}
+                    </Badge>
+                  </TabsTrigger>
                 </TabsList>
                 <TabsContent value="attachments">
                   <AttachmentArea
@@ -322,7 +345,9 @@ export function OpenTask({
                     onUpload={handleUpload}
                   />
                 </TabsContent>
-                <TabsContent value="subtasks">test</TabsContent>
+                <TabsContent value="subtasks">
+                  <SubTasks task={task} />
+                </TabsContent>
               </Tabs>
             </div>
             <div className="col-span-4 bg-gray-100 border-l py-4 px-6 flex flex-col gap-4 h-[calc(100vh-6rem-51px)]">

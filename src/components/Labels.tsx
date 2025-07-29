@@ -6,7 +6,7 @@ import {
   useSetLabelsForTaskMutation,
   useUpdateTaskMutation,
 } from "~/db/mutations/tasks";
-import { Badge } from "./ui/badge";
+import { LabelBadge } from "./ui/label-badge";
 import { TaskLabel } from "./ui/TaskLabel";
 
 export const Labels = ({
@@ -28,9 +28,13 @@ export const Labels = ({
       <div className="flex gap-2">
         <div className="flex flex-wrap gap-2">
           {task?.labels.map((label) => (
-            <Badge size="large" key={label.id} color={label.color || "neutral"}>
+            <LabelBadge
+              size="large"
+              key={label.id}
+              color={label.color || "neutral"}
+            >
               {label.name}
-            </Badge>
+            </LabelBadge>
           ))}
         </div>
         <LabelSelect

@@ -2,7 +2,7 @@ import { Label } from "~/db/schema";
 import { Button } from "./ui/button";
 import { Check, Plus } from "lucide-react";
 import { useState } from "react";
-import { Badge } from "./ui/badge";
+import { LabelBadge } from "./ui/label-badge";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import {
   Command,
@@ -74,9 +74,9 @@ export function LabelSelect({
                     }
                   }}
                 >
-                  <Badge size="small" color={label.color || "neutral"}>
+                  <LabelBadge size="small" color={label.color || "neutral"}>
                     {label.name}
-                  </Badge>
+                  </LabelBadge>
                   <Check
                     className={cn(
                       "ml-auto",

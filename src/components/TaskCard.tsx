@@ -2,7 +2,7 @@ import { TaskWithRelations } from "~/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { useDraggable } from "@dnd-kit/core";
 import { ClientOnly, Link } from "@tanstack/react-router";
-import { Badge } from "./ui/badge";
+import { LabelBadge } from "./ui/label-badge";
 import { cn, getInitials } from "~/lib/utils";
 import { DetailList, DetailListItem } from "./ui/detail-list";
 import { Calendar, Flag, Paperclip, TextIcon, Users } from "lucide-react";
@@ -86,13 +86,13 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
           {task.labels.length ? (
             <div className="mb-4 flex flex-wrap gap-1">
               {task.labels.map((label) => (
-                <Badge
+                <LabelBadge
                   key={label.id}
                   color={label.color || "neutral"}
                   size="very-small"
                 >
                   {label.name}
-                </Badge>
+                </LabelBadge>
               ))}
             </div>
           ) : null}

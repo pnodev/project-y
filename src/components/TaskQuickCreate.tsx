@@ -40,7 +40,7 @@ export default function TaskQuickCreate({
     }
 
     e.currentTarget.reset();
-    await createTask({ name, statusId: status, projectId, assignees: [] });
+    await createTask({ name, statusId: status, projectId });
 
     if (!isCtrlKeyPressed) {
       onClose();

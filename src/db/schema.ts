@@ -91,6 +91,43 @@ export const taskAssignees = createTable(
   (example) => [index("task_assignees_owner_idx").on(example.owner)]
 );
 
+export const subTasks = createTable(
+  "sub_task",
+  {
+    id: uuid("id").primaryKey(),
+    description: text("description"),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    done: boolean("done").notNull().default(false),
+    owner: varchar("owner", { length: 256 }).notNull(),
+    projectId: uuid("project_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+  },
+  (example) => [index("subtask_owner_idx").on(example.owner)]
+);
+
+export const subTaskAssignees = createTable(
+  "sub_task_assignees",
+  {
+    id: uuid("id").primaryKey(),
+    subTaskId: uuid("sub_task_id")
+      .notNull()
+      .references(() => subTasks.id, { onDelete: "cascade" }),
+    owner: varchar("owner", { length: 256 }).notNull(),
+    userId: varchar("user_id", { length: 256 }).notNull(),
+    assignedAt: timestamp("assigned_at").defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+  },
+  (example) => [index("sub_task_assignees_owner_idx").on(example.owner)]
+);
+
 export const statuses = createTable(
   "status",
   {
@@ -229,6 +266,7 @@ export const taskRelations = relations(tasks, ({ one, many }) => ({
   }),
   attachments: many(attachments),
   assignees: many(taskAssignees),
+  subTasks: many(subTasks),
 }));
 
 export const taskAssigneesRelations = relations(taskAssignees, ({ one }) => ({
@@ -236,6 +274,24 @@ export const taskAssigneesRelations = relations(taskAssignees, ({ one }) => ({
     fields: [taskAssignees.taskId],
     references: [tasks.id],
   }),
+}));
+
+export const subTaskAssigneesRelations = relations(
+  subTaskAssignees,
+  ({ one }) => ({
+    subTask: one(subTasks, {
+      fields: [subTaskAssignees.subTaskId],
+      references: [subTasks.id],
+    }),
+  })
+);
+
+export const subTaskRelations = relations(subTasks, ({ one, many }) => ({
+  task: one(tasks, {
+    fields: [subTasks.taskId],
+    references: [tasks.id],
+  }),
+  assignees: many(subTaskAssignees),
 }));
 
 export const labelRelations = relations(labels, ({ many }) => ({
@@ -248,6 +304,7 @@ export type TaskWithRelations = Task & {
   attachments: (typeof attachments.$inferSelect)[];
   project: Project;
   assignees: (typeof taskAssignees.$inferSelect)[];
+  subTasks: (typeof subTasks.$inferSelect)[];
 };
 export const insertTaskValidator = createInsertSchema(tasks, {
   id: (schema) => schema.optional(),
@@ -274,6 +331,34 @@ export type UpdateTask = {
   priority?: "low" | "medium" | "high" | "critical";
   deadline?: Date;
   projectId?: string;
+};
+
+export type SubTask = typeof subTasks.$inferSelect;
+export const insertSubTaskValidator = createInsertSchema(subTasks, {
+  id: (schema) => schema.optional(),
+  owner: (schema) => schema.optional(),
+  updatedAt: (schema) => schema.optional(),
+});
+export const updateSubTaskValidator = createInsertSchema(subTasks, {
+  id: (schema) => schema.optional(),
+  owner: (schema) => schema.optional(),
+  done: (schema) => schema.optional(),
+  taskId: (schema) => schema.optional(),
+  projectId: (schema) => schema.optional(),
+  updatedAt: (schema) => schema.optional(),
+});
+export type CreateSubTask = Omit<
+  typeof subTasks.$inferInsert,
+  "id" | "createdAt" | "updatedAt" | "owner"
+>;
+export type UpdateSubTask = {
+  id: string;
+  description?: string;
+  taskId: string;
+  done?: boolean;
+  projectId: string;
+  owner?: string;
+  updatedAt?: Date;
 };
 
 export const assignTaskValidator = createInsertSchema(taskAssignees, {
