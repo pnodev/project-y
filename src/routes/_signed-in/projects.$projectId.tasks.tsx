@@ -1,5 +1,9 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Outlet, useParams } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useParams,
+} from "@tanstack/react-router";
 import { Suspense, useCallback } from "react";
 
 import { useUpdateTaskMutation } from "~/db/mutations/tasks";
@@ -21,11 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Button } from "~/components/ui/button";
-import {
-  ArrowDownWideNarrow,
-  ArrowUpNarrowWide,
-  ArrowUpWideNarrow,
-} from "lucide-react";
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, Settings } from "lucide-react";
 import { useStore } from "@tanstack/react-store";
 import {
   BoardViewStore,
@@ -79,7 +79,7 @@ function Home() {
         projectQuery.data?.name ? `${projectQuery.data.name} - Tasks` : "Tasks"
       }
       actions={
-        <div>
+        <div className="flex gap-2">
           <DropdownMenu>
             <ButtonGroup>
               <Button
@@ -132,6 +132,15 @@ function Home() {
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Button size={"sm"} variant={"outline"} asChild>
+            <Link
+              to={"/projects/$projectId/settings"}
+              params={{ projectId: params.projectId }}
+              title="Project Settings"
+            >
+              <Settings />
+            </Link>
+          </Button>
         </div>
       }
     >

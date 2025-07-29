@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ProjectForm } from "~/components/forms/ProjectForm";
+import { ProjectFormCreate } from "~/components/forms/ProjectForm";
 import { PageLayout } from "~/components/PageLayout";
 import { useCreateProjectMutation } from "~/db/mutations/projects";
 
@@ -11,7 +11,7 @@ function RouteComponent() {
   const createProject = useCreateProjectMutation();
   return (
     <PageLayout title="New Project">
-      <ProjectForm onSubmit={async (data) => await createProject(data)} />
+      <ProjectFormCreate onSubmit={async (data) => await createProject(data)} />
     </PageLayout>
   );
 }

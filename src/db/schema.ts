@@ -407,6 +407,12 @@ export const insertProjectValidator = createInsertSchema(projects, {
   id: (schema) => schema.optional(),
   owner: (schema) => schema.optional(),
 });
+export const updateProjectValidator = createInsertSchema(projects, {
+  owner: (schema) => schema.optional(),
+  name: (schema) => schema.optional(),
+  description: (schema) => schema.optional(),
+  logo: (schema) => schema.optional(),
+});
 export type CreateProject = Omit<
   typeof projects.$inferInsert,
   "id" | "createdAt" | "updatedAt" | "owner"

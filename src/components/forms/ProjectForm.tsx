@@ -12,22 +12,24 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import { CreateProject } from "~/db/schema";
+import { CreateProject, Project, UpdateProject } from "~/db/schema";
 import { UploadButton } from "~/utils/uploadthing";
-import { useEffect, useState } from "react";
+import {
+  PageSection,
+  PageSectionContent,
+  PageSectionFooter,
+} from "../PageSection";
 
-// Create a form-specific schema based on your CreateProject type
-const formSchema = z.object({
-  name: z.string().min(1, "Project name is required").max(256),
-  description: z.string().optional(),
-  logo: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-}) satisfies z.ZodType<CreateProject>;
-
-export function ProjectForm({
+export function ProjectFormCreate({
   onSubmit,
 }: {
   onSubmit: (data: CreateProject) => void;
 }) {
+  const formSchema = z.object({
+    name: z.string().min(1, "Project name is required").max(256),
+    description: z.string().optional(),
+    logo: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  }) satisfies z.ZodType<CreateProject>;
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -42,75 +44,181 @@ export function ProjectForm({
     form.reset(); // Reset the form after submission
   };
 
-  const [logoUrl, setLogoUrl] = useState("");
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+        <PageSection title="Project Details">
+          <PageSectionContent className="space-y-8">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="My awesome project" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-  useEffect(() => {
-    if (logoUrl) {
-      form.setValue("logo", logoUrl);
-    }
-  }, [logoUrl]);
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Project description..."
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="logo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project Logo</FormLabel>
+                  <FormControl>
+                    <Input type="hidden" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                  {field.value ? (
+                    <img src={field.value} className="h-16 w-16" />
+                  ) : null}
+                  <UploadButton
+                    endpoint={"projectLogoUploader"}
+                    config={{ mode: "auto" }}
+                    onClientUploadComplete={(data) => {
+                      const [file] = data;
+                      form.setValue("logo", file.ufsUrl);
+                    }}
+                  />
+                </FormItem>
+              )}
+            />
+          </PageSectionContent>
+
+          <PageSectionFooter>
+            <Button type="submit">Create Project</Button>
+          </PageSectionFooter>
+        </PageSection>
+      </form>
+    </Form>
+  );
+}
+
+export function ProjectFormEdit({
+  project,
+  onSubmit,
+}: {
+  project: Project;
+  onSubmit: (data: UpdateProject) => void;
+}) {
+  const formSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1, "Project name is required").max(256),
+    description: z.string().optional(),
+    logo: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  }) satisfies z.ZodType<UpdateProject>;
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      id: project.id,
+      name: project.name,
+      description: project.description || "",
+      logo: project.logo || "",
+    },
+  });
+
+  const handleSubmit = (data: UpdateProject) => {
+    onSubmit(data);
+    form.reset(); // Reset the form after submission
+  };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
         <FormField
           control={form.control}
-          name="name"
+          name="id"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Project Name</FormLabel>
-              <FormControl>
-                <Input placeholder="My awesome project" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+            <input type="hidden" name="id" value={field.value} />
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Project description..."
-                  {...field}
-                  value={field.value ?? ""}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <PageSection title="Project Details">
+          <PageSectionContent className="space-y-8">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="My awesome project" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="logo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Logo</FormLabel>
-              <FormControl>
-                <Input type="hidden" {...field} />
-              </FormControl>
-              <FormMessage />
-              {field.value ? (
-                <img src={field.value} className="h-16 w-16" />
-              ) : null}
-              <UploadButton
-                endpoint={"projectLogoUploader"}
-                config={{ mode: "auto" }}
-                onClientUploadComplete={(data) => {
-                  const [file] = data;
-                  form.setValue("logo", file.ufsUrl);
-                }}
-              />
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Project description..."
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <Button type="submit">Create Project</Button>
+            <FormField
+              control={form.control}
+              name="logo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project Logo</FormLabel>
+                  <FormControl>
+                    <Input type="hidden" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                  {field.value ? (
+                    <img src={field.value} className="h-16 w-16" />
+                  ) : null}
+                  <UploadButton
+                    endpoint={"projectLogoUploader"}
+                    config={{ mode: "auto" }}
+                    onClientUploadComplete={(data) => {
+                      const [file] = data;
+                      form.setValue("logo", file.ufsUrl);
+                    }}
+                  />
+                </FormItem>
+              )}
+            />
+          </PageSectionContent>
+
+          <PageSectionFooter>
+            <Button type="submit">Update Project</Button>
+          </PageSectionFooter>
+        </PageSection>
       </form>
     </Form>
   );

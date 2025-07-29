@@ -49,6 +49,7 @@ function Button({
   icon: Icon,
   loading,
   hideContentWhenLoading,
+  type = "button",
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
@@ -61,19 +62,33 @@ function Button({
   }) {
   const Comp = asChild ? Slot : "button";
 
-  return (
-    <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      disabled={loading}
-      {...props}
-    >
+  const content = (
+    <>
       <LoadingSpinner
         className={hideContentWhenLoading ? "" : "-ml-1 mr-2"}
         isActive={!!loading}
       />
       {Icon && !loading ? <Icon className="-ml-1 mr-2 h-4 w-4" /> : null}
       {!hideContentWhenLoading || !loading ? children : null}
+    </>
+  );
+
+  return asChild ? (
+    <Comp
+      className={cn(buttonVariants({ variant, size, className }))}
+      type={type}
+      {...props}
+    >
+      {children}
+    </Comp>
+  ) : (
+    <Comp
+      className={cn(buttonVariants({ variant, size, className }))}
+      disabled={loading}
+      type={type}
+      {...props}
+    >
+      {content}
     </Comp>
   );
 }

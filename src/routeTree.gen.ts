@@ -22,6 +22,7 @@ import { Route as SignedInDashboardRouteImport } from './routes/_signed-in/dashb
 import { Route as PostsPostIdDeepRouteImport } from './routes/posts_.$postId.deep'
 import { Route as SignedInProjectsNewRouteImport } from './routes/_signed-in/projects.new'
 import { Route as SignedInProjectsProjectIdTasksRouteImport } from './routes/_signed-in/projects.$projectId.tasks'
+import { Route as SignedInProjectsProjectIdSettingsRouteImport } from './routes/_signed-in/projects.$projectId.settings'
 import { Route as SignedInProjectsProjectIdTasksTaskIdRouteImport } from './routes/_signed-in/projects.$projectId.tasks.$taskId'
 import { ServerRoute as ApiUploadthingServerRouteImport } from './routes/api/uploadthing'
 
@@ -82,6 +83,12 @@ const SignedInProjectsProjectIdTasksRoute =
     path: '/projects/$projectId/tasks',
     getParentRoute: () => SignedInRoute,
   } as any)
+const SignedInProjectsProjectIdSettingsRoute =
+  SignedInProjectsProjectIdSettingsRouteImport.update({
+    id: '/projects/$projectId/settings',
+    path: '/projects/$projectId/settings',
+    getParentRoute: () => SignedInRoute,
+  } as any)
 const SignedInProjectsProjectIdTasksTaskIdRoute =
   SignedInProjectsProjectIdTasksTaskIdRouteImport.update({
     id: '/$taskId',
@@ -104,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/posts': typeof PostsIndexRoute
   '/projects/new': typeof SignedInProjectsNewRoute
   '/posts/$postId/deep': typeof PostsPostIdDeepRoute
+  '/projects/$projectId/settings': typeof SignedInProjectsProjectIdSettingsRoute
   '/projects/$projectId/tasks': typeof SignedInProjectsProjectIdTasksRouteWithChildren
   '/projects/$projectId/tasks/$taskId': typeof SignedInProjectsProjectIdTasksTaskIdRoute
 }
@@ -117,6 +125,7 @@ export interface FileRoutesByTo {
   '/posts': typeof PostsIndexRoute
   '/projects/new': typeof SignedInProjectsNewRoute
   '/posts/$postId/deep': typeof PostsPostIdDeepRoute
+  '/projects/$projectId/settings': typeof SignedInProjectsProjectIdSettingsRoute
   '/projects/$projectId/tasks': typeof SignedInProjectsProjectIdTasksRouteWithChildren
   '/projects/$projectId/tasks/$taskId': typeof SignedInProjectsProjectIdTasksTaskIdRoute
 }
@@ -132,6 +141,7 @@ export interface FileRoutesById {
   '/posts/': typeof PostsIndexRoute
   '/_signed-in/projects/new': typeof SignedInProjectsNewRoute
   '/posts_/$postId/deep': typeof PostsPostIdDeepRoute
+  '/_signed-in/projects/$projectId/settings': typeof SignedInProjectsProjectIdSettingsRoute
   '/_signed-in/projects/$projectId/tasks': typeof SignedInProjectsProjectIdTasksRouteWithChildren
   '/_signed-in/projects/$projectId/tasks/$taskId': typeof SignedInProjectsProjectIdTasksTaskIdRoute
 }
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/posts'
     | '/projects/new'
     | '/posts/$postId/deep'
+    | '/projects/$projectId/settings'
     | '/projects/$projectId/tasks'
     | '/projects/$projectId/tasks/$taskId'
   fileRoutesByTo: FileRoutesByTo
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/posts'
     | '/projects/new'
     | '/posts/$postId/deep'
+    | '/projects/$projectId/settings'
     | '/projects/$projectId/tasks'
     | '/projects/$projectId/tasks/$taskId'
   id:
@@ -174,6 +186,7 @@ export interface FileRouteTypes {
     | '/posts/'
     | '/_signed-in/projects/new'
     | '/posts_/$postId/deep'
+    | '/_signed-in/projects/$projectId/settings'
     | '/_signed-in/projects/$projectId/tasks'
     | '/_signed-in/projects/$projectId/tasks/$taskId'
   fileRoutesById: FileRoutesById
@@ -287,6 +300,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignedInProjectsProjectIdTasksRouteImport
       parentRoute: typeof SignedInRoute
     }
+    '/_signed-in/projects/$projectId/settings': {
+      id: '/_signed-in/projects/$projectId/settings'
+      path: '/projects/$projectId/settings'
+      fullPath: '/projects/$projectId/settings'
+      preLoaderRoute: typeof SignedInProjectsProjectIdSettingsRouteImport
+      parentRoute: typeof SignedInRoute
+    }
     '/_signed-in/projects/$projectId/tasks/$taskId': {
       id: '/_signed-in/projects/$projectId/tasks/$taskId'
       path: '/$taskId'
@@ -328,6 +348,7 @@ interface SignedInRouteChildren {
   SignedInLabelsRoute: typeof SignedInLabelsRoute
   SignedInStatusesRoute: typeof SignedInStatusesRoute
   SignedInProjectsNewRoute: typeof SignedInProjectsNewRoute
+  SignedInProjectsProjectIdSettingsRoute: typeof SignedInProjectsProjectIdSettingsRoute
   SignedInProjectsProjectIdTasksRoute: typeof SignedInProjectsProjectIdTasksRouteWithChildren
 }
 
@@ -336,6 +357,8 @@ const SignedInRouteChildren: SignedInRouteChildren = {
   SignedInLabelsRoute: SignedInLabelsRoute,
   SignedInStatusesRoute: SignedInStatusesRoute,
   SignedInProjectsNewRoute: SignedInProjectsNewRoute,
+  SignedInProjectsProjectIdSettingsRoute:
+    SignedInProjectsProjectIdSettingsRoute,
   SignedInProjectsProjectIdTasksRoute:
     SignedInProjectsProjectIdTasksRouteWithChildren,
 }
