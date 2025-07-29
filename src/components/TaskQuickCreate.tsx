@@ -5,6 +5,7 @@ import { SimpleCard } from "./ui/simple-card";
 import { useCreateTaskMutation } from "~/db/mutations/tasks";
 import { useStore } from "@tanstack/react-store";
 import { BoardViewStore } from "./views/board-view-store";
+import { SendHorizontal } from "lucide-react";
 
 export default function TaskQuickCreate({
   status,
@@ -57,21 +58,26 @@ export default function TaskQuickCreate({
         <span className="sr-only">Close</span>
       </button>
       <SimpleCard className="relative z-50">
-        <Input
-          ref={ref}
-          name="name"
-          placeholder="Enter task name"
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              onClose();
-            } else if (e.ctrlKey && e.key === "Enter" && formRef.current) {
-              formRef.current.requestSubmit();
-            }
-            setIsCtrlKeyPressed(e.ctrlKey);
-          }}
-          onKeyUp={() => setIsCtrlKeyPressed(false)}
-        />
-        <Button type="submit">Create Task</Button>
+        <div className="flex gap-1">
+          <Input
+            ref={ref}
+            name="name"
+            placeholder="Enter task name"
+            disablePasswordManagers={true}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                onClose();
+              } else if (e.ctrlKey && e.key === "Enter" && formRef.current) {
+                formRef.current.requestSubmit();
+              }
+              setIsCtrlKeyPressed(e.ctrlKey);
+            }}
+            onKeyUp={() => setIsCtrlKeyPressed(false)}
+          />
+          <Button type="submit" size={"icon"}>
+            <SendHorizontal />
+          </Button>
+        </div>
         <p className="mt-1 text-[10px] text-muted-foreground">
           Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to keep the dialog open.
         </p>
