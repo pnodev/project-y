@@ -8,6 +8,7 @@ import {
   Task,
   taskAssignees,
   tasks,
+  TaskWithRelations,
   UpdateTask,
   updateTaskValidator,
 } from "~/db/schema";

@@ -61,7 +61,6 @@ import { AttachmentArea } from "./AttachmentArea";
 import { UserSelect } from "./UserSelect";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { SubTasks } from "./SubTasks";
-import { LabelBadge } from "./ui/label-badge";
 import { Badge } from "./ui/badge";
 
 export function OpenTask({

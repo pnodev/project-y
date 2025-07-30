@@ -1,13 +1,10 @@
-import { Plus } from "lucide-react";
-import { Button } from "./ui/button";
-import { Label, Task, TaskWithRelations } from "~/db/schema";
+import { Label, TaskWithRelations } from "~/db/schema";
 import { LabelSelect } from "./LabelSelect";
-import {
-  useSetLabelsForTaskMutation,
-  useUpdateTaskMutation,
-} from "~/db/mutations/tasks";
+import { useSetLabelsForTaskMutation } from "~/db/mutations/tasks";
 import { LabelBadge } from "./ui/label-badge";
 import { TaskLabel } from "./ui/TaskLabel";
+import { useState } from "react";
+import { EndlessLoadingSpinner } from "./EndlessLoadingSpinner";
 
 export const Labels = ({
   task,
@@ -17,9 +14,12 @@ export const Labels = ({
   labels: Label[];
 }) => {
   const setLabelsForTask = useSetLabelsForTaskMutation();
+  const [isAssigning, setIsAssigning] = useState(false);
   const handleSetLabels = async (labelIds: string[]) => {
     if (!task) return;
+    setIsAssigning(true);
     await setLabelsForTask(task, labelIds);
+    setIsAssigning(false);
   };
 
   return (
@@ -36,6 +36,11 @@ export const Labels = ({
               {label.name}
             </LabelBadge>
           ))}
+          <EndlessLoadingSpinner
+            isActive={isAssigning}
+            className="flex items-center"
+            spinnerClassName="size-6"
+          />
         </div>
         <LabelSelect
           labels={labels}

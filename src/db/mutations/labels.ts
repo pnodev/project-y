@@ -2,19 +2,11 @@ import { createServerFn, useServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import {
   CreateLabel,
-  CreateStatus,
   insertLabelValidator,
-  insertStatusValidator,
   labels,
-  labelsToTasks,
-  statuses,
-  tasks,
   UpdateLabel,
   updateLabelValidator,
   updateMultipleLabelsValidator,
-  updateMultipleStatusesValidator,
-  UpdateStatus,
-  updateStatusValidator,
 } from "~/db/schema";
 import { v7 as uuid } from "uuid";
 import z from "zod";
