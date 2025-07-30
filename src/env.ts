@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const env = createEnv({
   server: {
-    POSTGRES_URL: z.string().url(),
+    NETLIFY_DATABASE_URL: z.string().url(),
     CLERK_SECRET_KEY: z.string().min(1),
     SYNC_APP_ID: z.string().min(1),
     SYNC_PUBLISH_KEY: z.string().min(1),

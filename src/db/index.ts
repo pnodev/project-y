@@ -11,7 +11,8 @@ const globalForDb = globalThis as unknown as {
   conn: postgres.Sql | undefined;
 };
 
-const conn = globalForDb.conn ?? postgres(process.env.POSTGRES_URL as string);
+const conn =
+  globalForDb.conn ?? postgres(process.env.NETLIFY_DATABASE_URL as string);
 if (process.env.NODE_ENV !== "production") globalForDb.conn = conn;
 
 export const db = drizzle(conn, { schema });
