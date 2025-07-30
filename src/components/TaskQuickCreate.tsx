@@ -24,6 +24,7 @@ export default function TaskQuickCreate({
     (state) => state.quickCreateOpenFor
   );
   const [isCtrlKeyPressed, setIsCtrlKeyPressed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (quickCreateOpen === status && ref.current) {
@@ -40,8 +41,10 @@ export default function TaskQuickCreate({
       return;
     }
 
+    setIsLoading(true);
     e.currentTarget.reset();
     await createTask({ name, statusId: status, projectId });
+    setIsLoading(false);
 
     if (!isCtrlKeyPressed) {
       onClose();
@@ -74,7 +77,12 @@ export default function TaskQuickCreate({
             }}
             onKeyUp={() => setIsCtrlKeyPressed(false)}
           />
-          <Button type="submit" size={"icon"}>
+          <Button
+            type="submit"
+            size={"icon"}
+            loading={isLoading}
+            hideContentWhenLoading={true}
+          >
             <SendHorizontal />
           </Button>
         </div>
