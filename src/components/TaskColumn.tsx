@@ -70,7 +70,7 @@ export default function TaskColumn({
           {numberOfTasks}
         </span>
       </h2>
-      <div className="px-1.5 pt-1 flex flex-col gap-1.5 overflow-y-auto flex-1">
+      <div className="px-1.5 pt-1 flex flex-col gap-1.5 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent scrollbar-thumb-rounded-full">
         {children}
       </div>
       {status ? (
