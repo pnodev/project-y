@@ -4,6 +4,7 @@ import {
   assignTaskValidator,
   CreateTask,
   insertTaskValidator,
+  Label,
   labelsToTasks,
   Task,
   taskAssignees,
@@ -303,6 +304,19 @@ export function useSetLabelsForTaskMutation() {
 
   return useCallback(
     async (task: Task, labelIds: string[]) => {
+      const labels: Label[] = queryClient.getQueryData(["labels"]) || [];
+
+      queryClient.setQueryData(
+        ["tasks", task.id],
+        (oldData: TaskWithRelations | undefined) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            labels: [...labelIds.map((id) => labels.find((l) => l.id === id))],
+          };
+        }
+      );
+
       await _setLabelsForTask({ data: { taskId: task.id, labelIds } });
 
       router.invalidate();
