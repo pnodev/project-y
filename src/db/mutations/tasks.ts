@@ -30,7 +30,7 @@ const createTask = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const user = await getAuth(getWebRequest());
 
-    await db.insert(tasks).values({
+    const newTask = {
       id: uuid(),
       name: data.name,
       description: data.description,
@@ -39,8 +39,11 @@ const createTask = createServerFn({ method: "POST" })
       owner: getOwningIdentity(user),
       createdAt: new Date(),
       updatedAt: new Date(),
-    });
+    };
+    await db.insert(tasks).values(newTask);
     await sync(`task-create`, { data });
+
+    return newTask;
   });
 
 export function useCreateTaskMutation() {

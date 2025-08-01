@@ -6,6 +6,8 @@ import { useCreateTaskMutation } from "~/db/mutations/tasks";
 import { useStore } from "@tanstack/react-store";
 import { BoardViewStore } from "./views/board-view-store";
 import { SendHorizontal } from "lucide-react";
+import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
 
 export default function TaskQuickCreate({
   status,
@@ -19,6 +21,7 @@ export default function TaskQuickCreate({
   const createTask = useCreateTaskMutation();
   const ref = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const navigate = useNavigate();
   const quickCreateOpen = useStore(
     BoardViewStore,
     (state) => state.quickCreateOpenFor
@@ -43,7 +46,17 @@ export default function TaskQuickCreate({
 
     setIsLoading(true);
     e.currentTarget.reset();
-    await createTask({ name, statusId: status, projectId });
+    const data = await createTask({ name, statusId: status, projectId });
+    toast.success("Task created successfully!", {
+      action: {
+        label: "Open Task",
+        onClick: () =>
+          navigate({
+            to: "/projects/$projectId/tasks/$taskId",
+            params: { projectId, taskId: data.id },
+          }),
+      },
+    });
     setIsLoading(false);
 
     if (!isCtrlKeyPressed) {

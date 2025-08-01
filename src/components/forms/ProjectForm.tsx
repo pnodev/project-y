@@ -19,6 +19,7 @@ import {
   PageSectionContent,
   PageSectionFooter,
 } from "../PageSection";
+import { toast } from "sonner";
 
 export function ProjectFormCreate({
   onSubmit,
@@ -108,7 +109,9 @@ export function ProjectFormCreate({
           </PageSectionContent>
 
           <PageSectionFooter>
-            <Button type="submit">Create Project</Button>
+            <Button loading={form.formState.isSubmitting} type="submit">
+              Create Project
+            </Button>
           </PageSectionFooter>
         </PageSection>
       </form>
@@ -139,8 +142,9 @@ export function ProjectFormEdit({
     },
   });
 
-  const handleSubmit = (data: UpdateProject) => {
-    onSubmit(data);
+  const handleSubmit = async (data: UpdateProject) => {
+    await onSubmit(data);
+    toast.success("Project updated successfully!");
     form.reset(); // Reset the form after submission
   };
 
@@ -216,7 +220,9 @@ export function ProjectFormEdit({
           </PageSectionContent>
 
           <PageSectionFooter>
-            <Button type="submit">Update Project</Button>
+            <Button loading={form.formState.isSubmitting} type="submit">
+              Update Project
+            </Button>
           </PageSectionFooter>
         </PageSection>
       </form>
