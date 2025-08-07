@@ -15,7 +15,7 @@ export function useEventSource({
       topicsString += `topic[]=${topic}`;
     });
     const sse = new EventSource(
-      `https://connect.sync.pno.dev/stream/${appId}${topicsString}`
+      `https://sync-connect.pno.dev/stream/${appId}${topicsString}`
     );
     sse.addEventListener("update", (data) => {
       callback(data);
