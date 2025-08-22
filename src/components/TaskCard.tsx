@@ -1,17 +1,19 @@
 import { TaskWithRelations } from "~/db/schema";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { useDraggable } from "@dnd-kit/core";
 import { ClientOnly, Link } from "@tanstack/react-router";
 import { LabelBadge } from "./ui/label-badge";
 import { cn, getInitials } from "~/lib/utils";
 import { DetailList, DetailListItem } from "./ui/detail-list";
-import { Calendar, Flag, Paperclip, TextIcon, Users } from "lucide-react";
+import {
+  Calendar,
+  ClockFading,
+  Flag,
+  Folder,
+  Paperclip,
+  TextIcon,
+  Users,
+} from "lucide-react";
 import { DateDisplay } from "./ui/date-display";
 import { Avatar, AvatarFallback, AvatarImage, AvatarList } from "./ui/avatar";
 import { useUsersQuery } from "~/db/queries/users";
@@ -20,31 +22,98 @@ import { useAuth } from "@clerk/tanstack-react-start";
 import {
   useAssignTaskMutation,
   useUnassignTaskMutation,
-  useUpdateTaskMutation,
 } from "~/db/mutations/tasks";
 import { EndlessLoadingSpinner } from "./EndlessLoadingSpinner";
 import { Progress } from "./ui/progress";
+import { Badge } from "./ui/badge";
 
-export default function TaskCard({ task }: { task: TaskWithRelations }) {
+export default function TaskCard({
+  task,
+  showSprint,
+  showProject,
+}: {
+  task: TaskWithRelations;
+  showSprint?: boolean;
+  showProject?: boolean;
+}) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `task:${task.id}`,
   });
 
   return (
-    <ClientOnly fallback={<TaskCardComponent task={task} key={task.id} />}>
+    <ClientOnly
+      fallback={
+        <TaskCardComponent
+          task={task}
+          key={task.id}
+          showSprint={showSprint}
+          showProject={showProject}
+        />
+      }
+    >
       <div
         ref={setNodeRef}
         style={{ opacity: isDragging ? 0.2 : undefined }}
         {...listeners}
         {...attributes}
       >
-        <TaskCardComponent task={task} key={task.id} />
+        <TaskCardComponent
+          task={task}
+          key={task.id}
+          showSprint={showSprint}
+          showProject={showProject}
+        />
       </div>
     </ClientOnly>
   );
 }
 
-export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
+const TaskCardLinkWrapper = ({
+  to,
+  params,
+  children,
+}: {
+  to: "project" | "sprint";
+  params: Record<string, string | undefined>;
+  children: React.ReactNode;
+}) => {
+  if (to === "project") {
+    return (
+      <Link
+        to="/projects/$projectId/tasks/$taskId"
+        title="Project"
+        params={{
+          projectId: params.projectId as string,
+          taskId: params.taskId as string,
+        }}
+      >
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <Link
+      to="/sprints/$sprintId/tasks/$taskId"
+      title="Sprint"
+      params={{
+        sprintId: params.sprintId as string,
+        taskId: params.taskId as string,
+      }}
+    >
+      {children}
+    </Link>
+  );
+};
+
+export const TaskCardComponent = ({
+  task,
+  showSprint = true,
+  showProject = true,
+}: {
+  task: TaskWithRelations;
+  showSprint?: boolean;
+  showProject?: boolean;
+}) => {
   const isOverdue = task.deadline && task.deadline < new Date();
   const usersQuery = useUsersQuery();
   const currentUser = useAuth();
@@ -81,9 +150,13 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
   );
 
   return (
-    <Link
-      to="/projects/$projectId/tasks/$taskId"
-      params={{ projectId: task.projectId, taskId: task.id }}
+    <TaskCardLinkWrapper
+      to={showSprint ? "project" : "sprint"}
+      params={{
+        projectId: task.projectId || undefined,
+        taskId: task.id,
+        sprintId: task.sprintId || undefined,
+      }}
     >
       <Card
         className={cn(
@@ -94,6 +167,14 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
         onMouseLeave={() => setIsHovered(false)}
       >
         <CardHeader className="p-3 -mt-1">
+          {showProject ? (
+            <div className="flex items-center gap-2 -mt-2 -mx-3 px-3 py-1.5 bg-yellow-50 border-b rounded-t-sm  text-xs">
+              {task.project.logo ? (
+                <img src={task.project.logo} className="size-3.5" />
+              ) : null}
+              {task.project.name}
+            </div>
+          ) : null}
           {task.labels.length ? (
             <div className="mb-4 flex flex-wrap gap-1">
               {task.labels.map((label) => (
@@ -122,6 +203,20 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
             {task.attachments.length > 0 ? <Paperclip /> : null}
           </div>
           <DetailList size="small">
+            {task.sprint && showSprint ? (
+              <DetailListItem label="Sprint:" icon={ClockFading}>
+                <Badge
+                  variant={
+                    task.sprint.start < new Date() &&
+                    task.sprint.end < new Date()
+                      ? "secondary"
+                      : "default"
+                  }
+                >
+                  {task.sprint.name}
+                </Badge>
+              </DetailListItem>
+            ) : null}
             <DetailListItem label="Assigned to:" icon={Users}>
               <EndlessLoadingSpinner
                 isActive={isAssigning}
@@ -168,6 +263,6 @@ export const TaskCardComponent = ({ task }: { task: TaskWithRelations }) => {
           </DetailList>
         </CardContent>
       </Card>
-    </Link>
+    </TaskCardLinkWrapper>
   );
 };

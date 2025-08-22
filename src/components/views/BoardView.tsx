@@ -10,25 +10,25 @@ import { useState } from "react";
 import TaskCard, { TaskCardComponent } from "~/components/TaskCard";
 import TaskColumn from "~/components/TaskColumn";
 import { Priority, Status, TaskWithRelations, UpdateTask } from "~/db/schema";
-import { ScrollArea } from "../ui/scroll-area";
 import { useStore } from "@tanstack/react-store";
 import { BoardViewStore } from "./board-view-store";
 
 type TaskViewProps = {
   tasks: TaskWithRelations[];
-  projectId: string;
+  projectId?: string;
+  sprintId?: string;
   statuses: Status[];
-  priorityOrder: Priority[];
   updateTask: (task: UpdateTask) => Promise<void>;
 };
 
 export const BoardView = ({
   tasks,
   projectId,
+  sprintId,
   statuses,
-  priorityOrder,
   updateTask,
 }: TaskViewProps) => {
+  const priorityOrder: Priority[] = ["low", "medium", "high", "critical"];
   const [activeTask, setActiveTask] = useState<TaskWithRelations | null>(null);
 
   const handleDrop = (e: DragEndEvent) => {
@@ -116,6 +116,7 @@ export const BoardView = ({
           {tasksByStatus["unassigned"] ? (
             <TaskColumn
               projectId={projectId}
+              sprintId={sprintId}
               key="unassigned"
               numberOfTasks={tasksByStatus["unassigned"]?.length || 0}
             >
@@ -127,7 +128,14 @@ export const BoardView = ({
                 )
                 .sort(taskComparator())
                 .map((task) => {
-                  return <TaskCard key={task.id} task={task} />;
+                  return (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      showSprint={!sprintId}
+                      showProject={!!sprintId}
+                    />
+                  );
                 })}
             </TaskColumn>
           ) : null}
@@ -135,6 +143,7 @@ export const BoardView = ({
             return (
               <TaskColumn
                 projectId={projectId}
+                sprintId={sprintId}
                 key={status.id}
                 status={status}
                 numberOfTasks={tasksByStatus[status.id]?.length || 0}
@@ -148,7 +157,14 @@ export const BoardView = ({
                       )
                       .sort(taskComparator())
                       .map((task) => {
-                        return <TaskCard key={task.id} task={task} />;
+                        return (
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            showSprint={!sprintId}
+                            showProject={!!sprintId}
+                          />
+                        );
                       })
                   : null}
               </TaskColumn>
@@ -158,7 +174,13 @@ export const BoardView = ({
         </div>
       </div>
       <DragOverlay dropAnimation={null}>
-        {activeTask && <TaskCardComponent task={activeTask} />}
+        {activeTask && (
+          <TaskCardComponent
+            task={activeTask}
+            showSprint={!sprintId}
+            showProject={!!sprintId}
+          />
+        )}
       </DragOverlay>
     </DndContext>
   );

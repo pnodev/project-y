@@ -1,20 +1,15 @@
-import {
-  createFileRoute,
-  Link,
-  Outlet,
-  useParams,
-} from "@tanstack/react-router";
+import { useParams } from "@tanstack/react-router";
+import { Outlet } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { useStore } from "@tanstack/react-store";
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, Settings } from "lucide-react";
 import { Suspense, useCallback } from "react";
-
-import { useUpdateTaskMutation } from "~/db/mutations/tasks";
-
-import { BoardView } from "~/components/views/BoardView";
-import { Priority, UpdateTask } from "~/db/schema";
-import { PageLayout } from "~/components/PageLayout";
-import { statusesQueryOptions, useStatusesQuery } from "~/db/queries/statuses";
-import { projectQueryOptions, useProjectQuery } from "~/db/queries/projects";
 import { EndlessLoadingSpinner } from "~/components/EndlessLoadingSpinner";
-import { tasksQueryOptions, useTasksQuery } from "~/db/queries/tasks";
+import { PageLayout } from "~/components/PageLayout";
+import { SprintStatus } from "~/components/SprintStatus";
+import { Button } from "~/components/ui/button";
+import { ButtonGroup } from "~/components/ui/button-group";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,29 +19,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { Button } from "~/components/ui/button";
-import { ArrowDownWideNarrow, ArrowUpNarrowWide, Settings } from "lucide-react";
-import { useStore } from "@tanstack/react-store";
 import {
   BoardViewStore,
   SortByType,
 } from "~/components/views/board-view-store";
-import { ButtonGroup } from "~/components/ui/button-group";
+import { BoardView } from "~/components/views/BoardView";
+import { useUpdateTaskMutation } from "~/db/mutations/tasks";
+import { useSprintQuery } from "~/db/queries/sprints";
+import { useStatusesQuery } from "~/db/queries/statuses";
+import { useTasksForSprintQuery } from "~/db/queries/tasks";
+import { UpdateTask } from "~/db/schema";
 
-export const Route = createFileRoute("/_signed-in/projects/$projectId/tasks")({
-  loader: async ({ context, params }) => {
-    const { projectId } = params;
-    await context.queryClient.ensureQueryData(projectQueryOptions(projectId));
-    await context.queryClient.ensureQueryData(tasksQueryOptions(projectId));
-    await context.queryClient.ensureQueryData(statusesQueryOptions());
-  },
-  component: Home,
+export const Route = createFileRoute("/_signed-in/sprints/$sprintId/tasks")({
+  loader: async ({ context, params }) => {},
+  component: RouteComponent,
 });
 
-function Home() {
+function RouteComponent() {
   const params = useParams({ from: Route.id });
-  const tasksQuery = useTasksQuery(params.projectId);
-  const projectQuery = useProjectQuery(params.projectId);
+  const tasksQuery = useTasksForSprintQuery(params.sprintId);
+  const sprintQuery = useSprintQuery(params.sprintId);
   const statusesQuery = useStatusesQuery();
 
   const updateTask = useUpdateTaskMutation();
@@ -56,7 +48,6 @@ function Home() {
       await updateTask({
         id: id,
         statusId,
-        projectId: params.projectId,
       });
     },
     [updateTask]
@@ -75,10 +66,11 @@ function Home() {
   return (
     <PageLayout
       title={
-        projectQuery.data?.name ? `${projectQuery.data.name} - Tasks` : "Tasks"
+        sprintQuery.data?.name ? `${sprintQuery.data.name} - Tasks` : "Tasks"
       }
       actions={
         <div className="flex gap-2">
+          {sprintQuery.data && <SprintStatus sprint={sprintQuery.data} />}
           <DropdownMenu>
             <ButtonGroup>
               <Button
@@ -133,9 +125,9 @@ function Home() {
           </DropdownMenu>
           <Button size={"sm"} variant={"outline"} asChild>
             <Link
-              to={"/projects/$projectId/settings"}
-              params={{ projectId: params.projectId }}
-              title="Project Settings"
+              to={"/sprints/$sprintId/settings"}
+              params={{ sprintId: params.sprintId }}
+              title="Sprint Settings"
             >
               <Settings />
             </Link>
@@ -146,7 +138,7 @@ function Home() {
       <div className="flex flex-col gap-2 h-full grow-0">
         <BoardView
           tasks={tasksQuery.data}
-          projectId={params.projectId}
+          sprintId={params.sprintId}
           statuses={statusesQuery.data}
           updateTask={handleUpdateTask}
         />

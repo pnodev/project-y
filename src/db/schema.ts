@@ -65,6 +65,7 @@ export const tasks = createTable(
     deadline: timestamp("deadline", { withTimezone: true }),
     owner: varchar("owner", { length: 256 }).notNull(),
     projectId: uuid("project_id").notNull(),
+    sprintId: uuid("sprint_id"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -216,6 +217,22 @@ export const attachments = createTable(
   (example) => [index("attachment_owner_idx").on(example.owner)]
 );
 
+export const sprints = createTable(
+  "sprint",
+  {
+    id: uuid("id").primaryKey(),
+    name: varchar("name", { length: 256 }).notNull(),
+    start: timestamp("start", { withTimezone: true }).notNull(),
+    end: timestamp("end", { withTimezone: true }).notNull(),
+    owner: varchar("owner", { length: 256 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
+  },
+  (example) => [index("sprint_owner_idx").on(example.owner)]
+);
+
 export const attachmentRelations = relations(attachments, ({ one }) => ({
   task: one(tasks, {
     fields: [attachments.taskId],
@@ -267,6 +284,10 @@ export const taskRelations = relations(tasks, ({ one, many }) => ({
   attachments: many(attachments),
   assignees: many(taskAssignees),
   subTasks: many(subTasks),
+  sprint: one(sprints, {
+    fields: [tasks.sprintId],
+    references: [sprints.id],
+  }),
 }));
 
 export const taskAssigneesRelations = relations(taskAssignees, ({ one }) => ({
@@ -303,6 +324,7 @@ export type TaskWithRelations = Task & {
   labels: (typeof labels.$inferSelect)[];
   attachments: (typeof attachments.$inferSelect)[];
   project: Project;
+  sprint: Sprint | null;
   assignees: (typeof taskAssignees.$inferSelect)[];
   subTasks: SubTask[];
 };
@@ -331,6 +353,7 @@ export type UpdateTask = {
   priority?: "low" | "medium" | "high" | "critical";
   deadline?: Date;
   projectId?: string;
+  sprintId?: string;
 };
 
 export type SubTask = typeof subTasks.$inferSelect & {
@@ -398,6 +421,26 @@ export type CreateAttachment = Omit<
   "id" | "createdAt" | "updatedAt" | "owner"
 >;
 export type UpdateAttachment = {
+  id: string;
+  content?: string;
+};
+
+export type Sprint = typeof sprints.$inferSelect;
+export const insertSprintValidator = createInsertSchema(sprints, {
+  id: (schema) => schema.optional(),
+  owner: (schema) => schema.optional(),
+});
+export const updateSprintValidator = createInsertSchema(sprints, {
+  owner: (schema) => schema.optional(),
+  name: (schema) => schema.optional(),
+  start: (schema) => schema.optional(),
+  end: (schema) => schema.optional(),
+});
+export type CreateSprint = Omit<
+  typeof sprints.$inferInsert,
+  "id" | "createdAt" | "updatedAt" | "owner"
+>;
+export type UpdateSprint = {
   id: string;
   content?: string;
 };

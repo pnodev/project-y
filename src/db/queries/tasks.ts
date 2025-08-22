@@ -29,6 +29,7 @@ const fetchTasks = createServerFn({ method: "GET" })
         },
         project: true,
         assignees: true,
+        sprint: true,
         subTasks: {
           with: {
             assignees: true,
@@ -72,6 +73,72 @@ export const useTasksQuery = (projectId: string) => {
   return { ...queryData };
 };
 
+const fetchTasksForSprint = createServerFn({ method: "GET" })
+  .validator((d: { sprintId: string }) => d)
+  .handler(async ({ data: { sprintId } }): Promise<TaskWithRelations[]> => {
+    const user = await getAuth(getWebRequest());
+    console.log("Fetching tasks for user:", getOwningIdentity(user));
+    console.info("Fetching tasks for sprint:", sprintId);
+
+    const rawTasks = await db.query.tasks.findMany({
+      with: {
+        status: true,
+        labelsToTasks: {
+          with: {
+            label: true,
+          },
+        },
+        attachments: {
+          with: {
+            task: true,
+          },
+        },
+        project: true,
+        assignees: true,
+        sprint: true,
+        subTasks: {
+          with: {
+            assignees: true,
+          },
+        },
+      },
+      where: (model, { eq, and }) =>
+        and(
+          eq(model.owner, getOwningIdentity(user)),
+          eq(model.sprintId, sprintId)
+        ),
+    });
+
+    return rawTasks.map((task) => ({
+      ...task,
+      labels: task.labelsToTasks.map((l) => l.label),
+      labelsToTasks: undefined,
+    }));
+  });
+
+export const tasksForSprintQueryOptions = (sprintId: string) =>
+  queryOptions({
+    queryKey: ["tasks", sprintId],
+    queryFn: () => fetchTasksForSprint({ data: { sprintId } }),
+  });
+
+export const useTasksForSprintQuery = (sprintId: string) => {
+  const queryData = useSuspenseQuery(tasksForSprintQueryOptions(sprintId));
+
+  useEventSource({
+    topics: [
+      "task-create",
+      "task-delete",
+      ...queryData.data.map((t) => `task-update-${t.id}`),
+    ],
+    callback: () => {
+      queryData.refetch();
+    },
+  });
+
+  return { ...queryData };
+};
+
 export const fetchTask = createServerFn({ method: "GET" })
   .validator((d: string) => d)
   .handler(async ({ data }): Promise<TaskWithRelations | null> => {
@@ -99,6 +166,7 @@ export const fetchTask = createServerFn({ method: "GET" })
             assignees: true,
           },
         },
+        sprint: true,
       },
     });
 

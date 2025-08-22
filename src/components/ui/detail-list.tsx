@@ -37,7 +37,7 @@ export const DetailListItem = ({
 }: {
   children?: React.ReactNode;
   label: string;
-  icon?: LucideIcon;
+  icon?: LucideIcon | string;
   statusColor?: string;
   className?: string;
 }) => {
@@ -45,8 +45,11 @@ export const DetailListItem = ({
   return (
     <div className={cn("grid grid-cols-12 gap-1 items-center", className)}>
       <dt className={cn(size === "large" ? "col-span-4" : "col-span-4")}>
-        {Icon ? (
+        {Icon && typeof Icon !== "string" ? (
           <Icon className={cn("inline mr-2 size-3.5", statusColor)} />
+        ) : null}
+        {Icon && typeof Icon === "string" ? (
+          <img src={Icon} className={cn("inline mr-2 size-3.5", statusColor)} />
         ) : null}
         <TaskLabel
           className={cn(

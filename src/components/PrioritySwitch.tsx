@@ -30,7 +30,6 @@ export function PrioritySwitch({
       onValueChange={onValueChange}
     >
       <SelectTrigger
-        size="sm"
         color={priority === "critical" ? "red" : undefined}
         className={`${triggerColor} font-semibold capitalize`}
       >

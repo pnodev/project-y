@@ -21,8 +21,10 @@ import {
 } from "~/components/ui/sidebar";
 
 export function NavMain({
+  title,
   items,
 }: {
+  title: string;
   items: {
     title: string;
     url: string;
@@ -32,13 +34,14 @@ export function NavMain({
       title: string;
       url: string;
       icon?: LucideIcon | string;
+      highlighted?: boolean;
     }[];
   }[];
 }) {
   const routerState = useRouterState();
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Tasks</SidebarGroupLabel>
+      <SidebarGroupLabel>{title}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
@@ -82,6 +85,9 @@ export function NavMain({
                                 subItem.icon && <subItem.icon />
                               )}
                               <span>{subItem.title}</span>
+                              {subItem.highlighted && (
+                                <span className="block bg-indigo-500 size-1.5 rounded-full"></span>
+                              )}
                             </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>

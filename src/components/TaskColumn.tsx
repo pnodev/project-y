@@ -9,11 +9,13 @@ import { BoardViewStore } from "./views/board-view-store";
 export default function TaskColumn({
   status,
   projectId,
+  sprintId,
   numberOfTasks,
   children,
 }: {
   status?: Status;
-  projectId: string;
+  projectId?: string;
+  sprintId?: string;
   numberOfTasks?: number;
   children: React.ReactNode;
 }) {
@@ -78,6 +80,7 @@ export default function TaskColumn({
           <TaskQuickCreate
             status={status.id}
             projectId={projectId}
+            sprintId={sprintId}
             onClose={() =>
               BoardViewStore.setState((state) => {
                 return { ...state, quickCreateOpenFor: null };

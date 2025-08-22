@@ -1,5 +1,16 @@
 import * as React from "react";
-import { Flag, Folder, FolderPlus, LucideIcon, Tag } from "lucide-react";
+import {
+  Calendar,
+  CalendarPlus,
+  Clock,
+  ClockFading,
+  ClockPlus,
+  Flag,
+  Folder,
+  FolderPlus,
+  LucideIcon,
+  Tag,
+} from "lucide-react";
 
 import { NavMain } from "~/components/nav-main";
 import { NavSettings } from "~/components/nav-settings";
@@ -14,11 +25,13 @@ import {
 } from "~/components/ui/sidebar";
 import { version } from "../../package.json";
 import { useProjectsQuery } from "~/db/queries/projects";
+import { useSprintsQuery } from "~/db/queries/sprints";
 
 type NavItem = {
   title: string;
   url: string;
   icon?: LucideIcon | string;
+  highlighted?: boolean;
 };
 
 const data = {
@@ -33,6 +46,19 @@ const data = {
           title: "Add Project",
           url: "/projects/new",
           icon: FolderPlus,
+        },
+      ] as NavItem[],
+    },
+    {
+      title: "Sprints",
+      url: "#",
+      icon: ClockFading,
+      isActive: true,
+      items: [
+        {
+          title: "Add Sprint",
+          url: "/sprints/new",
+          icon: ClockPlus,
         },
       ] as NavItem[],
     },
@@ -65,6 +91,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const projectsQuery = useProjectsQuery();
+  const sprintsQuery = useSprintsQuery();
 
   data.navMain[0].items = [];
   data.navMain[0].items.push({
@@ -83,6 +110,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     title: "Add Project",
     url: "/projects/new",
     icon: FolderPlus,
+  });
+
+  data.navMain[1].items = [];
+  sprintsQuery.data.forEach((sprint) => {
+    data.navMain[1].items.push({
+      title: sprint.name,
+      url: `/sprints/${sprint.id}/tasks`,
+      icon: Clock,
+      highlighted: sprint.start < new Date() && sprint.end > new Date(),
+    });
+  });
+  data.navMain[1].items.push({
+    title: "Add Sprint",
+    url: "/sprints/new",
+    icon: ClockPlus,
   });
   return (
     <Sidebar
@@ -107,7 +149,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={data.navMain} title="Tasks" />
         <NavSettings settings={data.settings} />
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>

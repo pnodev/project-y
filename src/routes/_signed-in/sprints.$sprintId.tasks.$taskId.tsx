@@ -6,7 +6,7 @@ import { statusesQueryOptions, useStatusesQuery } from "~/db/queries/statuses";
 import { taskQueryOptions, useTaskQuery } from "~/db/queries/tasks";
 
 export const Route = createFileRoute(
-  "/_signed-in/projects/$projectId/tasks/$taskId"
+  "/_signed-in/sprints/$sprintId/tasks/$taskId"
 )({
   loader: async ({ context, params }) => {
     await context.queryClient.ensureQueryData(taskQueryOptions(params.taskId));
@@ -37,7 +37,7 @@ function RouteComponent() {
         ...comment,
         author: comment.author || "Unknown", // Default author to "Unknown" if null
       }))}
-      location="project"
+      location="sprint"
     />
   );
 }

@@ -40,6 +40,7 @@ import { Comments } from "./Comments";
 import {
   Calendar,
   CircleDashed,
+  ClockFading,
   Ellipsis,
   Flag,
   Trash2,
@@ -62,24 +63,28 @@ import { UserSelect } from "./UserSelect";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { SubTasks } from "./SubTasks";
 import { Badge } from "./ui/badge";
+import { SprintSelect } from "./SprintSelect";
 
 export function OpenTask({
   task,
   statuses,
   labels,
   comments,
+  location,
 }: {
   task?: TaskWithRelations;
   statuses: Status[];
   labels: Label[];
   comments: Comment[];
+  location: "project" | "sprint";
 }) {
   const navigate = useNavigate();
 
   const updateTask = useUpdateTaskMutation();
   const assignTask = useAssignTaskMutation();
   const unassignTask = useUnassignTaskMutation();
-  const [isAssigning, setIsAssigning] = useState(false);
+  const [isAssigningUser, setIsAssigningUser] = useState(false);
+  const [isAssigningSprint, setIsAssigningSprint] = useState(false);
   const createComment = useCreateCommentMutation();
   const createAttachment = useCreateAttachmentMutation();
   const deleteTask = useDeleteTaskMutation();
@@ -155,9 +160,15 @@ export function OpenTask({
     <Dialog
       open={!!task}
       onOpenChange={() => {
-        navigate({
-          to: `/projects/${task?.projectId}/tasks/$`,
-        });
+        if (location === "project") {
+          navigate({
+            to: `/projects/${task?.projectId}/tasks/$`,
+          });
+        } else {
+          navigate({
+            to: `/sprints/${task?.sprintId}/tasks/$`,
+          });
+        }
       }}
     >
       <DialogContent
@@ -280,13 +291,13 @@ export function OpenTask({
                 </DetailListItem>
                 <DetailListItem label="Assigned to" icon={Users}>
                   <UserSelect
-                    isAssigning={isAssigning}
+                    isAssigning={isAssigningUser}
                     selectedUserIds={task.assignees.map(
                       (assignee) => assignee.userId
                     )}
                     onValueChange={async (ids) => {
                       if (!task) return;
-                      setIsAssigning(true);
+                      setIsAssigningUser(true);
                       const add = ids.filter(
                         (id) =>
                           !task.assignees.find(
@@ -301,7 +312,22 @@ export function OpenTask({
                         await assignTask(task, add),
                         await unassignTask(task, remove),
                       ]);
-                      setIsAssigning(false);
+                      setIsAssigningUser(false);
+                    }}
+                  />
+                </DetailListItem>
+                <DetailListItem label="Sprint" icon={ClockFading}>
+                  <SprintSelect
+                    isAssigning={isAssigningSprint}
+                    selectedSprintId={task.sprintId || undefined}
+                    onValueChange={async (sprintId) => {
+                      if (!task || !sprintId) return;
+                      setIsAssigningSprint(true);
+                      await updateTask({
+                        id: task.id,
+                        sprintId,
+                      });
+                      setIsAssigningSprint(false);
                     }}
                   />
                 </DetailListItem>

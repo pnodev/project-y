@@ -36,6 +36,7 @@ const createTask = createServerFn({ method: "POST" })
       description: data.description,
       statusId: data.statusId,
       projectId: data.projectId,
+      sprintId: data.sprintId,
       owner: getOwningIdentity(user),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -61,6 +62,11 @@ export function useCreateTaskMutation() {
       queryClient.invalidateQueries({
         queryKey: ["tasks", task.projectId],
       });
+      if (task.sprintId) {
+        queryClient.invalidateQueries({
+          queryKey: ["tasks", task.sprintId],
+        });
+      }
 
       return result;
     },
@@ -144,6 +150,11 @@ export function useAssignTaskMutation() {
       queryClient.invalidateQueries({
         queryKey: ["tasks", task.id],
       });
+      if (task.sprintId) {
+        queryClient.invalidateQueries({
+          queryKey: ["tasks", task.sprintId],
+        });
+      }
     },
     [router, queryClient, _assignTask]
   );
@@ -165,6 +176,11 @@ export function useUnassignTaskMutation() {
       queryClient.invalidateQueries({
         queryKey: ["tasks", task.id],
       });
+      if (task.sprintId) {
+        queryClient.invalidateQueries({
+          queryKey: ["tasks", task.sprintId],
+        });
+      }
     },
     [router, queryClient, _unassignTask]
   );
