@@ -21,17 +21,27 @@ const fetchCommentsForTask = createServerFn({ method: "GET" })
     });
 
     const authorIds = [...new Set(rawData.map((comment) => comment.author))];
-    const authorsById = new Map(
-      await Promise.all(
-        authorIds.map(async (authorId) => {
-          const user = await clerkClient().users.getUser(authorId);
-          return [
+    const authorResults = await Promise.allSettled(
+      authorIds.map((authorId) =>
+        clerkClient()
+          .users.getUser(authorId)
+          .then((user) => ({
             authorId,
-            { fullName: user.fullName, imageUrl: user.imageUrl },
-          ] as const;
-        }),
+            fullName: user.fullName,
+            imageUrl: user.imageUrl,
+          })),
       ),
     );
+    const authorsById = new Map<
+      string,
+      { fullName: string | null; imageUrl: string | null }
+    >();
+    for (const result of authorResults) {
+      if (result.status === "fulfilled") {
+        const { authorId, fullName, imageUrl } = result.value;
+        authorsById.set(authorId, { fullName, imageUrl });
+      }
+    }
 
     return rawData.map((comment) => {
       const author = authorsById.get(comment.author);
