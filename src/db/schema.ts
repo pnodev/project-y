@@ -16,6 +16,7 @@ import {
   boolean,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -332,14 +333,16 @@ export const insertTaskValidator = createInsertSchema(tasks, {
   id: (schema) => schema.optional(),
   owner: (schema) => schema.optional(),
 });
-export const updateTaskValidator = createInsertSchema(tasks, {
-  name: (schema) => schema.optional(),
-  description: (schema) => schema.optional(),
-  statusId: (schema) => schema.optional(),
-  priority: (schema) => schema.optional(),
-  deadline: (schema) => schema.optional(),
-  projectId: (schema) => schema.optional(),
-  owner: (schema) => schema.optional(),
+/** Partial task updates; dates are coerced because RPC serializes them as strings. */
+export const updateTaskValidator = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(256).optional(),
+  description: z.string().nullable().optional(),
+  statusId: z.string().uuid().nullable().optional(),
+  priority: z.enum(PRIORITY_VALUES).optional(),
+  deadline: z.coerce.date().nullable().optional(),
+  projectId: z.string().uuid().optional(),
+  sprintId: z.string().uuid().nullable().optional(),
 });
 export type CreateTask = Omit<
   typeof tasks.$inferInsert,
