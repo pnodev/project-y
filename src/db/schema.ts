@@ -348,16 +348,7 @@ export type CreateTask = Omit<
   typeof tasks.$inferInsert,
   "id" | "createdAt" | "updatedAt" | "owner"
 >;
-export type UpdateTask = {
-  id: string;
-  name?: string;
-  description?: string;
-  statusId?: string;
-  priority?: "low" | "medium" | "high" | "critical";
-  deadline?: Date;
-  projectId?: string;
-  sprintId?: string;
-};
+export type UpdateTask = z.infer<typeof updateTaskValidator>;
 
 export type SubTask = typeof subTasks.$inferSelect & {
   assignees: (typeof subTaskAssignees.$inferSelect)[];
