@@ -2,15 +2,15 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import { TaskWithRelations } from "../schema";
-import { getAuth } from "@clerk/tanstack-react-start/server";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { auth } from "@clerk/tanstack-react-start/server";
+import { getRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
 import { useEventSource } from "~/hooks/use-event-source";
 
 const fetchTasks = createServerFn({ method: "GET" })
-  .validator((d: { projectId: string }) => d)
+  .inputValidator((d: { projectId: string }) => d)
   .handler(async ({ data: { projectId } }): Promise<TaskWithRelations[]> => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
     console.log("Fetching tasks for user:", getOwningIdentity(user));
     console.info("Fetching tasks for project:", projectId);
 
@@ -74,9 +74,9 @@ export const useTasksQuery = (projectId: string) => {
 };
 
 const fetchTasksForSprint = createServerFn({ method: "GET" })
-  .validator((d: { sprintId: string }) => d)
+  .inputValidator((d: { sprintId: string }) => d)
   .handler(async ({ data: { sprintId } }): Promise<TaskWithRelations[]> => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
     console.log("Fetching tasks for user:", getOwningIdentity(user));
     console.info("Fetching tasks for sprint:", sprintId);
 
@@ -140,10 +140,10 @@ export const useTasksForSprintQuery = (sprintId: string) => {
 };
 
 export const fetchTask = createServerFn({ method: "GET" })
-  .validator((d: string) => d)
+  .inputValidator((d: string) => d)
   .handler(async ({ data }): Promise<TaskWithRelations | null> => {
     console.info("Fetching task...");
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
     const task = await db.query.tasks.findFirst({
       where(fields, operators) {
         return operators.and(

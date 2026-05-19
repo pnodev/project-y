@@ -1,16 +1,15 @@
-import fetch from "node-fetch";
+import { env } from "~/env";
 
-export async function sync(topic: string, payload: any) {
-  const appId = "676bb0d1-942d-465a-a706-4ee451177507";
-  const key = "OIV3S2Q-ZMPEFQI-RHMNAVY-F4UZDDA";
+export async function sync(topic: string, payload: unknown) {
+  const baseUrl = env.SYNC_ENGINE_URL ?? "https://sync-connect.pno.dev";
   await fetch(
-    `https://sync-connect.pno.dev/stream/${appId}?key=${key}&topic=${topic}`,
+    `${baseUrl}/stream/${env.SYNC_APP_ID}?key=${env.SYNC_PUBLISH_KEY}&topic=${topic}`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ payload }),
-    }
+    },
   );
 }

@@ -8,8 +8,8 @@ import {
   UpdateSubTask,
   updateSubTaskValidator,
 } from "../schema";
-import { getAuth } from "@clerk/tanstack-react-start/server";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { auth } from "@clerk/tanstack-react-start/server";
+import { getRequest } from "@tanstack/react-start/server";
 import { db } from "..";
 import { v7 as uuid } from "uuid";
 import { getOwningIdentity } from "~/lib/utils";
@@ -21,9 +21,9 @@ import { and, eq, inArray } from "drizzle-orm";
 import z from "zod";
 
 const createSubTask = createServerFn({ method: "POST" })
-  .validator(insertSubTaskValidator)
+  .inputValidator(insertSubTaskValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     await db.insert(subTasks).values({
       ...data,
@@ -56,9 +56,9 @@ export function useCreateSubTaskMutation() {
 }
 
 const updateSubTask = createServerFn({ method: "POST" })
-  .validator(updateSubTaskValidator)
+  .inputValidator(updateSubTaskValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     await db
       .update(subTasks)
@@ -120,9 +120,9 @@ export function useUpdateSubTaskMutation() {
 }
 
 const deleteSubTask = createServerFn({ method: "POST" })
-  .validator(z.object({ id: z.string() }))
+  .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     const subTask = await db.query.subTasks.findFirst({
       where(fields, operators) {
@@ -170,14 +170,14 @@ export function useDeleteSubTaskMutation() {
 }
 
 const unassignSubTask = createServerFn({ method: "POST" })
-  .validator(
+  .inputValidator(
     z.object({
       subTaskId: z.string(),
       userIds: z.array(z.string()),
     })
   )
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
     const subTask = await db.query.subTasks.findFirst({
       where(fields, operators) {
         return operators.and(
@@ -220,14 +220,14 @@ export function useUnassignSubTaskMutation() {
 }
 
 const assignSubTask = createServerFn({ method: "POST" })
-  .validator(
+  .inputValidator(
     z.object({
       subTaskId: z.string(),
       userIds: z.array(z.string()),
     })
   )
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
     const subTask = await db.query.subTasks.findFirst({
       where(fields, operators) {
         return operators.and(

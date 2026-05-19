@@ -1,7 +1,5 @@
 import { useEditor, EditorContent } from "@tiptap/react";
-import { Document } from "@tiptap/extension-document";
-import { Text } from "@tiptap/extension-text";
-import { Heading } from "@tiptap/extension-heading";
+import StarterKit from "@tiptap/starter-kit";
 import { useCallback, useRef } from "react";
 import { DialogTitle } from "./ui/dialog";
 
@@ -39,28 +37,26 @@ export function EditableDialogTitle({
         onDebouncedUpdate?.(content);
       }, debounceMs);
     },
-    [onDebouncedUpdate, debounceMs]
+    [onDebouncedUpdate, debounceMs],
   );
 
   const editor = useEditor(
     {
       extensions: [
-        Document,
-        Text,
-        Heading.configure({
-          levels: [2],
+        StarterKit.configure({
+          heading: { levels: [2] },
         }),
       ],
       content: `<h2>${initialContent}</h2>`,
       autofocus: false,
-      immediatelyRender: false, // Prevent immediate rendering
-      shouldRerenderOnTransaction: false, // Reduce re-renders
+      immediatelyRender: false,
+      shouldRerenderOnTransaction: false,
       onUpdate: ({ editor }) => {
         const textContent = editor.getText();
 
         if (!hasInitialized.current) {
           hasInitialized.current = true;
-          return; // Skip updates on first render
+          return;
         }
 
         onUpdate?.(textContent);
@@ -85,7 +81,7 @@ export function EditableDialogTitle({
           class: "focus:outline-none",
           "data-placeholder": placeholder,
         },
-        handleKeyDown: (view, event) => {
+        handleKeyDown: (_view, event) => {
           if (event.key === "Enter") {
             event.preventDefault();
             return true;
@@ -94,19 +90,17 @@ export function EditableDialogTitle({
         },
       },
     },
-    []
-  ); // Empty dependency array to prevent re-initialization
+    [],
+  );
 
   return (
-    <>
-      <DialogTitle asChild>
-        <div>
-          <EditorContent
-            editor={editor}
-            className={`font-bold text-2xl leading-none tracking-tight cursor-text ${className}`}
-          />
-        </div>
-      </DialogTitle>
-    </>
+    <DialogTitle asChild>
+      <div>
+        <EditorContent
+          editor={editor}
+          className={`font-bold text-2xl leading-none tracking-tight cursor-text ${className}`}
+        />
+      </div>
+    </DialogTitle>
   );
 }

@@ -4,8 +4,8 @@ import {
   CreateAttachment,
   insertAttachmentValidator,
 } from "../schema";
-import { getAuth } from "@clerk/tanstack-react-start/server";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { auth } from "@clerk/tanstack-react-start/server";
+import { getRequest } from "@tanstack/react-start/server";
 import { db } from "..";
 import { v7 as uuid } from "uuid";
 import { getOwningIdentity } from "~/lib/utils";
@@ -18,9 +18,9 @@ import { and, eq } from "drizzle-orm";
 import { UTApi } from "uploadthing/server";
 
 const createAttachment = createServerFn({ method: "POST" })
-  .validator(insertAttachmentValidator)
+  .inputValidator(insertAttachmentValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     await db.insert(attachments).values({
       ...data,
@@ -58,9 +58,9 @@ export function useCreateAttachmentMutation() {
 }
 
 export const deleteAttachment = createServerFn({ method: "POST" })
-  .validator(z.object({ id: z.string() }))
+  .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     const attachment = await db.query.attachments.findFirst({
       where: (model, { eq, and }) =>

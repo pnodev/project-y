@@ -1,8 +1,8 @@
 import { createClerkClient } from "@clerk/backend";
-import { getAuth } from "@clerk/tanstack-react-start/server";
+import { auth } from "@clerk/tanstack-react-start/server";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { getRequest } from "@tanstack/react-start/server";
 import { db } from "..";
 import { getOwningIdentity } from "~/lib/utils";
 import { env } from "~/env";

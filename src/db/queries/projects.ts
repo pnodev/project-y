@@ -1,14 +1,14 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
-import { getAuth } from "@clerk/tanstack-react-start/server";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { auth } from "@clerk/tanstack-react-start/server";
+import { getRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
 import { useEventSource } from "~/hooks/use-event-source";
 
 const fetchProjects = createServerFn({ method: "GET" }).handler(async () => {
   console.info("Fetching projects...");
-  const user = await getAuth(getWebRequest());
+  const user = await auth();
   return await db.query.projects.findMany({
     where: (model, { eq }) => eq(model.owner, getOwningIdentity(user)),
   });
@@ -38,10 +38,10 @@ export const useProjectsQuery = () => {
 };
 
 const fetchProject = createServerFn({ method: "GET" })
-  .validator((d: { projectId: string }) => d)
+  .inputValidator((d: { projectId: string }) => d)
   .handler(async ({ data: { projectId } }) => {
     console.info("Fetching project...");
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
     return await db.query.projects.findFirst({
       where: (model, { eq, and }) =>
         and(eq(model.id, projectId), eq(model.owner, getOwningIdentity(user))),

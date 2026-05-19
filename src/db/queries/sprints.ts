@@ -1,14 +1,14 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
-import { getAuth } from "@clerk/tanstack-react-start/server";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { auth } from "@clerk/tanstack-react-start/server";
+import { getRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
 import { useEventSource } from "~/hooks/use-event-source";
 
 const fetchSprints = createServerFn({ method: "GET" }).handler(async () => {
   console.info("Fetching sprints...");
-  const user = await getAuth(getWebRequest());
+  const user = await auth();
 
   return await db.query.sprints.findMany({
     where: (model, { eq }) => eq(model.owner, getOwningIdentity(user)),
@@ -40,10 +40,10 @@ export const useSprintsQuery = () => {
 };
 
 const fetchSprint = createServerFn({ method: "GET" })
-  .validator((d: { sprintId: string }) => d)
+  .inputValidator((d: { sprintId: string }) => d)
   .handler(async ({ data: { sprintId } }) => {
     console.info("Fetching sprint...");
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     return await db.query.sprints.findFirst({
       where: (model, { eq, and }) =>

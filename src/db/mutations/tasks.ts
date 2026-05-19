@@ -19,16 +19,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { and, eq, inArray } from "drizzle-orm";
 import z from "zod";
-import { getAuth } from "@clerk/tanstack-react-start/server";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { auth } from "@clerk/tanstack-react-start/server";
+import { getRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
 import { deleteAttachment } from "./attachments";
 
 const createTask = createServerFn({ method: "POST" })
-  .validator(insertTaskValidator)
+  .inputValidator(insertTaskValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     const newTask = {
       id: uuid(),
@@ -76,14 +76,14 @@ export function useCreateTaskMutation() {
 
 // First, update the validator schema in assignTask
 const assignTask = createServerFn({ method: "POST" })
-  .validator(
+  .inputValidator(
     z.object({
       taskId: z.string(),
       userIds: z.array(z.string()), // Changed from userId to userIds array
     })
   )
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     // Get existing assignees for this task
     const existingAssignees = await db.query.taskAssignees.findMany({
@@ -113,14 +113,14 @@ const assignTask = createServerFn({ method: "POST" })
 
 // Update the unassign mutation similarly
 const unassignTask = createServerFn({ method: "POST" })
-  .validator(
+  .inputValidator(
     z.object({
       taskId: z.string(),
       userIds: z.array(z.string()),
     })
   )
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
     await db
       .delete(taskAssignees)
       .where(
@@ -187,9 +187,9 @@ export function useUnassignTaskMutation() {
 }
 
 const updateTask = createServerFn({ method: "POST" })
-  .validator(updateTaskValidator)
+  .inputValidator(updateTaskValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
     await db
       .update(tasks)
       .set({
@@ -244,9 +244,9 @@ export function useUpdateTaskMutation() {
 }
 
 const deleteTask = createServerFn({ method: "POST" })
-  .validator(z.object({ id: z.string() }))
+  .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
     const task = await db.query.tasks.findFirst({
       with: {
         attachments: true,
@@ -293,7 +293,7 @@ export function useDeleteTaskMutation() {
 }
 
 const setLabelsForTask = createServerFn({ method: "POST" })
-  .validator(
+  .inputValidator(
     z.object({
       taskId: z.string().uuid(),
       labelIds: z.array(z.string().uuid()),

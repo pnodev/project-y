@@ -10,8 +10,8 @@ import {
   UpdateProject,
   updateProjectValidator,
 } from "../schema";
-import { getAuth } from "@clerk/tanstack-react-start/server";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { auth } from "@clerk/tanstack-react-start/server";
+import { getRequest } from "@tanstack/react-start/server";
 import { db } from "..";
 import { v7 as uuid } from "uuid";
 import { getOwningIdentity } from "~/lib/utils";
@@ -23,9 +23,9 @@ import { and, eq } from "drizzle-orm";
 import z from "zod";
 
 const createProject = createServerFn({ method: "POST" })
-  .validator(insertProjectValidator)
+  .inputValidator(insertProjectValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     await db.insert(projects).values({
       ...data,
@@ -58,9 +58,9 @@ export function useCreateProjectMutation() {
 }
 
 const updateProject = createServerFn({ method: "POST" })
-  .validator(updateProjectValidator)
+  .inputValidator(updateProjectValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     await db
       .update(projects)
@@ -100,9 +100,9 @@ export function useUpdateProjectMutation() {
 }
 
 const deleteProject = createServerFn({ method: "POST" })
-  .validator(z.object({ id: z.string() }))
+  .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     await db
       .delete(tasks)

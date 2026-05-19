@@ -3,15 +3,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import { labels, labelsToTasks } from "~/db/schema";
 import { asc, eq, sql } from "drizzle-orm";
-import { getAuth } from "@clerk/tanstack-react-start/server";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { auth } from "@clerk/tanstack-react-start/server";
+import { getRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
 import { useEventSource } from "~/hooks/use-event-source";
 
 export const fetchLabels = createServerFn({ method: "GET" }).handler(
   async () => {
     console.info("Fetching labels...");
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
     return await db.query.labels.findMany({
       where: (model, { eq }) => eq(model.owner, getOwningIdentity(user)),
       orderBy: (fields, { asc }) => [asc(fields.order)],
@@ -46,7 +46,7 @@ export const fetchLabelsWithTaskCounts = createServerFn({
   method: "GET",
 }).handler(async () => {
   console.info("Fetching labels with task counts...");
-  const user = await getAuth(getWebRequest());
+  const user = await auth();
   const labelsWithCounts = await db
     .select({
       id: labels.id,

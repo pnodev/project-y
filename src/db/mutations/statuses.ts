@@ -15,15 +15,15 @@ import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { and, eq } from "drizzle-orm";
-import { getAuth } from "@clerk/tanstack-react-start/server";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { auth } from "@clerk/tanstack-react-start/server";
+import { getRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
 
 const createStatus = createServerFn({ method: "POST" })
-  .validator(insertStatusValidator)
+  .inputValidator(insertStatusValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     await db.insert(statuses).values({
       ...data,
@@ -59,9 +59,9 @@ export function useCreateStatusMutation() {
 }
 
 const updateStatus = createServerFn({ method: "POST" })
-  .validator(updateStatusValidator)
+  .inputValidator(updateStatusValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     await db
       .update(statuses)
@@ -104,9 +104,9 @@ export function useUpdateStatusMutation() {
 }
 
 const updateMultipleStatuses = createServerFn({ method: "POST" })
-  .validator(updateMultipleStatusesValidator)
+  .inputValidator(updateMultipleStatusesValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     await Promise.all(
       data.map(async (entry) => {
@@ -168,9 +168,9 @@ export function useUpdateMultipleStatusesMutation() {
 }
 
 const deleteStatus = createServerFn({ method: "POST" })
-  .validator(z.object({ id: z.string() }))
+  .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     await db
       .update(tasks)
