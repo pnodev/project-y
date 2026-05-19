@@ -70,6 +70,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@netlify/vite-plugin-tanstack-start": "^1.3.14",
     "@tanstack/devtools-vite": "^0.7.0",
     "@types/node": "^22.10.2",
     "@types/react": "^19.2.0",
