@@ -4,26 +4,21 @@ import { z } from "zod";
 export const env = createEnv({
   server: {
     NETLIFY_DATABASE_URL: z.string().url(),
-    CLERK_SECRET_KEY: z.string().min(1),
+    BETTER_AUTH_SECRET: z.string().min(32),
+    BETTER_AUTH_URL: z.string().url(),
+    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+    GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
     SYNC_APP_ID: z.string().min(1),
     SYNC_PUBLISH_KEY: z.string().min(1),
     UPLOADTHING_TOKEN: z.string().min(1),
     SYNC_ENGINE_URL: z.string().url().optional(),
-    CLERK_SIGN_IN_URL: z.string().optional(),
   },
 
   clientPrefix: "PUBLIC_",
 
-  client: {
-    PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
-  },
+  client: {},
 
-  runtimeEnv: {
-    ...process.env,
-    PUBLIC_CLERK_PUBLISHABLE_KEY:
-      process.env.PUBLIC_CLERK_PUBLISHABLE_KEY ??
-      process.env.CLERK_PUBLISHABLE_KEY,
-  },
+  runtimeEnv: process.env,
 
   emptyStringAsUndefined: true,
 });

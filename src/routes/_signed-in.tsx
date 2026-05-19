@@ -3,7 +3,7 @@ import { AppSidebar } from "~/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { SiteHeader } from "~/components/site-header";
 import { useOrganizationCacheClear } from "~/hooks/organization-cache-clear";
-import { authStateFn } from "~/db/queries";
+import { requireSession } from "~/lib/auth-functions";
 import { projectsQueryOptions } from "~/db/queries/projects";
 import { sprintsQueryOptions } from "~/db/queries/sprints";
 import { useRouterState } from "@tanstack/react-router";
@@ -17,7 +17,9 @@ export const Route = createFileRoute("/_signed-in")({
     ]);
   },
   component: PathlessLayoutComponent,
-  beforeLoad: async () => await authStateFn(),
+  beforeLoad: async () => {
+    await requireSession();
+  },
 });
 
 function PathlessLayoutComponent() {

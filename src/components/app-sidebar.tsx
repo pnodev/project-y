@@ -1,5 +1,6 @@
 import * as React from "react";
 import {
+  Building2,
   Calendar,
   CalendarPlus,
   Clock,
@@ -10,6 +11,7 @@ import {
   FolderPlus,
   LucideIcon,
   Tag,
+  User,
 } from "lucide-react";
 
 import { NavMain } from "~/components/nav-main";
@@ -76,6 +78,16 @@ const data = {
   //   },
   // ],
   settings: [
+    {
+      name: "Account",
+      url: "/settings/account",
+      icon: User,
+    },
+    {
+      name: "Organization",
+      url: "/settings/organization",
+      icon: Building2,
+    },
     {
       name: "Statuses",
       url: "/statuses",

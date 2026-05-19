@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
+import * as authSchema from "./auth-schema";
 import * as schema from "./schema";
 
 /**
@@ -15,4 +16,4 @@ const conn =
   globalForDb.conn ?? postgres(process.env.NETLIFY_DATABASE_URL as string);
 if (process.env.NODE_ENV !== "production") globalForDb.conn = conn;
 
-export const db = drizzle(conn, { schema });
+export const db = drizzle(conn, { schema: { ...schema, ...authSchema } });

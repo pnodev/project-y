@@ -29,7 +29,10 @@ export function NavSettings({
             <SidebarMenuItem key={item.name}>
               <SidebarMenuButton
                 asChild
-                isActive={routerState.location.pathname === item.url}
+                isActive={
+                  routerState.location.pathname === item.url ||
+                  routerState.location.pathname.startsWith(`${item.url}/`)
+                }
               >
                 <Link to={item.url}>
                   <item.icon />

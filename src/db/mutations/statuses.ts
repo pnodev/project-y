@@ -15,19 +15,19 @@ import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { and, eq } from "drizzle-orm";
-import { auth } from "@clerk/tanstack-react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
 
 const createStatus = createServerFn({ method: "POST" })
   .inputValidator(insertStatusValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await db.insert(statuses).values({
       ...data,
       id: uuid(),
-      owner: getOwningIdentity(user),
+      owner: getOwningIdentity(session),
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -60,7 +60,7 @@ export function useCreateStatusMutation() {
 const updateStatus = createServerFn({ method: "POST" })
   .inputValidator(updateStatusValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await db
       .update(statuses)
@@ -73,7 +73,7 @@ const updateStatus = createServerFn({ method: "POST" })
       .where(
         and(
           eq(statuses.id, data.id!),
-          eq(statuses.owner, getOwningIdentity(user))
+          eq(statuses.owner, getOwningIdentity(session))
         )
       );
     await sync(`status-update-${data.id}`, { data });
@@ -105,7 +105,7 @@ export function useUpdateStatusMutation() {
 const updateMultipleStatuses = createServerFn({ method: "POST" })
   .inputValidator(updateMultipleStatusesValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await Promise.all(
       data.map(async (entry) => {
@@ -120,7 +120,7 @@ const updateMultipleStatuses = createServerFn({ method: "POST" })
           .where(
             and(
               eq(statuses.id, entry.id!),
-              eq(statuses.owner, getOwningIdentity(user))
+              eq(statuses.owner, getOwningIdentity(session))
             )
           );
       })
@@ -169,7 +169,7 @@ export function useUpdateMultipleStatusesMutation() {
 const deleteStatus = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await db
       .update(tasks)
@@ -177,7 +177,7 @@ const deleteStatus = createServerFn({ method: "POST" })
       .where(
         and(
           eq(tasks.statusId, data.id),
-          eq(tasks.owner, getOwningIdentity(user))
+          eq(tasks.owner, getOwningIdentity(session))
         )
       );
     await db
@@ -185,7 +185,7 @@ const deleteStatus = createServerFn({ method: "POST" })
       .where(
         and(
           eq(statuses.id, data.id),
-          eq(statuses.owner, getOwningIdentity(user))
+          eq(statuses.owner, getOwningIdentity(session))
         )
       );
     await sync("status-delete", { data });

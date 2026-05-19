@@ -18,7 +18,7 @@ import { DateDisplay } from "./ui/date-display";
 import { Avatar, AvatarFallback, AvatarImage, AvatarList } from "./ui/avatar";
 import { useUsersQuery } from "~/db/queries/users";
 import { useEffect, useState } from "react";
-import { useAuth } from "@clerk/tanstack-react-start";
+import { authClient } from "~/lib/auth-client";
 import {
   useAssignTaskMutation,
   useUnassignTaskMutation,
@@ -116,7 +116,8 @@ export const TaskCardComponent = ({
 }) => {
   const isOverdue = task.deadline && task.deadline < new Date();
   const usersQuery = useUsersQuery();
-  const currentUser = useAuth();
+  const { data: session } = authClient.useSession();
+  const currentUserId = session?.user.id;
   const assignTask = useAssignTaskMutation();
   const unassignTask = useUnassignTaskMutation();
   const [isAssigning, setIsAssigning] = useState(false);
@@ -124,16 +125,14 @@ export const TaskCardComponent = ({
   const [isHovered, setIsHovered] = useState(false);
   useEffect(() => {
     const handleKeyPress = async (event: KeyboardEvent) => {
-      if (currentUser && currentUser.userId && isHovered && event.key === "m") {
+      if (currentUserId && isHovered && event.key === "m") {
         setIsAssigning(true);
         if (
-          task.assignees.find(
-            (assignee) => assignee.userId === currentUser.userId
-          )
+          task.assignees.find((assignee) => assignee.userId === currentUserId)
         ) {
-          await unassignTask(task, [currentUser.userId]);
+          await unassignTask(task, [currentUserId]);
         } else {
-          await assignTask(task, [currentUser.userId]);
+          await assignTask(task, [currentUserId]);
         }
         setIsAssigning(false);
       }
@@ -143,7 +142,7 @@ export const TaskCardComponent = ({
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [isHovered, task]);
+  }, [isHovered, task, currentUserId, assignTask, unassignTask]);
 
   const percentageComplete = Math.round(
     (task.subTasks.filter((t) => t.done).length / task.subTasks.length) * 100

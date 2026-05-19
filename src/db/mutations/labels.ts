@@ -15,17 +15,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { and, eq } from "drizzle-orm";
 import { getOwningIdentity } from "~/lib/utils";
-import { auth } from "@clerk/tanstack-react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { sync } from "./sync";
 
 const createLabel = createServerFn({ method: "POST" })
   .inputValidator(insertLabelValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
     await db.insert(labels).values({
       ...data,
       id: uuid(),
-      owner: getOwningIdentity(user),
+      owner: getOwningIdentity(session),
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -58,7 +58,7 @@ export function useCreateLabelMutation() {
 const updateLabel = createServerFn({ method: "POST" })
   .inputValidator(updateLabelValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await db
       .update(labels)
@@ -69,7 +69,7 @@ const updateLabel = createServerFn({ method: "POST" })
         updatedAt: new Date(),
       })
       .where(
-        and(eq(labels.id, data.id!), eq(labels.owner, getOwningIdentity(user)))
+        and(eq(labels.id, data.id!), eq(labels.owner, getOwningIdentity(session)))
       );
 
     await sync(`label-update-${data.id}`, { data });
@@ -101,7 +101,7 @@ export function useUpdateLabelMutation() {
 const updateMultipleLabels = createServerFn({ method: "POST" })
   .inputValidator(updateMultipleLabelsValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await Promise.all(
       data.map(async (entry) => {
@@ -116,7 +116,7 @@ const updateMultipleLabels = createServerFn({ method: "POST" })
           .where(
             and(
               eq(labels.id, entry.id!),
-              eq(labels.owner, getOwningIdentity(user))
+              eq(labels.owner, getOwningIdentity(session))
             )
           );
       })
@@ -165,12 +165,12 @@ export function useUpdateMultipleLabelsMutation() {
 const deleteLabel = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await db
       .delete(labels)
       .where(
-        and(eq(labels.id, data.id), eq(labels.owner, getOwningIdentity(user)))
+        and(eq(labels.id, data.id), eq(labels.owner, getOwningIdentity(session)))
       );
 
     await sync(`label-update-${data.id}`, { data });

@@ -3,18 +3,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import { statuses, tasks } from "~/db/schema";
 import { asc, eq, sql } from "drizzle-orm";
-import { auth } from "@clerk/tanstack-react-start/server";
-import { getRequest } from "@tanstack/react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { getOwningIdentity } from "~/lib/utils";
 import { useEventSource } from "~/hooks/use-event-source";
 
 export const fetchStatuses = createServerFn({ method: "GET" }).handler(
   async () => {
     console.info("Fetching statuses...");
-    const user = await auth();
+    const session = await requireSession();
 
     return await db.query.statuses.findMany({
-      where: (model, { eq }) => eq(model.owner, getOwningIdentity(user)),
+      where: (model, { eq }) => eq(model.owner, getOwningIdentity(session)),
       orderBy: (fields, { asc }) => [asc(fields.order)],
     });
   }
@@ -48,7 +47,7 @@ export const fetchStatusesWithTaskCounts = createServerFn({
   method: "GET",
 }).handler(async () => {
   console.info("Fetching statuses with task counts...");
-  const user = await auth();
+  const session = await requireSession();
 
   const statusesWithCounts = await db
     .select({
@@ -62,7 +61,7 @@ export const fetchStatusesWithTaskCounts = createServerFn({
     })
     .from(statuses)
     .leftJoin(tasks, eq(statuses.id, tasks.statusId))
-    .where(eq(statuses.owner, getOwningIdentity(user)))
+    .where(eq(statuses.owner, getOwningIdentity(session)))
     .groupBy(statuses.id)
     .orderBy(asc(statuses.order));
 

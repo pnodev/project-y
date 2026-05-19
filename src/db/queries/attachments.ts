@@ -1,6 +1,5 @@
-import { auth } from "@clerk/tanstack-react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { db } from "..";
 import { getOwningIdentity } from "~/lib/utils";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
@@ -13,10 +12,10 @@ const fetchAttachmentsForTask = createServerFn({ method: "GET" })
       return [];
     }
     console.info(`Fetching attachments for... ${data}`);
-    const user = await auth();
+    const session = await requireSession();
     return await db.query.attachments.findMany({
       where: (model, { eq, and }) =>
-        and(eq(model.owner, getOwningIdentity(user)), eq(model.taskId, data)),
+        and(eq(model.owner, getOwningIdentity(session)), eq(model.taskId, data)),
       orderBy: (fields, { asc }) => [asc(fields.createdAt)],
     });
   });

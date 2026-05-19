@@ -20,7 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { and, eq, inArray } from "drizzle-orm";
 import z from "zod";
-import { auth } from "@clerk/tanstack-react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
 import { deleteAttachment } from "./attachments";
@@ -54,7 +54,7 @@ function getTaskListQueryKeys(
 const createTask = createServerFn({ method: "POST" })
   .inputValidator(insertTaskValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     const newTask = {
       id: uuid(),
@@ -63,7 +63,7 @@ const createTask = createServerFn({ method: "POST" })
       statusId: data.statusId,
       projectId: data.projectId,
       sprintId: data.sprintId,
-      owner: getOwningIdentity(user),
+      owner: getOwningIdentity(session),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -109,8 +109,8 @@ const assignTask = createServerFn({ method: "POST" })
     })
   )
   .handler(async ({ data }) => {
-    const user = await auth();
-    const owner = getOwningIdentity(user);
+    const session = await requireSession();
+    const owner = getOwningIdentity(session);
 
     const task = await db.query.tasks.findFirst({
       where: (model, { eq, and }) =>
@@ -153,8 +153,8 @@ const unassignTask = createServerFn({ method: "POST" })
     })
   )
   .handler(async ({ data }) => {
-    const user = await auth();
-    const owner = getOwningIdentity(user);
+    const session = await requireSession();
+    const owner = getOwningIdentity(session);
 
     const task = await db.query.tasks.findFirst({
       where: (model, { eq, and }) =>
@@ -231,7 +231,7 @@ const updateTask = createServerFn({ method: "POST" })
   .inputValidator(updateTaskValidator)
   .handler(async ({ data }) => {
     try {
-      const user = await auth();
+      const session = await requireSession();
       const { id, ...updates } = data;
 
       const setValues = Object.fromEntries(
@@ -244,7 +244,7 @@ const updateTask = createServerFn({ method: "POST" })
           ...setValues,
           updatedAt: new Date(),
         })
-        .where(and(eq(tasks.id, id), eq(tasks.owner, getOwningIdentity(user))));
+        .where(and(eq(tasks.id, id), eq(tasks.owner, getOwningIdentity(session))));
       await sync(`task-update-${id}`, { data });
     } catch (error) {
       console.error("[updateTask] failed:", error);
@@ -321,13 +321,13 @@ export function useUpdateTaskMutation() {
 const deleteTask = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
     const task = await db.query.tasks.findFirst({
       with: {
         attachments: true,
       },
       where: (model, { eq, and }) =>
-        and(eq(model.id, data.id), eq(model.owner, getOwningIdentity(user))),
+        and(eq(model.id, data.id), eq(model.owner, getOwningIdentity(session))),
     });
     if (!task) return;
     await Promise.all(
@@ -338,7 +338,7 @@ const deleteTask = createServerFn({ method: "POST" })
     await db
       .delete(tasks)
       .where(
-        and(eq(tasks.id, data.id), eq(tasks.owner, getOwningIdentity(user))),
+        and(eq(tasks.id, data.id), eq(tasks.owner, getOwningIdentity(session))),
       );
     await sync(`task-delete`, { data });
   });
@@ -374,8 +374,8 @@ const setLabelsForTask = createServerFn({ method: "POST" })
     })
   )
   .handler(async ({ data }) => {
-    const user = await auth();
-    const owner = getOwningIdentity(user);
+    const session = await requireSession();
+    const owner = getOwningIdentity(session);
 
     const task = await db.query.tasks.findFirst({
       where: (model, { eq, and }) =>

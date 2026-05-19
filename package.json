@@ -12,8 +12,6 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@clerk/backend": "^2.6.0",
-    "@clerk/tanstack-react-start": "^1.2.7",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -33,6 +31,7 @@
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@t3-oss/env-core": "^0.13.8",
+    "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "^0.7.0",
     "@tanstack/react-query": "^5.81.5",
     "@tanstack/react-query-devtools": "^5.81.5",
@@ -41,12 +40,12 @@
     "@tanstack/react-router-ssr-query": "^1.167.0",
     "@tanstack/react-start": "^1.167.0",
     "@tanstack/react-store": "^0.9.3",
-    "@tailwindcss/vite": "^4.1.18",
     "@tiptap/core": "^2.25.0",
     "@tiptap/extension-text-style": "^2.25.0",
     "@tiptap/react": "^2.25.0",
     "@tiptap/starter-kit": "^2.25.0",
     "@uploadthing/react": "^7.3.2",
+    "better-auth": "^1.6.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -83,7 +82,6 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "@clerk/shared",
       "@parcel/watcher",
       "@tailwindcss/oxide",
       "esbuild",

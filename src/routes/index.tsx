@@ -1,19 +1,24 @@
-import { useUser } from "@clerk/tanstack-react-start";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { authClient } from "~/lib/auth-client";
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const user = useUser();
+  const { data: session, isPending } = authClient.useSession();
   const navigate = useNavigate({ from: "/" });
 
-  if (!user.isSignedIn) {
-    navigate({ to: "/sign-in/$" });
-  } else {
-    navigate({ to: "/dashboard" });
-  }
+  useEffect(() => {
+    if (isPending) return;
+
+    if (!session) {
+      navigate({ to: "/sign-in/$" });
+    } else {
+      navigate({ to: "/dashboard" });
+    }
+  }, [session, isPending, navigate]);
 
   return (
     <div className="flex flex-col justify-center items-center h-screen">

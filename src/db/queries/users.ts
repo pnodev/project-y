@@ -1,29 +1,39 @@
-import { auth, clerkClient } from "@clerk/tanstack-react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { redirect } from "@tanstack/react-router";
+import { db } from "~/db";
+import { user } from "~/db/auth-schema";
+import { formatUserName } from "~/lib/utils";
 
-type User = {
+export type AppUser = {
   id: string;
+  firstname: string;
+  lastname: string;
   name: string;
   avatar: string;
 };
 
 const fetchAllUsers = createServerFn({ method: "GET" }).handler(
-  async (): Promise<User[]> => {
-    const { userId } = await auth();
-    if (!userId) {
-      throw redirect({ to: "/sign-in/$" });
-    }
+  async (): Promise<AppUser[]> => {
+    await requireSession();
 
-    console.info("Fetching users...");
-    const { data: users } = await clerkClient().users.getUserList();
-    return users.map((user) => ({
-      id: user.id,
-      name: user.fullName || "",
-      avatar: user.imageUrl,
+    const users = await db
+      .select({
+        id: user.id,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        avatar: user.image,
+      })
+      .from(user);
+
+    return users.map((u) => ({
+      id: u.id,
+      firstname: u.firstname,
+      lastname: u.lastname,
+      name: formatUserName(u.firstname, u.lastname),
+      avatar: u.avatar ?? "",
     }));
-  },
+  }
 );
 
 export const usersQueryOptions = () =>

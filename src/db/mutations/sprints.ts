@@ -7,7 +7,7 @@ import {
   UpdateSprint,
   updateSprintValidator,
 } from "../schema";
-import { auth } from "@clerk/tanstack-react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { db } from "..";
 import { getOwningIdentity } from "~/lib/utils";
 import { v7 as uuid } from "uuid";
@@ -21,12 +21,12 @@ import { z } from "zod";
 const createSprint = createServerFn({ method: "POST" })
   .inputValidator(insertSprintValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await db.insert(sprints).values({
       ...data,
       id: uuid(),
-      owner: getOwningIdentity(user),
+      owner: getOwningIdentity(session),
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -56,7 +56,7 @@ export function useCreateSprintMutation() {
 const updateSprint = createServerFn({ method: "POST" })
   .inputValidator(updateSprintValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await db
       .update(sprints)
@@ -65,7 +65,7 @@ const updateSprint = createServerFn({ method: "POST" })
         updatedAt: new Date(),
       })
       .where(
-        and(eq(sprints.id, data.id), eq(sprints.owner, getOwningIdentity(user)))
+        and(eq(sprints.id, data.id), eq(sprints.owner, getOwningIdentity(session)))
       );
     await sync("sprint-update-" + data.id, { data });
   });
@@ -96,7 +96,7 @@ export function useUpdateSprintMutation() {
 export const deleteSprint = createServerFn({ method: "POST" })
   .inputValidator(z.object({ sprintId: z.string() }))
   .handler(async ({ data: { sprintId } }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     // remove all tasks from the sprint
     await db
@@ -105,7 +105,7 @@ export const deleteSprint = createServerFn({ method: "POST" })
       .where(
         and(
           eq(tasks.sprintId, sprintId),
-          eq(tasks.owner, getOwningIdentity(user))
+          eq(tasks.owner, getOwningIdentity(session))
         )
       );
 
@@ -114,7 +114,7 @@ export const deleteSprint = createServerFn({ method: "POST" })
       .where(
         and(
           eq(sprints.id, sprintId),
-          eq(sprints.owner, getOwningIdentity(user))
+          eq(sprints.owner, getOwningIdentity(session))
         )
       );
     await sync("sprint-delete", { data: { id: sprintId } });
