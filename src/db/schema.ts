@@ -72,7 +72,11 @@ export const tasks = createTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },
-  (example) => [index("task_owner_idx").on(example.owner)]
+  (example) => [
+    index("task_owner_idx").on(example.owner),
+    index("task_owner_project_idx").on(example.owner, example.projectId),
+    index("task_owner_sprint_idx").on(example.owner, example.sprintId),
+  ]
 );
 
 export const taskAssignees = createTable(
@@ -193,7 +197,10 @@ export const comments = createTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }),
   },
-  (example) => [index("comment_owner_idx").on(example.owner)]
+  (example) => [
+    index("comment_owner_idx").on(example.owner),
+    index("comment_task_owner_idx").on(example.taskId, example.owner),
+  ]
 );
 
 export const attachments = createTable(

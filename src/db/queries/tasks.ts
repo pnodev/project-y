@@ -1,48 +1,117 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
-import { TaskWithRelations } from "../schema";
+import { Project, TaskWithRelations } from "../schema";
 import { requireSession } from "~/lib/auth-functions";
 import { getOwningIdentity } from "~/lib/utils";
 import { useEventSource } from "~/hooks/use-event-source";
 
-const boardTaskRelations = {
-  status: true,
+/** Board cards only need lightweight relations (not full attachments / subtask bodies). */
+export const boardTaskRelationsForProject = {
   labelsToTasks: {
     with: {
       label: true,
     },
   },
-  attachments: true,
-  project: true,
+  attachments: {
+    columns: {
+      id: true,
+    },
+  },
   assignees: true,
   sprint: true,
-  subTasks: true,
+  subTasks: {
+    columns: {
+      id: true,
+      done: true,
+    },
+  },
 } as const;
 
-function mapBoardTasks(
-  rawTasks: Awaited<ReturnType<typeof db.query.tasks.findMany<{ with: typeof boardTaskRelations }>>>
+export const boardTaskRelationsForSprint = {
+  ...boardTaskRelationsForProject,
+  project: true,
+} as const;
+
+export type BoardTaskRow = Awaited<
+  ReturnType<
+    typeof db.query.tasks.findMany<{
+      with: typeof boardTaskRelationsForSprint;
+    }>
+  >
+>[number];
+
+function stubProject(task: BoardTaskRow): Project {
+  return {
+    id: task.projectId,
+    name: "",
+    description: null,
+    owner: task.owner,
+    logo: null,
+    createdAt: task.createdAt,
+    updatedAt: task.updatedAt,
+  };
+}
+
+export function mapBoardTasks(
+  rawTasks: BoardTaskRow[],
+  options: { includeProject: boolean }
 ): TaskWithRelations[] {
   return rawTasks.map((task) => ({
     ...task,
     labels: task.labelsToTasks.map((l) => l.label),
     labelsToTasks: undefined,
+    project:
+      options.includeProject && "project" in task && task.project
+        ? task.project
+        : stubProject(task),
     subTasks: task.subTasks.map((subTask) => ({
       ...subTask,
+      description: null,
+      taskId: task.id,
+      owner: task.owner,
+      projectId: task.projectId,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
       assignees: [],
     })),
-  }));
+  })) as unknown as TaskWithRelations[];
+}
+
+type TaskDetailRow = NonNullable<
+  Awaited<
+    ReturnType<
+      typeof db.query.tasks.findFirst<{
+        with: {
+          status: true;
+          labelsToTasks: { with: { label: true } };
+          attachments: true;
+          project: true;
+          assignees: true;
+          subTasks: { with: { assignees: true } };
+          sprint: true;
+        };
+      }>
+    >
+  >
+>;
+
+export function mapTaskWithRelations(task: TaskDetailRow): TaskWithRelations {
+  const { labelsToTasks, ...taskWithoutLabelsToTasks } = task;
+
+  return {
+    ...taskWithoutLabelsToTasks,
+    labels: labelsToTasks.map((l) => l.label),
+  };
 }
 
 const fetchTasks = createServerFn({ method: "GET" })
   .inputValidator((d: { projectId: string }) => d)
   .handler(async ({ data: { projectId } }): Promise<TaskWithRelations[]> => {
     const session = await requireSession();
-    console.log("Fetching tasks for user:", getOwningIdentity(session));
-    console.info("Fetching tasks for project:", projectId);
 
     const rawTasks = await db.query.tasks.findMany({
-      with: boardTaskRelations,
+      with: boardTaskRelationsForProject,
       where: (model, { eq, and }) =>
         and(
           eq(model.owner, getOwningIdentity(session)),
@@ -50,7 +119,7 @@ const fetchTasks = createServerFn({ method: "GET" })
         ),
     });
 
-    return mapBoardTasks(rawTasks);
+    return mapBoardTasks(rawTasks as BoardTaskRow[], { includeProject: false });
   });
 
 export const tasksQueryOptions = (projectId: string) =>
@@ -80,11 +149,9 @@ const fetchTasksForSprint = createServerFn({ method: "GET" })
   .inputValidator((d: { sprintId: string }) => d)
   .handler(async ({ data: { sprintId } }): Promise<TaskWithRelations[]> => {
     const session = await requireSession();
-    console.log("Fetching tasks for user:", getOwningIdentity(session));
-    console.info("Fetching tasks for sprint:", sprintId);
 
     const rawTasks = await db.query.tasks.findMany({
-      with: boardTaskRelations,
+      with: boardTaskRelationsForSprint,
       where: (model, { eq, and }) =>
         and(
           eq(model.owner, getOwningIdentity(session)),
@@ -92,7 +159,7 @@ const fetchTasksForSprint = createServerFn({ method: "GET" })
         ),
     });
 
-    return mapBoardTasks(rawTasks);
+    return mapBoardTasks(rawTasks, { includeProject: true });
   });
 
 export const tasksForSprintQueryOptions = (sprintId: string) =>
@@ -121,7 +188,6 @@ export const useTasksForSprintQuery = (sprintId: string) => {
 export const fetchTask = createServerFn({ method: "GET" })
   .inputValidator((d: string) => d)
   .handler(async ({ data }): Promise<TaskWithRelations | null> => {
-    console.info("Fetching task...");
     const session = await requireSession();
     const task = await db.query.tasks.findFirst({
       where(fields, operators) {
@@ -151,12 +217,7 @@ export const fetchTask = createServerFn({ method: "GET" })
 
     if (!task) return null;
 
-    const { labelsToTasks, ...taskWithoutLabelsToTasks } = task;
-
-    return {
-      ...taskWithoutLabelsToTasks,
-      labels: labelsToTasks.map((l) => l.label),
-    };
+    return mapTaskWithRelations(task);
   });
 
 export const taskQueryOptions = (id: string) =>

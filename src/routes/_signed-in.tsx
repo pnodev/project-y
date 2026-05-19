@@ -3,23 +3,17 @@ import { AppSidebar } from "~/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { SiteHeader } from "~/components/site-header";
 import { useOrganizationCacheClear } from "~/hooks/organization-cache-clear";
-import { requireSession } from "~/lib/auth-functions";
-import { projectsQueryOptions } from "~/db/queries/projects";
-import { sprintsQueryOptions } from "~/db/queries/sprints";
+import { fetchSidebarBundle } from "~/db/queries/bundles";
+import { hydrateSidebarCache } from "~/db/queries/hydrate-query-cache";
 import { useRouterState } from "@tanstack/react-router";
 import { TopLoadingState } from "~/components/TopLoadingState";
 
 export const Route = createFileRoute("/_signed-in")({
   loader: async ({ context }) => {
-    await Promise.all([
-      context.queryClient.ensureQueryData(projectsQueryOptions()),
-      context.queryClient.ensureQueryData(sprintsQueryOptions()),
-    ]);
+    const bundle = await fetchSidebarBundle();
+    hydrateSidebarCache(context.queryClient, bundle);
   },
   component: PathlessLayoutComponent,
-  beforeLoad: async () => {
-    await requireSession();
-  },
 });
 
 function PathlessLayoutComponent() {

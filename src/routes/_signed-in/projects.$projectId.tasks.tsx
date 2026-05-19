@@ -11,10 +11,12 @@ import { useUpdateTaskMutation } from "~/db/mutations/tasks";
 import { BoardView } from "~/components/views/BoardView";
 import { Priority, UpdateTask } from "~/db/schema";
 import { PageLayout } from "~/components/PageLayout";
-import { statusesQueryOptions, useStatusesQuery } from "~/db/queries/statuses";
-import { projectQueryOptions, useProjectQuery } from "~/db/queries/projects";
+import { useStatusesQuery } from "~/db/queries/statuses";
+import { useProjectQuery } from "~/db/queries/projects";
 import { EndlessLoadingSpinner } from "~/components/EndlessLoadingSpinner";
-import { tasksQueryOptions, useTasksQuery } from "~/db/queries/tasks";
+import { useTasksQuery } from "~/db/queries/tasks";
+import { fetchProjectBoardBundle } from "~/db/queries/bundles";
+import { hydrateProjectBoardCache } from "~/db/queries/hydrate-query-cache";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,11 +38,8 @@ import { ButtonGroup } from "~/components/ui/button-group";
 export const Route = createFileRoute("/_signed-in/projects/$projectId/tasks")({
   loader: async ({ context, params }) => {
     const { projectId } = params;
-    await Promise.all([
-      context.queryClient.ensureQueryData(projectQueryOptions(projectId)),
-      context.queryClient.ensureQueryData(tasksQueryOptions(projectId)),
-      context.queryClient.ensureQueryData(statusesQueryOptions()),
-    ]);
+    const bundle = await fetchProjectBoardBundle({ data: { projectId } });
+    hydrateProjectBoardCache(context.queryClient, projectId, bundle);
   },
   component: Home,
 });
