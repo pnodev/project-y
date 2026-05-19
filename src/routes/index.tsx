@@ -20,9 +20,5 @@ function RouteComponent() {
     }
   }, [session, isPending, navigate]);
 
-  return (
-    <div className="flex flex-col justify-center items-center h-screen">
-      Welcome to Project Y
-    </div>
-  );
+  return null;
 }

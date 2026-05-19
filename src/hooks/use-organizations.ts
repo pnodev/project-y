@@ -61,7 +61,7 @@ export function useOrganizations() {
   return {
     organizations,
     activeOrg,
-    activeOrganizationId: session?.session.activeOrganizationId ?? null,
+    activeOrganizationId: activeOrg?.id ?? null,
     isLoading,
     loadOrganizations,
     syncActiveOrg,

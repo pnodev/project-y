@@ -82,21 +82,27 @@ export function OrganizationMembersSection({
 
   const onInvite = async (values: InviteFormValues) => {
     setIsInviting(true);
-    const { error } = await authClient.organization.inviteMember({
-      email: values.email,
-      role: values.role,
-      organizationId,
-    });
-    setIsInviting(false);
+    try {
+      const { error } = await authClient.organization.inviteMember({
+        email: values.email,
+        role: values.role,
+        organizationId,
+      });
 
-    if (error) {
-      toast.error(error.message ?? "Failed to send invitation");
-      return;
+      if (error) {
+        toast.error(error.message ?? "Failed to send invitation");
+        return;
+      }
+
+      form.reset({ email: "", role: "member" });
+      toast.success("Invitation sent");
+      onChanged();
+    } catch (error) {
+      console.error("Failed to send invitation", error);
+      toast.error("Failed to send invitation");
+    } finally {
+      setIsInviting(false);
     }
-
-    form.reset({ email: "", role: "member" });
-    toast.success("Invitation sent");
-    onChanged();
   };
 
   const handleRemove = useCallback(

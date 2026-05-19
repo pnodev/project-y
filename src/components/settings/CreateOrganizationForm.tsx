@@ -52,7 +52,17 @@ export function CreateOrganizationForm() {
       return;
     }
 
-    await authClient.organization.setActive({ organizationId: data.id });
+    const { error: setActiveError } = await authClient.organization.setActive({
+      organizationId: data.id,
+    });
+
+    if (setActiveError) {
+      toast.error(
+        setActiveError.message ?? "Organization created but failed to activate it"
+      );
+      return;
+    }
+
     toast.success("Organization created");
     navigate({ to: "/settings/organization" });
   };

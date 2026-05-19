@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { EndlessLoadingSpinner } from "~/components/EndlessLoadingSpinner";
 import { PageLayout } from "~/components/PageLayout";
 import { Button } from "~/components/ui/button";
@@ -37,10 +37,14 @@ function RouteComponent() {
   const { activeOrganizationId, loadOrganizations } = useOrganizations();
   const [fullOrg, setFullOrg] = useState<FullOrganization | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const loadRequestIdRef = useRef(0);
 
   const loadFullOrg = useCallback(async () => {
+    const requestId = ++loadRequestIdRef.current;
+
     if (!activeOrganizationId) {
       setFullOrg(null);
+      setIsLoading(false);
       return;
     }
 
@@ -48,10 +52,16 @@ function RouteComponent() {
     const { data, error } = await authClient.organization.getFullOrganization({
       query: { organizationId: activeOrganizationId, membersLimit: 100 },
     });
+
+    if (requestId !== loadRequestIdRef.current) {
+      return;
+    }
+
     setIsLoading(false);
 
     if (error) {
       console.error(error);
+      setFullOrg(null);
       return;
     }
 

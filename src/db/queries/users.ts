@@ -1,8 +1,9 @@
 import { requireSession } from "~/lib/auth-functions";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
+import { eq } from "drizzle-orm";
 import { db } from "~/db";
-import { user } from "~/db/auth-schema";
+import { member, user } from "~/db/auth-schema";
 import { formatUserName } from "~/lib/utils";
 
 export type AppUser = {
@@ -15,16 +16,29 @@ export type AppUser = {
 
 const fetchAllUsers = createServerFn({ method: "GET" }).handler(
   async (): Promise<AppUser[]> => {
-    await requireSession();
+    const session = await requireSession();
+    const organizationId = session.session.activeOrganizationId;
 
-    const users = await db
-      .select({
-        id: user.id,
-        firstname: user.firstname,
-        lastname: user.lastname,
-        avatar: user.image,
-      })
-      .from(user);
+    const users = organizationId
+      ? await db
+          .select({
+            id: user.id,
+            firstname: user.firstname,
+            lastname: user.lastname,
+            avatar: user.image,
+          })
+          .from(user)
+          .innerJoin(member, eq(member.userId, user.id))
+          .where(eq(member.organizationId, organizationId))
+      : await db
+          .select({
+            id: user.id,
+            firstname: user.firstname,
+            lastname: user.lastname,
+            avatar: user.image,
+          })
+          .from(user)
+          .where(eq(user.id, session.user.id));
 
     return users.map((u) => ({
       id: u.id,

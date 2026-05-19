@@ -122,7 +122,7 @@ export function OpenTask({
         author: currentUserId,
       });
     },
-    [createComment, task]
+    [createComment, task, currentUserId]
   );
 
   const handleUpload = useCallback(
@@ -151,7 +151,7 @@ export function OpenTask({
         })
       );
     },
-    [createAttachment, task]
+    [createAttachment, task, currentUserId]
   );
 
   const owner = useCurrentOwningIdentity();

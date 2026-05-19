@@ -1,13 +1,22 @@
 -- Restore profile images from Clerk (one-time).
--- Get URLs from Clerk Dashboard → Users / Organizations → profile image URL.
--- Clerk URLs often look like: https://img.clerk.com/...
+-- Replace the two URL variables below, then run.
 
--- User profile photo
-UPDATE "user"
-SET image = 'https://REPLACE_WITH_CLERK_USER_IMAGE_URL'
-WHERE id = 'F2LaBzrU26nMG3dVl8uBsBbNq69FeaT2';
+DO $$
+DECLARE
+  clerk_user_image_url text := 'https://REPLACE_WITH_CLERK_USER_IMAGE_URL';
+  clerk_org_logo_url text := 'https://REPLACE_WITH_CLERK_ORG_IMAGE_URL';
+BEGIN
+  IF clerk_user_image_url LIKE '%REPLACE_WITH%'
+     OR clerk_org_logo_url LIKE '%REPLACE_WITH%' THEN
+    RAISE EXCEPTION
+      'Replace clerk_user_image_url and clerk_org_logo_url with real Clerk image URLs before running this migration.';
+  END IF;
 
--- Organization logo
-UPDATE organization
-SET logo = 'https://REPLACE_WITH_CLERK_ORG_IMAGE_URL'
-WHERE id = 'YVWL19ooaw0qTkFISrp6ng3d0I648Ykn';
+  UPDATE "user"
+  SET image = clerk_user_image_url
+  WHERE id = 'F2LaBzrU26nMG3dVl8uBsBbNq69FeaT2';
+
+  UPDATE organization
+  SET logo = clerk_org_logo_url
+  WHERE id = 'YVWL19ooaw0qTkFISrp6ng3d0I648Ykn';
+END $$;

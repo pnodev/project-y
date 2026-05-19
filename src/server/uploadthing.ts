@@ -5,6 +5,16 @@ import { auth } from "~/lib/auth";
 
 const f = createUploadthing();
 
+async function uploadAuthMiddleware() {
+  const session = await auth.api.getSession({
+    headers: getRequestHeaders(),
+  });
+
+  if (!session) throw new UploadThingError("Unauthorized");
+
+  return { uploadedBy: session.user.id };
+}
+
 export const uploadRouter = {
   attachmentUploader: f({
     image: {
@@ -12,15 +22,7 @@ export const uploadRouter = {
       maxFileCount: 10,
     },
   })
-    .middleware(async () => {
-      const session = await auth.api.getSession({
-        headers: getRequestHeaders(),
-      });
-
-      if (!session) throw new UploadThingError("Unauthorized");
-
-      return { uploadedBy: session.user.id };
-    })
+    .middleware(uploadAuthMiddleware)
     .onUploadComplete(async ({ metadata }) => {
       return {
         uploadedBy: metadata.uploadedBy,
@@ -32,15 +34,7 @@ export const uploadRouter = {
       maxFileCount: 1,
     },
   })
-    .middleware(async () => {
-      const session = await auth.api.getSession({
-        headers: getRequestHeaders(),
-      });
-
-      if (!session) throw new UploadThingError("Unauthorized");
-
-      return { uploadedBy: session.user.id };
-    })
+    .middleware(uploadAuthMiddleware)
     .onUploadComplete(async ({ metadata }) => {
       return {
         uploadedBy: metadata.uploadedBy,
@@ -52,15 +46,7 @@ export const uploadRouter = {
       maxFileCount: 1,
     },
   })
-    .middleware(async () => {
-      const session = await auth.api.getSession({
-        headers: getRequestHeaders(),
-      });
-
-      if (!session) throw new UploadThingError("Unauthorized");
-
-      return { uploadedBy: session.user.id };
-    })
+    .middleware(uploadAuthMiddleware)
     .onUploadComplete(async ({ metadata }) => {
       return {
         uploadedBy: metadata.uploadedBy,

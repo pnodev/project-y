@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,6 +45,13 @@ export function OrganizationSettingsForm({
       slug: organization.slug,
     },
   });
+
+  useEffect(() => {
+    form.reset({
+      name: organization.name,
+      slug: organization.slug,
+    });
+  }, [organization.id, organization.name, organization.slug, form]);
 
   const handleLogoUpload = async (logo: string) => {
     const { error } = await authClient.organization.update({

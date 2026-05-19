@@ -13,14 +13,27 @@ export function useCurrentOwningIdentity() {
       return;
     }
 
-    void authClient.organization.getFullOrganization().then(({ data }) => {
-      if (data) {
-        setOrg({
-          name: data.name,
-          avatar: data.logo ?? "",
-        });
-      }
-    });
+    let cancelled = false;
+
+    void authClient.organization
+      .getFullOrganization({
+        query: { organizationId: activeOrgId },
+      })
+      .then(({ data }) => {
+        if (cancelled || session?.session.activeOrganizationId !== activeOrgId) {
+          return;
+        }
+        if (data) {
+          setOrg({
+            name: data.name,
+            avatar: data.logo ?? "",
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [session?.session.activeOrganizationId]);
 
   if (org) {

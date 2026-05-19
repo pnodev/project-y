@@ -25,18 +25,37 @@ export function OrganizationDangerZone({
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    const { error } = await authClient.organization.delete({ organizationId });
-    setIsDeleting(false);
+    try {
+      const { error: deleteError } = await authClient.organization.delete({
+        organizationId,
+      });
 
-    if (error) {
-      toast.error(error.message ?? "Failed to delete organization");
-      return;
+      if (deleteError) {
+        toast.error(deleteError.message ?? "Failed to delete organization");
+        return;
+      }
+
+      const { error: setActiveError } = await authClient.organization.setActive({
+        organizationId: null,
+      });
+
+      if (setActiveError) {
+        toast.error(
+          setActiveError.message ??
+            "Organization deleted but failed to clear active organization"
+        );
+        return;
+      }
+
+      onDeleted();
+      toast.success("Organization deleted");
+      navigate({ to: "/dashboard" });
+    } catch (error) {
+      console.error("Failed to delete organization", error);
+      toast.error("Failed to delete organization");
+    } finally {
+      setIsDeleting(false);
     }
-
-    await authClient.organization.setActive({ organizationId: null });
-    onDeleted();
-    toast.success("Organization deleted");
-    navigate({ to: "/dashboard" });
   };
 
   return (

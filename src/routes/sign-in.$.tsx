@@ -70,10 +70,15 @@ function RouteComponent() {
   };
 
   const handleGoogleSignIn = async () => {
-    await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "/dashboard",
-    });
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard",
+      });
+    } catch (error) {
+      console.error("Google sign-in failed", { provider: "google", error });
+      toast.error("Google sign-in failed. Please try again.");
+    }
   };
 
   return (

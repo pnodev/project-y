@@ -34,13 +34,12 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
+          const nameParts = user.name?.split(" ") ?? [];
           const firstname =
-            (user.firstname as string | undefined) ??
-            user.name?.split(" ")[0] ??
-            "";
+            (user.firstname as string | undefined) ?? nameParts[0] ?? "";
           const lastname =
             (user.lastname as string | undefined) ??
-            user.name?.split(" ").slice(1).join(" ") ??
+            nameParts.slice(1).join(" ") ??
             "";
           return {
             data: {
@@ -59,12 +58,13 @@ export const auth = betterAuth({
           if (firstname === undefined && lastname === undefined) {
             return { data: user };
           }
+          const updateNameParts = (user.name as string | undefined)?.split(" ") ?? [];
           return {
             data: {
               ...user,
               name: formatUserName(
-                firstname ?? (user.name as string)?.split(" ")[0],
-                lastname ?? (user.name as string)?.split(" ").slice(1).join(" ")
+                firstname ?? updateNameParts[0],
+                lastname ?? updateNameParts.slice(1).join(" ")
               ),
             },
           };
@@ -92,9 +92,11 @@ export const auth = betterAuth({
           console.info(
             `[organization invite] ${data.email} → ${inviteLink}`
           );
+          return;
         }
-        // Wire to your email provider in production.
-        void inviteLink;
+        throw new Error(
+          "Organization invitations require a production email provider. Configure sendInvitationEmail in src/lib/auth.ts."
+        );
       },
     }),
     tanstackStartCookies(),

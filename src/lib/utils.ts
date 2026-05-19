@@ -34,6 +34,16 @@ export const getInitials = (
     .toUpperCase();
 };
 
+export function getUserInitials(user: {
+  firstname?: string | null;
+  lastname?: string | null;
+  name?: string | null;
+}) {
+  const fromNames = getInitials(user.firstname ?? undefined, user.lastname ?? undefined);
+  if (fromNames) return fromNames;
+  return getInitials(user.name ?? undefined);
+}
+
 export const getFormattedDateString = (date: Date) => {
   return date.toLocaleDateString(undefined, {
     day: "2-digit",
