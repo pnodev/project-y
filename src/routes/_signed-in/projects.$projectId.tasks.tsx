@@ -36,9 +36,11 @@ import { ButtonGroup } from "~/components/ui/button-group";
 export const Route = createFileRoute("/_signed-in/projects/$projectId/tasks")({
   loader: async ({ context, params }) => {
     const { projectId } = params;
-    await context.queryClient.ensureQueryData(projectQueryOptions(projectId));
-    await context.queryClient.ensureQueryData(tasksQueryOptions(projectId));
-    await context.queryClient.ensureQueryData(statusesQueryOptions());
+    await Promise.all([
+      context.queryClient.ensureQueryData(projectQueryOptions(projectId)),
+      context.queryClient.ensureQueryData(tasksQueryOptions(projectId)),
+      context.queryClient.ensureQueryData(statusesQueryOptions()),
+    ]);
   },
   component: Home,
 });

@@ -23,6 +23,7 @@ export const labelsQueryOptions = () =>
   queryOptions({
     queryKey: ["labels"],
     queryFn: () => fetchLabels(),
+    staleTime: 5 * 60_000,
   });
 
 export const useLabelsQuery = () => {

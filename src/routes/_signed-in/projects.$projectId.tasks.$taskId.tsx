@@ -9,10 +9,12 @@ export const Route = createFileRoute(
   "/_signed-in/projects/$projectId/tasks/$taskId"
 )({
   loader: async ({ context, params }) => {
-    await context.queryClient.ensureQueryData(taskQueryOptions(params.taskId));
-    await context.queryClient.ensureQueryData(labelsQueryOptions());
-    await context.queryClient.ensureQueryData(commentsQueryOptions());
-    await context.queryClient.ensureQueryData(statusesQueryOptions());
+    await Promise.all([
+      context.queryClient.ensureQueryData(taskQueryOptions(params.taskId)),
+      context.queryClient.ensureQueryData(labelsQueryOptions()),
+      context.queryClient.ensureQueryData(commentsQueryOptions(params.taskId)),
+      context.queryClient.ensureQueryData(statusesQueryOptions()),
+    ]);
   },
   component: RouteComponent,
 });

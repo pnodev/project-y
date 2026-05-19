@@ -24,6 +24,7 @@ export const statusesQueryOptions = () =>
   queryOptions({
     queryKey: ["statuses"],
     queryFn: () => fetchStatuses(),
+    staleTime: 5 * 60_000,
   });
 
 export const useStatusesQuery = () => {

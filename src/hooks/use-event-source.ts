@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useEffectEvent } from "react";
 
 export function useEventSource({
   topics,
@@ -7,22 +7,29 @@ export function useEventSource({
   topics: string[];
   callback: (data: any) => void;
 }) {
+  const topicsKey = [...topics].sort().join("\0");
+
+  const onUpdate = useEffectEvent((data: unknown) => {
+    callback(data);
+  });
+
   useEffect(() => {
+    const sortedTopics = topicsKey ? topicsKey.split("\0") : [];
     const appId = "676bb0d1-942d-465a-a706-4ee451177507";
     let topicsString = "?";
-    topics.forEach((topic) => {
+    sortedTopics.forEach((topic) => {
       if (topicsString !== "?") topicsString += "&";
       topicsString += `topic[]=${topic}`;
     });
     const sse = new EventSource(
-      `https://sync-connect.pno.dev/stream/${appId}${topicsString}`
+      `https://sync-connect.pno.dev/stream/${appId}${topicsString}`,
     );
-    sse.addEventListener("update", (data) => {
-      callback(data);
+    sse.addEventListener("update", (event) => {
+      onUpdate(event.data);
     });
 
     return () => {
       sse.close();
     };
-  }, [topics]);
+  }, [topicsKey]);
 }
