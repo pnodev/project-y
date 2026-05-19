@@ -16,7 +16,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { and, eq } from "drizzle-orm";
 import { auth } from "@clerk/tanstack-react-start/server";
-import { getRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
 

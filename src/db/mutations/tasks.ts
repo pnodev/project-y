@@ -20,7 +20,6 @@ import { useCallback } from "react";
 import { and, eq, inArray } from "drizzle-orm";
 import z from "zod";
 import { auth } from "@clerk/tanstack-react-start/server";
-import { getRequest } from "@tanstack/react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
 import { deleteAttachment } from "./attachments";
@@ -263,9 +262,8 @@ const deleteTask = createServerFn({ method: "POST" })
     await db
       .delete(tasks)
       .where(
-        and(eq(tasks.id, data.id), eq(tasks.owner, getOwningIdentity(user)))
+        and(eq(tasks.id, data.id), eq(tasks.owner, getOwningIdentity(user))),
       );
-    await db.delete(tasks).where(eq(tasks.id, data.id));
     await sync(`task-delete`, { data });
   });
 

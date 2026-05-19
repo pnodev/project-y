@@ -16,7 +16,6 @@ import { useCallback } from "react";
 import { and, eq } from "drizzle-orm";
 import { getOwningIdentity } from "~/lib/utils";
 import { auth } from "@clerk/tanstack-react-start/server";
-import { getRequest } from "@tanstack/react-start/server";
 import { sync } from "./sync";
 
 const createLabel = createServerFn({ method: "POST" })

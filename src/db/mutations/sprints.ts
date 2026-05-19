@@ -8,7 +8,6 @@ import {
   updateSprintValidator,
 } from "../schema";
 import { auth } from "@clerk/tanstack-react-start/server";
-import { getRequest } from "@tanstack/react-start/server";
 import { db } from "..";
 import { getOwningIdentity } from "~/lib/utils";
 import { v7 as uuid } from "uuid";
@@ -17,6 +16,7 @@ import { useCallback } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 
 const createSprint = createServerFn({ method: "POST" })
   .inputValidator(insertSprintValidator)
@@ -94,7 +94,7 @@ export function useUpdateSprintMutation() {
 }
 
 export const deleteSprint = createServerFn({ method: "POST" })
-  .inputValidator((d: { sprintId: string }) => d)
+  .inputValidator(z.object({ sprintId: z.string() }))
   .handler(async ({ data: { sprintId } }) => {
     const user = await auth();
 

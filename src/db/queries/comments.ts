@@ -21,12 +21,14 @@ const fetchCommentsForTask = createServerFn({ method: "GET" })
     });
 
     return Promise.all(
-      rawData.map(async (comment) => ({
-        ...comment,
-        author: (await clerkClient().users.getUser(comment.author)).fullName,
-        authorAvatar: (await clerkClient().users.getUser(comment.author))
-          .imageUrl,
-      }))
+      rawData.map(async (comment) => {
+        const user = await clerkClient().users.getUser(comment.author);
+        return {
+          ...comment,
+          author: user.fullName,
+          authorAvatar: user.imageUrl,
+        };
+      }),
     );
   });
 

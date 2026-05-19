@@ -5,7 +5,6 @@ import {
   insertAttachmentValidator,
 } from "../schema";
 import { auth } from "@clerk/tanstack-react-start/server";
-import { getRequest } from "@tanstack/react-start/server";
 import { db } from "..";
 import { v7 as uuid } from "uuid";
 import { getOwningIdentity } from "~/lib/utils";
