@@ -5,6 +5,7 @@ import {
   CreateTask,
   insertTaskValidator,
   Label,
+  labels,
   labelsToTasks,
   Task,
   taskAssignees,
@@ -83,6 +84,13 @@ const assignTask = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const user = await auth();
+    const owner = getOwningIdentity(user);
+
+    const task = await db.query.tasks.findFirst({
+      where: (model, { eq, and }) =>
+        and(eq(model.id, data.taskId), eq(model.owner, owner)),
+    });
+    if (!task) return;
 
     // Get existing assignees for this task
     const existingAssignees = await db.query.taskAssignees.findMany({
@@ -99,7 +107,7 @@ const assignTask = createServerFn({ method: "POST" })
         newUserIds.map((userId) => ({
           id: uuid(),
           taskId: data.taskId,
-          owner: getOwningIdentity(user),
+          owner,
           userId: userId,
           assignedAt: new Date(),
           updatedAt: new Date(),
@@ -120,14 +128,22 @@ const unassignTask = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const user = await auth();
+    const owner = getOwningIdentity(user);
+
+    const task = await db.query.tasks.findFirst({
+      where: (model, { eq, and }) =>
+        and(eq(model.id, data.taskId), eq(model.owner, owner)),
+    });
+    if (!task) return;
+
     await db
       .delete(taskAssignees)
       .where(
         and(
           eq(taskAssignees.taskId, data.taskId),
           inArray(taskAssignees.userId, data.userIds),
-          eq(taskAssignees.owner, getOwningIdentity(user))
-        )
+          eq(taskAssignees.owner, owner),
+        ),
       );
     await sync(`task-update-${data.taskId}`, { data });
   });
@@ -298,6 +314,23 @@ const setLabelsForTask = createServerFn({ method: "POST" })
     })
   )
   .handler(async ({ data }) => {
+    const user = await auth();
+    const owner = getOwningIdentity(user);
+
+    const task = await db.query.tasks.findFirst({
+      where: (model, { eq, and }) =>
+        and(eq(model.id, data.taskId), eq(model.owner, owner)),
+    });
+    if (!task) return;
+
+    if (data.labelIds.length > 0) {
+      const ownedLabels = await db.query.labels.findMany({
+        where: (model, { eq, and, inArray }) =>
+          and(inArray(model.id, data.labelIds), eq(model.owner, owner)),
+      });
+      if (ownedLabels.length !== data.labelIds.length) return;
+    }
+
     // Remove existing labels for the task
     await db.delete(labelsToTasks).where(eq(labelsToTasks.taskId, data.taskId));
 
