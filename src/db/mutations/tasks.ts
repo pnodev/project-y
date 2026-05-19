@@ -23,7 +23,7 @@ import z from "zod";
 import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
-import { deleteAttachment } from "./attachments";
+import { deleteAttachmentForOwner } from "./attachments";
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -330,9 +330,10 @@ const deleteTask = createServerFn({ method: "POST" })
         and(eq(model.id, data.id), eq(model.owner, getOwningIdentity(session))),
     });
     if (!task) return;
+    const owner = getOwningIdentity(session);
     await Promise.all(
       task.attachments.map((attachment) =>
-        deleteAttachment({ data: { id: attachment.id } })
+        deleteAttachmentForOwner(owner, attachment.id)
       )
     );
     await db

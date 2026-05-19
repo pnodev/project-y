@@ -56,31 +56,35 @@ export function useCreateAttachmentMutation() {
   );
 }
 
+export async function deleteAttachmentForOwner(
+  owner: string,
+  attachmentId: string
+) {
+  const attachment = await db.query.attachments.findFirst({
+    where: (model, { eq, and }) =>
+      and(eq(model.id, attachmentId), eq(model.owner, owner)),
+  });
+  if (!attachment) return;
+
+  const utapi = new UTApi();
+  utapi.deleteFiles([attachment.providerFileId]);
+  await db
+    .delete(attachments)
+    .where(
+      and(eq(attachments.id, attachmentId), eq(attachments.owner, owner))
+    );
+
+  await sync(`attachment-update-${attachmentId}`, { data: { id: attachmentId } });
+  await sync(`task-update-${attachment.taskId}`, { data: { id: attachmentId } });
+
+  return { id: attachmentId, taskId: attachment.taskId };
+}
+
 export const deleteAttachment = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
     const session = await requireSessionFromRequest();
-
-    const attachment = await db.query.attachments.findFirst({
-      where: (model, { eq, and }) =>
-        and(eq(model.id, data.id), eq(model.owner, getOwningIdentity(session))),
-    });
-    if (!attachment) return;
-    const utapi = new UTApi();
-    utapi.deleteFiles([attachment?.providerFileId]);
-    await db
-      .delete(attachments)
-      .where(
-        and(
-          eq(attachments.id, data.id),
-          eq(attachments.owner, getOwningIdentity(session))
-        )
-      );
-
-    await sync(`attachment-update-${data.id}`, { data });
-    await sync(`task-update-${attachment?.taskId}`, { data });
-
-    return { id: data.id, taskId: attachment?.taskId };
+    return deleteAttachmentForOwner(getOwningIdentity(session), data.id);
   });
 
 export function useDeleteAttachmentMutation() {

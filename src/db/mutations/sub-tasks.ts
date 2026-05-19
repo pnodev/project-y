@@ -131,6 +131,8 @@ const deleteSubTask = createServerFn({ method: "POST" })
         );
       },
     });
+    if (!subTask) return;
+
     await db
       .delete(subTasks)
       .where(
@@ -140,7 +142,7 @@ const deleteSubTask = createServerFn({ method: "POST" })
         )
       );
 
-    await sync(`task-update-${data.id}`, { data });
+    await sync(`task-update-${subTask.taskId}`, { data });
     return subTask;
   });
 
