@@ -24,8 +24,8 @@ export function useEventSource({
     const sse = new EventSource(
       `https://sync-connect.pno.dev/stream/${appId}${topicsString}`,
     );
-    sse.addEventListener("update", (data) => {
-      onUpdate(data);
+    sse.addEventListener("update", (event) => {
+      onUpdate(event.data);
     });
 
     return () => {
