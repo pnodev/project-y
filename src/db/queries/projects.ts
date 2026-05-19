@@ -1,13 +1,13 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
 import { useEventSource } from "~/hooks/use-event-source";
 
 const fetchProjects = createServerFn({ method: "GET" }).handler(async () => {
   console.info("Fetching projects...");
-  const session = await requireSession();
+  const session = await requireSessionFromRequest();
   return await db.query.projects.findMany({
     where: (model, { eq }) => eq(model.owner, getOwningIdentity(session)),
   });
@@ -40,7 +40,7 @@ const fetchProject = createServerFn({ method: "GET" })
   .inputValidator((d: { projectId: string }) => d)
   .handler(async ({ data: { projectId } }) => {
     console.info("Fetching project...");
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
     return await db.query.projects.findFirst({
       where: (model, { eq, and }) =>
         and(eq(model.id, projectId), eq(model.owner, getOwningIdentity(session))),

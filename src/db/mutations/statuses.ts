@@ -15,14 +15,14 @@ import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { and, eq } from "drizzle-orm";
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
 
 const createStatus = createServerFn({ method: "POST" })
   .inputValidator(insertStatusValidator)
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await db.insert(statuses).values({
       ...data,
@@ -60,7 +60,7 @@ export function useCreateStatusMutation() {
 const updateStatus = createServerFn({ method: "POST" })
   .inputValidator(updateStatusValidator)
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await db
       .update(statuses)
@@ -105,7 +105,7 @@ export function useUpdateStatusMutation() {
 const updateMultipleStatuses = createServerFn({ method: "POST" })
   .inputValidator(updateMultipleStatusesValidator)
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await Promise.all(
       data.map(async (entry) => {
@@ -169,7 +169,7 @@ export function useUpdateMultipleStatusesMutation() {
 const deleteStatus = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await db
       .update(tasks)

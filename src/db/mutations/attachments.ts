@@ -4,7 +4,7 @@ import {
   CreateAttachment,
   insertAttachmentValidator,
 } from "../schema";
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { db } from "..";
 import { v7 as uuid } from "uuid";
 import { getOwningIdentity } from "~/lib/utils";
@@ -19,7 +19,7 @@ import { UTApi } from "uploadthing/server";
 const createAttachment = createServerFn({ method: "POST" })
   .inputValidator(insertAttachmentValidator)
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await db.insert(attachments).values({
       ...data,
@@ -59,7 +59,7 @@ export function useCreateAttachmentMutation() {
 export const deleteAttachment = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     const attachment = await db.query.attachments.findFirst({
       where: (model, { eq, and }) =>

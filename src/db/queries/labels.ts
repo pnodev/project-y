@@ -3,14 +3,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import { labels, labelsToTasks } from "~/db/schema";
 import { asc, eq, sql } from "drizzle-orm";
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
 import { useEventSource } from "~/hooks/use-event-source";
 
 export const fetchLabels = createServerFn({ method: "GET" }).handler(
   async () => {
     console.info("Fetching labels...");
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
     return await db.query.labels.findMany({
       where: (model, { eq }) => eq(model.owner, getOwningIdentity(session)),
       orderBy: (fields, { asc }) => [asc(fields.order)],
@@ -46,7 +46,7 @@ export const fetchLabelsWithTaskCounts = createServerFn({
   method: "GET",
 }).handler(async () => {
   console.info("Fetching labels with task counts...");
-  const session = await requireSession();
+  const session = await requireSessionFromRequest();
   const labelsWithCounts = await db
     .select({
       id: labels.id,

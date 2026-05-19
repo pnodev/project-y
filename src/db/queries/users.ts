@@ -1,4 +1,4 @@
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
@@ -55,7 +55,7 @@ export async function getUsersForSession(
 
 const fetchAllUsers = createServerFn({ method: "GET" }).handler(
   async (): Promise<AppUser[]> => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
     return getUsersForSession(session);
   }
 );

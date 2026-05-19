@@ -20,7 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { and, eq, inArray } from "drizzle-orm";
 import z from "zod";
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
 import { deleteAttachment } from "./attachments";
@@ -54,7 +54,7 @@ function getTaskListQueryKeys(
 const createTask = createServerFn({ method: "POST" })
   .inputValidator(insertTaskValidator)
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     const newTask = {
       id: uuid(),
@@ -109,7 +109,7 @@ const assignTask = createServerFn({ method: "POST" })
     })
   )
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
     const owner = getOwningIdentity(session);
 
     const task = await db.query.tasks.findFirst({
@@ -153,7 +153,7 @@ const unassignTask = createServerFn({ method: "POST" })
     })
   )
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
     const owner = getOwningIdentity(session);
 
     const task = await db.query.tasks.findFirst({
@@ -231,7 +231,7 @@ const updateTask = createServerFn({ method: "POST" })
   .inputValidator(updateTaskValidator)
   .handler(async ({ data }) => {
     try {
-      const session = await requireSession();
+      const session = await requireSessionFromRequest();
       const { id, ...updates } = data;
 
       const setValues = Object.fromEntries(
@@ -321,7 +321,7 @@ export function useUpdateTaskMutation() {
 const deleteTask = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
     const task = await db.query.tasks.findFirst({
       with: {
         attachments: true,
@@ -374,7 +374,7 @@ const setLabelsForTask = createServerFn({ method: "POST" })
     })
   )
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
     const owner = getOwningIdentity(session);
 
     const task = await db.query.tasks.findFirst({

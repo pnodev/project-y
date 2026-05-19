@@ -8,7 +8,7 @@ import {
   UpdateSubTask,
   updateSubTaskValidator,
 } from "../schema";
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { db } from "..";
 import { v7 as uuid } from "uuid";
 import { getOwningIdentity } from "~/lib/utils";
@@ -22,7 +22,7 @@ import z from "zod";
 const createSubTask = createServerFn({ method: "POST" })
   .inputValidator(insertSubTaskValidator)
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await db.insert(subTasks).values({
       ...data,
@@ -57,7 +57,7 @@ export function useCreateSubTaskMutation() {
 const updateSubTask = createServerFn({ method: "POST" })
   .inputValidator(updateSubTaskValidator)
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await db
       .update(subTasks)
@@ -121,7 +121,7 @@ export function useUpdateSubTaskMutation() {
 const deleteSubTask = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     const subTask = await db.query.subTasks.findFirst({
       where(fields, operators) {
@@ -176,7 +176,7 @@ const unassignSubTask = createServerFn({ method: "POST" })
     })
   )
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
     const subTask = await db.query.subTasks.findFirst({
       where(fields, operators) {
         return operators.and(
@@ -226,7 +226,7 @@ const assignSubTask = createServerFn({ method: "POST" })
     })
   )
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
     const subTask = await db.query.subTasks.findFirst({
       where(fields, operators) {
         return operators.and(

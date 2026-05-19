@@ -1,4 +1,4 @@
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "..";
 import { formatUserName, getOwningIdentity } from "~/lib/utils";
@@ -58,7 +58,7 @@ const fetchCommentsForTask = createServerFn({ method: "GET" })
       return [];
     }
 
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
     return getCommentsForTask(getOwningIdentity(session), data);
   });
 
