@@ -60,13 +60,15 @@ function RouteComponent() {
   const updateTask = useUpdateTaskMutation();
 
   const handleUpdateTask = useCallback(
-    async ({ id, statusId }: UpdateTask) => {
+    async ({ id, statusId, projectId }: UpdateTask) => {
       await updateTask({
-        id: id,
+        id,
         statusId,
+        projectId,
+        sprintId: params.sprintId,
       });
     },
-    [updateTask]
+    [updateTask, params.sprintId]
   );
 
   const sortBy = useStore(BoardViewStore, (state) => state.sortBy);

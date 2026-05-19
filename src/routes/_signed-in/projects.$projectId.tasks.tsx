@@ -54,14 +54,15 @@ function Home() {
   const updateTask = useUpdateTaskMutation();
 
   const handleUpdateTask = useCallback(
-    async ({ id, statusId }: UpdateTask) => {
+    async ({ id, statusId, projectId, sprintId }: UpdateTask) => {
       await updateTask({
-        id: id,
+        id,
         statusId,
-        projectId: params.projectId,
+        projectId: projectId ?? params.projectId,
+        sprintId,
       });
     },
-    [updateTask]
+    [updateTask, params.projectId]
   );
 
   const sortBy = useStore(BoardViewStore, (state) => state.sortBy);
