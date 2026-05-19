@@ -230,20 +230,26 @@ export function useUnassignTaskMutation() {
 const updateTask = createServerFn({ method: "POST" })
   .inputValidator(updateTaskValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
-    const { id, ...updates } = data;
-    if (!id) {
-      throw new Error("Task id is required");
-    }
+    try {
+      const user = await auth();
+      const { id, ...updates } = data;
 
-    await db
-      .update(tasks)
-      .set({
-        ...updates,
-        updatedAt: updates.updatedAt ?? new Date(),
-      })
-      .where(and(eq(tasks.id, id), eq(tasks.owner, getOwningIdentity(user))));
-    await sync(`task-update-${id}`, { data });
+      const setValues = Object.fromEntries(
+        Object.entries(updates).filter(([, value]) => value !== undefined)
+      );
+
+      await db
+        .update(tasks)
+        .set({
+          ...setValues,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(tasks.id, id), eq(tasks.owner, getOwningIdentity(user))));
+      await sync(`task-update-${id}`, { data });
+    } catch (error) {
+      console.error("[updateTask] failed:", error);
+      throw error;
+    }
   });
 
 export function useUpdateTaskMutation() {
@@ -285,7 +291,7 @@ export function useUpdateTaskMutation() {
 
       try {
         const result = await _updateTask({
-          data: { ...task, updatedAt: new Date() },
+          data: task,
         });
 
         for (const queryKey of listQueryKeys) {
