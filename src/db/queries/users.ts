@@ -1,29 +1,53 @@
-import { auth, clerkClient } from "@clerk/tanstack-react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { redirect } from "@tanstack/react-router";
+import { eq } from "drizzle-orm";
+import { db } from "~/db";
+import { member, user } from "~/db/auth-schema";
+import { formatUserName } from "~/lib/utils";
 
-type User = {
+export type AppUser = {
   id: string;
+  firstname: string;
+  lastname: string;
   name: string;
   avatar: string;
 };
 
 const fetchAllUsers = createServerFn({ method: "GET" }).handler(
-  async (): Promise<User[]> => {
-    const { userId } = await auth();
-    if (!userId) {
-      throw redirect({ to: "/sign-in/$" });
-    }
+  async (): Promise<AppUser[]> => {
+    const session = await requireSession();
+    const organizationId = session.session.activeOrganizationId;
 
-    console.info("Fetching users...");
-    const { data: users } = await clerkClient().users.getUserList();
-    return users.map((user) => ({
-      id: user.id,
-      name: user.fullName || "",
-      avatar: user.imageUrl,
+    const users = organizationId
+      ? await db
+          .select({
+            id: user.id,
+            firstname: user.firstname,
+            lastname: user.lastname,
+            avatar: user.image,
+          })
+          .from(user)
+          .innerJoin(member, eq(member.userId, user.id))
+          .where(eq(member.organizationId, organizationId))
+      : await db
+          .select({
+            id: user.id,
+            firstname: user.firstname,
+            lastname: user.lastname,
+            avatar: user.image,
+          })
+          .from(user)
+          .where(eq(user.id, session.user.id));
+
+    return users.map((u) => ({
+      id: u.id,
+      firstname: u.firstname,
+      lastname: u.lastname,
+      name: formatUserName(u.firstname, u.lastname),
+      avatar: u.avatar ?? "",
     }));
-  },
+  }
 );
 
 export const usersQueryOptions = () =>

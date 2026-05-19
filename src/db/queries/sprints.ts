@@ -1,17 +1,16 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
-import { auth } from "@clerk/tanstack-react-start/server";
-import { getRequest } from "@tanstack/react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { getOwningIdentity } from "~/lib/utils";
 import { useEventSource } from "~/hooks/use-event-source";
 
 const fetchSprints = createServerFn({ method: "GET" }).handler(async () => {
   console.info("Fetching sprints...");
-  const user = await auth();
+  const session = await requireSession();
 
   return await db.query.sprints.findMany({
-    where: (model, { eq }) => eq(model.owner, getOwningIdentity(user)),
+    where: (model, { eq }) => eq(model.owner, getOwningIdentity(session)),
     orderBy: (fields, { asc }) => [asc(fields.createdAt)],
   });
 });
@@ -43,11 +42,11 @@ const fetchSprint = createServerFn({ method: "GET" })
   .inputValidator((d: { sprintId: string }) => d)
   .handler(async ({ data: { sprintId } }) => {
     console.info("Fetching sprint...");
-    const user = await auth();
+    const session = await requireSession();
 
     return await db.query.sprints.findFirst({
       where: (model, { eq, and }) =>
-        and(eq(model.owner, getOwningIdentity(user)), eq(model.id, sprintId)),
+        and(eq(model.owner, getOwningIdentity(session)), eq(model.id, sprintId)),
       orderBy: (fields, { asc }) => [asc(fields.createdAt)],
     });
   });

@@ -1,17 +1,17 @@
-import { useOrganization } from "@clerk/tanstack-react-start";
+import { authClient } from "~/lib/auth-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
 export function useOrganizationCacheClear() {
-  const { organization, isLoaded } = useOrganization();
+  const { data: session } = authClient.useSession();
   const queryClient = useQueryClient();
   const previousOrgId = useRef<string | null>(null);
   const isInitialized = useRef(false);
 
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!session) return;
 
-    const currentOrgId = organization?.id || null;
+    const currentOrgId = session.session.activeOrganizationId ?? null;
 
     if (!isInitialized.current) {
       isInitialized.current = true;
@@ -21,10 +21,8 @@ export function useOrganizationCacheClear() {
 
     if (previousOrgId.current !== currentOrgId) {
       console.info("Organization switched, invalidating all queries");
-      // This refetches all queries instead of clearing them
-      // Prevents CancelledError while ensuring fresh data
       queryClient.invalidateQueries();
       previousOrgId.current = currentOrgId;
     }
-  }, [organization?.id, isLoaded, queryClient]);
+  }, [session?.session.activeOrganizationId, session, queryClient]);
 }

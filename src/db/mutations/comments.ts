@@ -1,6 +1,6 @@
 import { createServerFn, useServerFn } from "@tanstack/react-start";
 import { comments, CreateComment, insertCommentValidator } from "../schema";
-import { auth } from "@clerk/tanstack-react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { db } from "..";
 import { v7 as uuid } from "uuid";
 import { getOwningIdentity } from "~/lib/utils";
@@ -12,12 +12,12 @@ import { sync } from "./sync";
 const createComment = createServerFn({ method: "POST" })
   .inputValidator(insertCommentValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await db.insert(comments).values({
       ...data,
       id: uuid(),
-      owner: getOwningIdentity(user),
+      owner: getOwningIdentity(session),
       createdAt: new Date(),
       updatedAt: new Date(),
     });

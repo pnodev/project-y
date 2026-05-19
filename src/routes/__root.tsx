@@ -13,7 +13,6 @@ import { DefaultCatchBoundary } from "~/components/DefaultCatchBoundary";
 import { NotFound } from "~/components/NotFound";
 import appCss from "~/styles/app.css?url";
 import { seo } from "~/utils/seo";
-import { ClerkProvider } from "@clerk/tanstack-react-start";
 import { Toaster } from "~/components/ui/sonner";
 
 export const Route = createRootRouteWithContext<{
@@ -71,19 +70,17 @@ export const Route = createRootRouteWithContext<{
 
 function RootDocument({ children }: { children: ReactNode }) {
   return (
-    <ClerkProvider>
-      <html>
-        <head>
-          <HeadContent />
-        </head>
-        <body>
-          {children ?? <Outlet />}
-          <Toaster />
-          <TanStackRouterDevtools position="bottom-right" />
-          <ReactQueryDevtools buttonPosition="bottom-left" />
-          <Scripts />
-        </body>
-      </html>
-    </ClerkProvider>
+    <html>
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        {children ?? <Outlet />}
+        <Toaster />
+        <TanStackRouterDevtools position="bottom-right" />
+        <ReactQueryDevtools buttonPosition="bottom-left" />
+        <Scripts />
+      </body>
+    </html>
   );
 }

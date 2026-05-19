@@ -4,7 +4,7 @@ import {
   CreateAttachment,
   insertAttachmentValidator,
 } from "../schema";
-import { auth } from "@clerk/tanstack-react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { db } from "..";
 import { v7 as uuid } from "uuid";
 import { getOwningIdentity } from "~/lib/utils";
@@ -19,12 +19,12 @@ import { UTApi } from "uploadthing/server";
 const createAttachment = createServerFn({ method: "POST" })
   .inputValidator(insertAttachmentValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await db.insert(attachments).values({
       ...data,
       id: uuid(),
-      owner: getOwningIdentity(user),
+      owner: getOwningIdentity(session),
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -59,11 +59,11 @@ export function useCreateAttachmentMutation() {
 export const deleteAttachment = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     const attachment = await db.query.attachments.findFirst({
       where: (model, { eq, and }) =>
-        and(eq(model.id, data.id), eq(model.owner, getOwningIdentity(user))),
+        and(eq(model.id, data.id), eq(model.owner, getOwningIdentity(session))),
     });
     if (!attachment) return;
     const utapi = new UTApi();
@@ -73,7 +73,7 @@ export const deleteAttachment = createServerFn({ method: "POST" })
       .where(
         and(
           eq(attachments.id, data.id),
-          eq(attachments.owner, getOwningIdentity(user))
+          eq(attachments.owner, getOwningIdentity(session))
         )
       );
 

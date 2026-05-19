@@ -7,7 +7,6 @@ import {
 } from "~/components/ui/dialog";
 import {
   Attachment,
-  Comment,
   Label,
   Status,
   TaskWithRelations,
@@ -25,7 +24,7 @@ import { DetailList, DetailListItem } from "~/components/ui/detail-list";
 import { StatusSwitch } from "./StatusSwitch";
 import { Labels } from "./Labels";
 import { EditableDialogTitle } from "./EditableDialogTitle";
-import { useAuth } from "@clerk/tanstack-react-start";
+import { authClient } from "~/lib/auth-client";
 import { useCurrentOwningIdentity } from "~/hooks/use-current-owning-identity";
 import {
   Breadcrumb,
@@ -36,6 +35,7 @@ import {
 import { TaskLabel } from "./ui/TaskLabel";
 import { CommentInput } from "./CommentInput";
 import { useCreateCommentMutation } from "~/db/mutations/comments";
+import type { CommentWithAuthor } from "~/db/queries/comments";
 import { Comments } from "./Comments";
 import {
   Calendar,
@@ -75,7 +75,7 @@ export function OpenTask({
   task?: TaskWithRelations;
   statuses: Status[];
   labels: Label[];
-  comments: Comment[];
+  comments: CommentWithAuthor[];
   location: "project" | "sprint";
 }) {
   const navigate = useNavigate();
@@ -88,7 +88,8 @@ export function OpenTask({
   const createComment = useCreateCommentMutation();
   const createAttachment = useCreateAttachmentMutation();
   const deleteTask = useDeleteTaskMutation();
-  const currentUser = useAuth();
+  const { data: session } = authClient.useSession();
+  const currentUserId = session?.user.id;
   const handleUpdateTask = useCallback(
     async (data: UpdateTask) => {
       await updateTask({
@@ -114,14 +115,14 @@ export function OpenTask({
 
   const handleComment = useCallback(
     async (content: string) => {
-      if (!task?.id || !currentUser.userId) return;
+      if (!task?.id || !currentUserId) return;
       await createComment({
         taskId: task.id,
         content,
-        author: currentUser.userId,
+        author: currentUserId,
       });
     },
-    [createComment, task]
+    [createComment, task, currentUserId]
   );
 
   const handleUpload = useCallback(
@@ -135,7 +136,7 @@ export function OpenTask({
         serverData: { uploadedBy: string | null };
       }[]
     ) => {
-      if (!task?.id || !currentUser.userId) return;
+      if (!task?.id || !currentUserId) return;
       await Promise.all(
         data.map(async (attachment) => {
           await createAttachment({
@@ -150,7 +151,7 @@ export function OpenTask({
         })
       );
     },
-    [createAttachment, task]
+    [createAttachment, task, currentUserId]
   );
 
   const owner = useCurrentOwningIdentity();
@@ -173,7 +174,6 @@ export function OpenTask({
     >
       <DialogContent
         size="large"
-        aria-describedby={`task-title-${task?.id}`}
         isLoading={isDeleting}
         className="p-0 gap-0"
         onEscapeKeyDown={(e) => {
@@ -387,7 +387,8 @@ export function OpenTask({
                 className="grow"
                 comments={comments.map((comment) => ({
                   ...comment,
-                  authorAvatar: "", // Provide a default or dynamic value for authorAvatar here
+                  author: comment.author || "Unknown",
+                  authorAvatar: comment.authorAvatar ?? "",
                 }))}
               />
               <CommentInput onSubmit={handleComment} />

@@ -10,7 +10,7 @@ import {
   UpdateProject,
   updateProjectValidator,
 } from "../schema";
-import { auth } from "@clerk/tanstack-react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { db } from "..";
 import { v7 as uuid } from "uuid";
 import { getOwningIdentity } from "~/lib/utils";
@@ -24,12 +24,12 @@ import z from "zod";
 const createProject = createServerFn({ method: "POST" })
   .inputValidator(insertProjectValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await db.insert(projects).values({
       ...data,
       id: uuid(),
-      owner: getOwningIdentity(user),
+      owner: getOwningIdentity(session),
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -59,7 +59,7 @@ export function useCreateProjectMutation() {
 const updateProject = createServerFn({ method: "POST" })
   .inputValidator(updateProjectValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await db
       .update(projects)
@@ -72,7 +72,7 @@ const updateProject = createServerFn({ method: "POST" })
       .where(
         and(
           eq(projects.id, data.id!),
-          eq(projects.owner, getOwningIdentity(user))
+          eq(projects.owner, getOwningIdentity(session))
         )
       );
     await sync(`project-update-${data.id}`, { data });
@@ -101,14 +101,14 @@ export function useUpdateProjectMutation() {
 const deleteProject = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await db
       .delete(tasks)
       .where(
         and(
           eq(tasks.projectId, data.id),
-          eq(tasks.owner, getOwningIdentity(user))
+          eq(tasks.owner, getOwningIdentity(session))
         )
       );
     await db
@@ -116,7 +116,7 @@ const deleteProject = createServerFn({ method: "POST" })
       .where(
         and(
           eq(projects.id, data.id),
-          eq(projects.owner, getOwningIdentity(user))
+          eq(projects.owner, getOwningIdentity(session))
         )
       );
     await sync("project-delete", { data });

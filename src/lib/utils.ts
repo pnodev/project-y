@@ -5,24 +5,44 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function getOwningIdentity(user: {
-  userId: string | null;
-  orgId: string | undefined | null;
+export function getOwningIdentity(session: {
+  user: { id: string };
+  session: { activeOrganizationId?: string | null };
 }): string {
-  if (user.orgId) {
-    return user.orgId;
-  }
-  return user.userId as string;
+  return session.session.activeOrganizationId ?? session.user.id;
 }
 
-export const getInitials = (name: string | undefined) => {
-  if (!name) return "";
-  return name
+export function formatUserName(
+  firstname: string | null | undefined,
+  lastname: string | null | undefined
+): string {
+  return [firstname, lastname].filter(Boolean).join(" ").trim();
+}
+
+export const getInitials = (
+  nameOrFirstname: string | undefined,
+  lastname?: string
+) => {
+  if (lastname !== undefined) {
+    return [nameOrFirstname?.[0], lastname[0]].filter(Boolean).join("").toUpperCase();
+  }
+  if (!nameOrFirstname) return "";
+  return nameOrFirstname
     .split(" ")
     .map((part) => part[0])
     .join("")
     .toUpperCase();
 };
+
+export function getUserInitials(user: {
+  firstname?: string | null;
+  lastname?: string | null;
+  name?: string | null;
+}) {
+  const fromNames = getInitials(user.firstname ?? undefined, user.lastname ?? undefined);
+  if (fromNames) return fromNames;
+  return getInitials(user.name ?? undefined);
+}
 
 export const getFormattedDateString = (date: Date) => {
   return date.toLocaleDateString(undefined, {

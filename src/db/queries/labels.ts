@@ -3,17 +3,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import { labels, labelsToTasks } from "~/db/schema";
 import { asc, eq, sql } from "drizzle-orm";
-import { auth } from "@clerk/tanstack-react-start/server";
-import { getRequest } from "@tanstack/react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { getOwningIdentity } from "~/lib/utils";
 import { useEventSource } from "~/hooks/use-event-source";
 
 export const fetchLabels = createServerFn({ method: "GET" }).handler(
   async () => {
     console.info("Fetching labels...");
-    const user = await auth();
+    const session = await requireSession();
     return await db.query.labels.findMany({
-      where: (model, { eq }) => eq(model.owner, getOwningIdentity(user)),
+      where: (model, { eq }) => eq(model.owner, getOwningIdentity(session)),
       orderBy: (fields, { asc }) => [asc(fields.order)],
     });
   }
@@ -47,7 +46,7 @@ export const fetchLabelsWithTaskCounts = createServerFn({
   method: "GET",
 }).handler(async () => {
   console.info("Fetching labels with task counts...");
-  const user = await auth();
+  const session = await requireSession();
   const labelsWithCounts = await db
     .select({
       id: labels.id,
@@ -60,7 +59,7 @@ export const fetchLabelsWithTaskCounts = createServerFn({
     })
     .from(labels)
     .leftJoin(labelsToTasks, eq(labels.id, labelsToTasks.labelId))
-    .where(eq(labels.owner, getOwningIdentity(user)))
+    .where(eq(labels.owner, getOwningIdentity(session)))
     .groupBy(labels.id)
     .orderBy(asc(labels.order));
 

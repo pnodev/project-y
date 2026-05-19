@@ -1,54 +1,61 @@
-import { auth, clerkClient } from "@clerk/tanstack-react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "..";
-import { getOwningIdentity } from "~/lib/utils";
-import { and } from "drizzle-orm";
+import { formatUserName, getOwningIdentity } from "~/lib/utils";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEventSource } from "~/hooks/use-event-source";
+import { user } from "~/db/auth-schema";
+import type { Comment } from "~/db/schema";
+
+export type CommentWithAuthor = Omit<Comment, "author"> & {
+  author: string | null;
+  authorAvatar: string | null;
+};
 
 const fetchCommentsForTask = createServerFn({ method: "GET" })
   .inputValidator((data?: string) => data)
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<CommentWithAuthor[]> => {
     if (!data) {
       return [];
     }
-    console.info(`Fetching comments for... ${data}`);
-    const user = await auth();
+
+    const session = await requireSession();
     const rawData = await db.query.comments.findMany({
-      where: (model, { eq }) =>
-        and(eq(model.owner, getOwningIdentity(user)), eq(model.taskId, data)),
-      orderBy: (fields, { asc }) => [asc(fields.createdAt)],
+      where: (model, { eq: eqFn }) =>
+        and(
+          eqFn(model.owner, getOwningIdentity(session)),
+          eqFn(model.taskId, data)
+        ),
+      orderBy: (fields) => [asc(fields.createdAt)],
     });
 
     const authorIds = [...new Set(rawData.map((comment) => comment.author))];
-    const authorResults = await Promise.allSettled(
-      authorIds.map((authorId) =>
-        clerkClient()
-          .users.getUser(authorId)
-          .then((user) => ({
-            authorId,
-            fullName: user.fullName,
-            imageUrl: user.imageUrl,
-          })),
-      ),
+    const authors =
+      authorIds.length > 0
+        ? await db
+            .select({
+              id: user.id,
+              firstname: user.firstname,
+              lastname: user.lastname,
+              image: user.image,
+            })
+            .from(user)
+            .where(inArray(user.id, authorIds))
+        : [];
+
+    const authorsById = new Map(
+      authors.map((author) => [author.id, author])
     );
-    const authorsById = new Map<
-      string,
-      { fullName: string | null; imageUrl: string | null }
-    >();
-    for (const result of authorResults) {
-      if (result.status === "fulfilled") {
-        const { authorId, fullName, imageUrl } = result.value;
-        authorsById.set(authorId, { fullName, imageUrl });
-      }
-    }
 
     return rawData.map((comment) => {
       const author = authorsById.get(comment.author);
       return {
         ...comment,
-        author: author?.fullName ?? null,
-        authorAvatar: author?.imageUrl ?? null,
+        author: author
+          ? formatUserName(author.firstname, author.lastname)
+          : null,
+        authorAvatar: author?.image ?? null,
       };
     });
   });

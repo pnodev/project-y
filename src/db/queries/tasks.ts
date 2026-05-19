@@ -2,8 +2,7 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import { TaskWithRelations } from "../schema";
-import { auth } from "@clerk/tanstack-react-start/server";
-import { getRequest } from "@tanstack/react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { getOwningIdentity } from "~/lib/utils";
 import { useEventSource } from "~/hooks/use-event-source";
 
@@ -38,15 +37,15 @@ function mapBoardTasks(
 const fetchTasks = createServerFn({ method: "GET" })
   .inputValidator((d: { projectId: string }) => d)
   .handler(async ({ data: { projectId } }): Promise<TaskWithRelations[]> => {
-    const user = await auth();
-    console.log("Fetching tasks for user:", getOwningIdentity(user));
+    const session = await requireSession();
+    console.log("Fetching tasks for user:", getOwningIdentity(session));
     console.info("Fetching tasks for project:", projectId);
 
     const rawTasks = await db.query.tasks.findMany({
       with: boardTaskRelations,
       where: (model, { eq, and }) =>
         and(
-          eq(model.owner, getOwningIdentity(user)),
+          eq(model.owner, getOwningIdentity(session)),
           eq(model.projectId, projectId)
         ),
     });
@@ -80,15 +79,15 @@ export const useTasksQuery = (projectId: string) => {
 const fetchTasksForSprint = createServerFn({ method: "GET" })
   .inputValidator((d: { sprintId: string }) => d)
   .handler(async ({ data: { sprintId } }): Promise<TaskWithRelations[]> => {
-    const user = await auth();
-    console.log("Fetching tasks for user:", getOwningIdentity(user));
+    const session = await requireSession();
+    console.log("Fetching tasks for user:", getOwningIdentity(session));
     console.info("Fetching tasks for sprint:", sprintId);
 
     const rawTasks = await db.query.tasks.findMany({
       with: boardTaskRelations,
       where: (model, { eq, and }) =>
         and(
-          eq(model.owner, getOwningIdentity(user)),
+          eq(model.owner, getOwningIdentity(session)),
           eq(model.sprintId, sprintId)
         ),
     });
@@ -123,12 +122,12 @@ export const fetchTask = createServerFn({ method: "GET" })
   .inputValidator((d: string) => d)
   .handler(async ({ data }): Promise<TaskWithRelations | null> => {
     console.info("Fetching task...");
-    const user = await auth();
+    const session = await requireSession();
     const task = await db.query.tasks.findFirst({
       where(fields, operators) {
         return operators.and(
           operators.eq(fields.id, data),
-          operators.eq(fields.owner, getOwningIdentity(user))
+          operators.eq(fields.owner, getOwningIdentity(session))
         );
       },
       with: {

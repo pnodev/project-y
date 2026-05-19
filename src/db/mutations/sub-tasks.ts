@@ -8,7 +8,7 @@ import {
   UpdateSubTask,
   updateSubTaskValidator,
 } from "../schema";
-import { auth } from "@clerk/tanstack-react-start/server";
+import { requireSession } from "~/lib/auth-functions";
 import { db } from "..";
 import { v7 as uuid } from "uuid";
 import { getOwningIdentity } from "~/lib/utils";
@@ -22,12 +22,12 @@ import z from "zod";
 const createSubTask = createServerFn({ method: "POST" })
   .inputValidator(insertSubTaskValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await db.insert(subTasks).values({
       ...data,
       id: uuid(),
-      owner: getOwningIdentity(user),
+      owner: getOwningIdentity(session),
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -57,7 +57,7 @@ export function useCreateSubTaskMutation() {
 const updateSubTask = createServerFn({ method: "POST" })
   .inputValidator(updateSubTaskValidator)
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     await db
       .update(subTasks)
@@ -67,7 +67,7 @@ const updateSubTask = createServerFn({ method: "POST" })
       .where(
         and(
           eq(subTasks.id, data.id!),
-          eq(subTasks.owner, getOwningIdentity(user))
+          eq(subTasks.owner, getOwningIdentity(session))
         )
       );
 
@@ -121,13 +121,13 @@ export function useUpdateSubTaskMutation() {
 const deleteSubTask = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
 
     const subTask = await db.query.subTasks.findFirst({
       where(fields, operators) {
         return operators.and(
           operators.eq(fields.id, data.id),
-          operators.eq(fields.owner, getOwningIdentity(user))
+          operators.eq(fields.owner, getOwningIdentity(session))
         );
       },
     });
@@ -136,7 +136,7 @@ const deleteSubTask = createServerFn({ method: "POST" })
       .where(
         and(
           eq(subTasks.id, data.id),
-          eq(subTasks.owner, getOwningIdentity(user))
+          eq(subTasks.owner, getOwningIdentity(session))
         )
       );
 
@@ -176,12 +176,12 @@ const unassignSubTask = createServerFn({ method: "POST" })
     })
   )
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
     const subTask = await db.query.subTasks.findFirst({
       where(fields, operators) {
         return operators.and(
           operators.eq(fields.id, data.subTaskId),
-          operators.eq(fields.owner, getOwningIdentity(user))
+          operators.eq(fields.owner, getOwningIdentity(session))
         );
       },
     });
@@ -191,7 +191,7 @@ const unassignSubTask = createServerFn({ method: "POST" })
         and(
           eq(subTaskAssignees.subTaskId, data.subTaskId),
           inArray(subTaskAssignees.userId, data.userIds),
-          eq(subTaskAssignees.owner, getOwningIdentity(user))
+          eq(subTaskAssignees.owner, getOwningIdentity(session))
         )
       );
     await sync(`task-update-${subTask?.taskId}`, { data });
@@ -226,12 +226,12 @@ const assignSubTask = createServerFn({ method: "POST" })
     })
   )
   .handler(async ({ data }) => {
-    const user = await auth();
+    const session = await requireSession();
     const subTask = await db.query.subTasks.findFirst({
       where(fields, operators) {
         return operators.and(
           operators.eq(fields.id, data.subTaskId),
-          operators.eq(fields.owner, getOwningIdentity(user))
+          operators.eq(fields.owner, getOwningIdentity(session))
         );
       },
     });
@@ -251,7 +251,7 @@ const assignSubTask = createServerFn({ method: "POST" })
         newUserIds.map((userId) => ({
           id: uuid(),
           subTaskId: data.subTaskId,
-          owner: getOwningIdentity(user),
+          owner: getOwningIdentity(session),
           userId: userId,
           assignedAt: new Date(),
           updatedAt: new Date(),
