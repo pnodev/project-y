@@ -20,3 +20,5 @@ yarn.lock
 .nitro
 .tanstack
 dist
+# Local Netlify folder
+.netlify
