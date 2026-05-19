@@ -67,7 +67,11 @@ export async function deleteAttachmentForOwner(
   if (!attachment) return;
 
   const utapi = new UTApi();
-  utapi.deleteFiles([attachment.providerFileId]);
+  const deleteResult = await utapi.deleteFiles([attachment.providerFileId]);
+  if (!deleteResult.success) {
+    throw new Error("Failed to delete attachment file from storage");
+  }
+
   await db
     .delete(attachments)
     .where(
