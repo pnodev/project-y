@@ -10,7 +10,7 @@ import {
   UpdateProject,
   updateProjectValidator,
 } from "../schema";
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { db } from "..";
 import { v7 as uuid } from "uuid";
 import { getOwningIdentity } from "~/lib/utils";
@@ -24,7 +24,7 @@ import z from "zod";
 const createProject = createServerFn({ method: "POST" })
   .inputValidator(insertProjectValidator)
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await db.insert(projects).values({
       ...data,
@@ -59,7 +59,7 @@ export function useCreateProjectMutation() {
 const updateProject = createServerFn({ method: "POST" })
   .inputValidator(updateProjectValidator)
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await db
       .update(projects)
@@ -101,7 +101,7 @@ export function useUpdateProjectMutation() {
 const deleteProject = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await db
       .delete(tasks)

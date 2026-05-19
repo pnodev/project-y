@@ -6,7 +6,7 @@ import { getCommentsForTask } from "~/db/queries/comments";
 import type { AppUser } from "~/db/queries/users";
 import { getUsersForSession } from "~/db/queries/users";
 import type { Label, Project, Sprint, Status, TaskWithRelations } from "~/db/schema";
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
 
 export type ProjectBoardBundle = {
@@ -48,7 +48,7 @@ export const fetchProjectBoardBundle = createServerFn({ method: "GET" })
     async ({
       data: { projectId },
     }): Promise<ProjectBoardBundle> => {
-      const session = await requireSession();
+      const session = await requireSessionFromRequest();
       const owner = getOwningIdentity(session);
 
       const [project, rawTasks, statuses, users] = await Promise.all([
@@ -85,7 +85,7 @@ export const fetchSprintBoardBundle = createServerFn({ method: "GET" })
     async ({
       data: { sprintId },
     }): Promise<SprintBoardBundle> => {
-      const session = await requireSession();
+      const session = await requireSessionFromRequest();
       const owner = getOwningIdentity(session);
 
       const [sprint, rawTasks, statuses, users] = await Promise.all([
@@ -120,7 +120,7 @@ export const fetchTaskPageBundle = createServerFn({ method: "GET" })
     async ({
       data: { taskId },
     }): Promise<TaskPageBundle> => {
-      const session = await requireSession();
+      const session = await requireSessionFromRequest();
       const owner = getOwningIdentity(session);
 
       const [taskRow, comments, labels, statuses] = await Promise.all([
@@ -171,7 +171,7 @@ export const fetchTaskPageBundle = createServerFn({ method: "GET" })
 
 export const fetchSidebarBundle = createServerFn({ method: "GET" }).handler(
   async (): Promise<SidebarBundle> => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
     const owner = getOwningIdentity(session);
 
     const [projects, sprints] = await Promise.all([

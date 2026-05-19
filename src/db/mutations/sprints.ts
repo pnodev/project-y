@@ -7,7 +7,7 @@ import {
   UpdateSprint,
   updateSprintValidator,
 } from "../schema";
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { db } from "..";
 import { getOwningIdentity } from "~/lib/utils";
 import { v7 as uuid } from "uuid";
@@ -21,7 +21,7 @@ import { z } from "zod";
 const createSprint = createServerFn({ method: "POST" })
   .inputValidator(insertSprintValidator)
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await db.insert(sprints).values({
       ...data,
@@ -56,7 +56,7 @@ export function useCreateSprintMutation() {
 const updateSprint = createServerFn({ method: "POST" })
   .inputValidator(updateSprintValidator)
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await db
       .update(sprints)
@@ -96,7 +96,7 @@ export function useUpdateSprintMutation() {
 export const deleteSprint = createServerFn({ method: "POST" })
   .inputValidator(z.object({ sprintId: z.string() }))
   .handler(async ({ data: { sprintId } }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     // remove all tasks from the sprint
     await db

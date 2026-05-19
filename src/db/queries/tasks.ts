@@ -2,7 +2,7 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import { Project, TaskWithRelations } from "../schema";
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
 import { useEventSource } from "~/hooks/use-event-source";
 
@@ -108,7 +108,7 @@ export function mapTaskWithRelations(task: TaskDetailRow): TaskWithRelations {
 const fetchTasks = createServerFn({ method: "GET" })
   .inputValidator((d: { projectId: string }) => d)
   .handler(async ({ data: { projectId } }): Promise<TaskWithRelations[]> => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     const rawTasks = await db.query.tasks.findMany({
       with: boardTaskRelationsForProject,
@@ -148,7 +148,7 @@ export const useTasksQuery = (projectId: string) => {
 const fetchTasksForSprint = createServerFn({ method: "GET" })
   .inputValidator((d: { sprintId: string }) => d)
   .handler(async ({ data: { sprintId } }): Promise<TaskWithRelations[]> => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     const rawTasks = await db.query.tasks.findMany({
       with: boardTaskRelationsForSprint,
@@ -188,7 +188,7 @@ export const useTasksForSprintQuery = (sprintId: string) => {
 export const fetchTask = createServerFn({ method: "GET" })
   .inputValidator((d: string) => d)
   .handler(async ({ data }): Promise<TaskWithRelations | null> => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
     const task = await db.query.tasks.findFirst({
       where(fields, operators) {
         return operators.and(

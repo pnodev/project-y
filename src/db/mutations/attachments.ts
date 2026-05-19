@@ -4,7 +4,7 @@ import {
   CreateAttachment,
   insertAttachmentValidator,
 } from "../schema";
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { db } from "..";
 import { v7 as uuid } from "uuid";
 import { getOwningIdentity } from "~/lib/utils";
@@ -19,7 +19,7 @@ import { UTApi } from "uploadthing/server";
 const createAttachment = createServerFn({ method: "POST" })
   .inputValidator(insertAttachmentValidator)
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await db.insert(attachments).values({
       ...data,
@@ -56,31 +56,39 @@ export function useCreateAttachmentMutation() {
   );
 }
 
+export async function deleteAttachmentForOwner(
+  owner: string,
+  attachmentId: string
+) {
+  const attachment = await db.query.attachments.findFirst({
+    where: (model, { eq, and }) =>
+      and(eq(model.id, attachmentId), eq(model.owner, owner)),
+  });
+  if (!attachment) return;
+
+  const utapi = new UTApi();
+  const deleteResult = await utapi.deleteFiles([attachment.providerFileId]);
+  if (!deleteResult.success) {
+    throw new Error("Failed to delete attachment file from storage");
+  }
+
+  await db
+    .delete(attachments)
+    .where(
+      and(eq(attachments.id, attachmentId), eq(attachments.owner, owner))
+    );
+
+  await sync(`attachment-update-${attachmentId}`, { data: { id: attachmentId } });
+  await sync(`task-update-${attachment.taskId}`, { data: { id: attachmentId } });
+
+  return { id: attachmentId, taskId: attachment.taskId };
+}
+
 export const deleteAttachment = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const session = await requireSession();
-
-    const attachment = await db.query.attachments.findFirst({
-      where: (model, { eq, and }) =>
-        and(eq(model.id, data.id), eq(model.owner, getOwningIdentity(session))),
-    });
-    if (!attachment) return;
-    const utapi = new UTApi();
-    utapi.deleteFiles([attachment?.providerFileId]);
-    await db
-      .delete(attachments)
-      .where(
-        and(
-          eq(attachments.id, data.id),
-          eq(attachments.owner, getOwningIdentity(session))
-        )
-      );
-
-    await sync(`attachment-update-${data.id}`, { data });
-    await sync(`task-update-${attachment?.taskId}`, { data });
-
-    return { id: data.id, taskId: attachment?.taskId };
+    const session = await requireSessionFromRequest();
+    return deleteAttachmentForOwner(getOwningIdentity(session), data.id);
   });
 
 export function useDeleteAttachmentMutation() {

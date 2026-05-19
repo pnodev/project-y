@@ -15,13 +15,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { and, eq } from "drizzle-orm";
 import { getOwningIdentity } from "~/lib/utils";
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { sync } from "./sync";
 
 const createLabel = createServerFn({ method: "POST" })
   .inputValidator(insertLabelValidator)
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
     await db.insert(labels).values({
       ...data,
       id: uuid(),
@@ -58,7 +58,7 @@ export function useCreateLabelMutation() {
 const updateLabel = createServerFn({ method: "POST" })
   .inputValidator(updateLabelValidator)
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await db
       .update(labels)
@@ -101,7 +101,7 @@ export function useUpdateLabelMutation() {
 const updateMultipleLabels = createServerFn({ method: "POST" })
   .inputValidator(updateMultipleLabelsValidator)
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await Promise.all(
       data.map(async (entry) => {
@@ -165,7 +165,7 @@ export function useUpdateMultipleLabelsMutation() {
 const deleteLabel = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     await db
       .delete(labels)

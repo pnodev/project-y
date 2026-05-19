@@ -1,4 +1,4 @@
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "..";
 import { getOwningIdentity } from "~/lib/utils";
@@ -12,7 +12,7 @@ const fetchAttachmentsForTask = createServerFn({ method: "GET" })
       return [];
     }
     console.info(`Fetching attachments for... ${data}`);
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
     return await db.query.attachments.findMany({
       where: (model, { eq, and }) =>
         and(eq(model.owner, getOwningIdentity(session)), eq(model.taskId, data)),

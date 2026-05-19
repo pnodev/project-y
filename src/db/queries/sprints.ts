@@ -1,13 +1,13 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
 import { useEventSource } from "~/hooks/use-event-source";
 
 const fetchSprints = createServerFn({ method: "GET" }).handler(async () => {
   console.info("Fetching sprints...");
-  const session = await requireSession();
+  const session = await requireSessionFromRequest();
 
   return await db.query.sprints.findMany({
     where: (model, { eq }) => eq(model.owner, getOwningIdentity(session)),
@@ -42,7 +42,7 @@ const fetchSprint = createServerFn({ method: "GET" })
   .inputValidator((d: { sprintId: string }) => d)
   .handler(async ({ data: { sprintId } }) => {
     console.info("Fetching sprint...");
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     return await db.query.sprints.findFirst({
       where: (model, { eq, and }) =>

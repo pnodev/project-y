@@ -3,14 +3,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import { statuses, tasks } from "~/db/schema";
 import { asc, eq, sql } from "drizzle-orm";
-import { requireSession } from "~/lib/auth-functions";
+import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
 import { useEventSource } from "~/hooks/use-event-source";
 
 export const fetchStatuses = createServerFn({ method: "GET" }).handler(
   async () => {
     console.info("Fetching statuses...");
-    const session = await requireSession();
+    const session = await requireSessionFromRequest();
 
     return await db.query.statuses.findMany({
       where: (model, { eq }) => eq(model.owner, getOwningIdentity(session)),
@@ -47,7 +47,7 @@ export const fetchStatusesWithTaskCounts = createServerFn({
   method: "GET",
 }).handler(async () => {
   console.info("Fetching statuses with task counts...");
-  const session = await requireSession();
+  const session = await requireSessionFromRequest();
 
   const statusesWithCounts = await db
     .select({
