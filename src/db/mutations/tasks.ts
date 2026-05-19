@@ -5,6 +5,7 @@ import {
   CreateTask,
   insertTaskValidator,
   Label,
+  labels,
   labelsToTasks,
   Task,
   taskAssignees,
@@ -19,16 +20,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { and, eq, inArray } from "drizzle-orm";
 import z from "zod";
-import { getAuth } from "@clerk/tanstack-react-start/server";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { auth } from "@clerk/tanstack-react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
 import { deleteAttachment } from "./attachments";
 
 const createTask = createServerFn({ method: "POST" })
-  .validator(insertTaskValidator)
+  .inputValidator(insertTaskValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     const newTask = {
       id: uuid(),
@@ -76,14 +76,21 @@ export function useCreateTaskMutation() {
 
 // First, update the validator schema in assignTask
 const assignTask = createServerFn({ method: "POST" })
-  .validator(
+  .inputValidator(
     z.object({
       taskId: z.string(),
       userIds: z.array(z.string()), // Changed from userId to userIds array
     })
   )
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
+    const owner = getOwningIdentity(user);
+
+    const task = await db.query.tasks.findFirst({
+      where: (model, { eq, and }) =>
+        and(eq(model.id, data.taskId), eq(model.owner, owner)),
+    });
+    if (!task) return;
 
     // Get existing assignees for this task
     const existingAssignees = await db.query.taskAssignees.findMany({
@@ -100,7 +107,7 @@ const assignTask = createServerFn({ method: "POST" })
         newUserIds.map((userId) => ({
           id: uuid(),
           taskId: data.taskId,
-          owner: getOwningIdentity(user),
+          owner,
           userId: userId,
           assignedAt: new Date(),
           updatedAt: new Date(),
@@ -113,22 +120,30 @@ const assignTask = createServerFn({ method: "POST" })
 
 // Update the unassign mutation similarly
 const unassignTask = createServerFn({ method: "POST" })
-  .validator(
+  .inputValidator(
     z.object({
       taskId: z.string(),
       userIds: z.array(z.string()),
     })
   )
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
+    const owner = getOwningIdentity(user);
+
+    const task = await db.query.tasks.findFirst({
+      where: (model, { eq, and }) =>
+        and(eq(model.id, data.taskId), eq(model.owner, owner)),
+    });
+    if (!task) return;
+
     await db
       .delete(taskAssignees)
       .where(
         and(
           eq(taskAssignees.taskId, data.taskId),
           inArray(taskAssignees.userId, data.userIds),
-          eq(taskAssignees.owner, getOwningIdentity(user))
-        )
+          eq(taskAssignees.owner, owner),
+        ),
       );
     await sync(`task-update-${data.taskId}`, { data });
   });
@@ -187,9 +202,9 @@ export function useUnassignTaskMutation() {
 }
 
 const updateTask = createServerFn({ method: "POST" })
-  .validator(updateTaskValidator)
+  .inputValidator(updateTaskValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
     await db
       .update(tasks)
       .set({
@@ -244,9 +259,9 @@ export function useUpdateTaskMutation() {
 }
 
 const deleteTask = createServerFn({ method: "POST" })
-  .validator(z.object({ id: z.string() }))
+  .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
     const task = await db.query.tasks.findFirst({
       with: {
         attachments: true,
@@ -263,9 +278,8 @@ const deleteTask = createServerFn({ method: "POST" })
     await db
       .delete(tasks)
       .where(
-        and(eq(tasks.id, data.id), eq(tasks.owner, getOwningIdentity(user)))
+        and(eq(tasks.id, data.id), eq(tasks.owner, getOwningIdentity(user))),
       );
-    await db.delete(tasks).where(eq(tasks.id, data.id));
     await sync(`task-delete`, { data });
   });
 
@@ -293,13 +307,30 @@ export function useDeleteTaskMutation() {
 }
 
 const setLabelsForTask = createServerFn({ method: "POST" })
-  .validator(
+  .inputValidator(
     z.object({
       taskId: z.string().uuid(),
       labelIds: z.array(z.string().uuid()),
     })
   )
   .handler(async ({ data }) => {
+    const user = await auth();
+    const owner = getOwningIdentity(user);
+
+    const task = await db.query.tasks.findFirst({
+      where: (model, { eq, and }) =>
+        and(eq(model.id, data.taskId), eq(model.owner, owner)),
+    });
+    if (!task) return;
+
+    if (data.labelIds.length > 0) {
+      const ownedLabels = await db.query.labels.findMany({
+        where: (model, { eq, and, inArray }) =>
+          and(inArray(model.id, data.labelIds), eq(model.owner, owner)),
+      });
+      if (ownedLabels.length !== data.labelIds.length) return;
+    }
+
     // Remove existing labels for the task
     await db.delete(labelsToTasks).where(eq(labelsToTasks.taskId, data.taskId));
 

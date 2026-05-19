@@ -7,8 +7,7 @@ import {
   UpdateSprint,
   updateSprintValidator,
 } from "../schema";
-import { getAuth } from "@clerk/tanstack-react-start/server";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { auth } from "@clerk/tanstack-react-start/server";
 import { db } from "..";
 import { getOwningIdentity } from "~/lib/utils";
 import { v7 as uuid } from "uuid";
@@ -17,11 +16,12 @@ import { useCallback } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 
 const createSprint = createServerFn({ method: "POST" })
-  .validator(insertSprintValidator)
+  .inputValidator(insertSprintValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     await db.insert(sprints).values({
       ...data,
@@ -54,9 +54,9 @@ export function useCreateSprintMutation() {
 }
 
 const updateSprint = createServerFn({ method: "POST" })
-  .validator(updateSprintValidator)
+  .inputValidator(updateSprintValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     await db
       .update(sprints)
@@ -94,9 +94,9 @@ export function useUpdateSprintMutation() {
 }
 
 export const deleteSprint = createServerFn({ method: "POST" })
-  .validator((d: { sprintId: string }) => d)
+  .inputValidator(z.object({ sprintId: z.string() }))
   .handler(async ({ data: { sprintId } }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     // remove all tasks from the sprint
     await db

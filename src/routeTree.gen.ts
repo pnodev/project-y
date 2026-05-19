@@ -8,18 +8,14 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { createServerRootRoute } from '@tanstack/react-start/server'
-
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignedInRouteImport } from './routes/_signed-in'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as PostsIndexRouteImport } from './routes/posts.index'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
-import { Route as PostsPostIdRouteImport } from './routes/posts.$postId'
+import { Route as ApiUploadthingRouteImport } from './routes/api/uploadthing'
 import { Route as SignedInStatusesRouteImport } from './routes/_signed-in/statuses'
 import { Route as SignedInLabelsRouteImport } from './routes/_signed-in/labels'
 import { Route as SignedInDashboardRouteImport } from './routes/_signed-in/dashboard'
-import { Route as PostsPostIdDeepRouteImport } from './routes/posts_.$postId.deep'
 import { Route as SignedInSprintsNewRouteImport } from './routes/_signed-in/sprints.new'
 import { Route as SignedInProjectsNewRouteImport } from './routes/_signed-in/projects.new'
 import { Route as SignedInSprintsSprintIdTasksRouteImport } from './routes/_signed-in/sprints.$sprintId.tasks'
@@ -28,9 +24,6 @@ import { Route as SignedInProjectsProjectIdTasksRouteImport } from './routes/_si
 import { Route as SignedInProjectsProjectIdSettingsRouteImport } from './routes/_signed-in/projects.$projectId.settings'
 import { Route as SignedInSprintsSprintIdTasksTaskIdRouteImport } from './routes/_signed-in/sprints.$sprintId.tasks.$taskId'
 import { Route as SignedInProjectsProjectIdTasksTaskIdRouteImport } from './routes/_signed-in/projects.$projectId.tasks.$taskId'
-import { ServerRoute as ApiUploadthingServerRouteImport } from './routes/api/uploadthing'
-
-const rootServerRouteImport = createServerRootRoute()
 
 const SignedInRoute = SignedInRouteImport.update({
   id: '/_signed-in',
@@ -41,19 +34,14 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PostsIndexRoute = PostsIndexRouteImport.update({
-  id: '/posts/',
-  path: '/posts/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SignInSplatRoute = SignInSplatRouteImport.update({
   id: '/sign-in/$',
   path: '/sign-in/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PostsPostIdRoute = PostsPostIdRouteImport.update({
-  id: '/posts/$postId',
-  path: '/posts/$postId',
+const ApiUploadthingRoute = ApiUploadthingRouteImport.update({
+  id: '/api/uploadthing',
+  path: '/api/uploadthing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignedInStatusesRoute = SignedInStatusesRouteImport.update({
@@ -70,11 +58,6 @@ const SignedInDashboardRoute = SignedInDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => SignedInRoute,
-} as any)
-const PostsPostIdDeepRoute = PostsPostIdDeepRouteImport.update({
-  id: '/posts_/$postId/deep',
-  path: '/posts/$postId/deep',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const SignedInSprintsNewRoute = SignedInSprintsNewRouteImport.update({
   id: '/sprints/new',
@@ -122,23 +105,16 @@ const SignedInProjectsProjectIdTasksTaskIdRoute =
     path: '/$taskId',
     getParentRoute: () => SignedInProjectsProjectIdTasksRoute,
   } as any)
-const ApiUploadthingServerRoute = ApiUploadthingServerRouteImport.update({
-  id: '/api/uploadthing',
-  path: '/api/uploadthing',
-  getParentRoute: () => rootServerRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof SignedInDashboardRoute
   '/labels': typeof SignedInLabelsRoute
   '/statuses': typeof SignedInStatusesRoute
-  '/posts/$postId': typeof PostsPostIdRoute
+  '/api/uploadthing': typeof ApiUploadthingRoute
   '/sign-in/$': typeof SignInSplatRoute
-  '/posts': typeof PostsIndexRoute
   '/projects/new': typeof SignedInProjectsNewRoute
   '/sprints/new': typeof SignedInSprintsNewRoute
-  '/posts/$postId/deep': typeof PostsPostIdDeepRoute
   '/projects/$projectId/settings': typeof SignedInProjectsProjectIdSettingsRoute
   '/projects/$projectId/tasks': typeof SignedInProjectsProjectIdTasksRouteWithChildren
   '/sprints/$sprintId/settings': typeof SignedInSprintsSprintIdSettingsRoute
@@ -151,12 +127,10 @@ export interface FileRoutesByTo {
   '/dashboard': typeof SignedInDashboardRoute
   '/labels': typeof SignedInLabelsRoute
   '/statuses': typeof SignedInStatusesRoute
-  '/posts/$postId': typeof PostsPostIdRoute
+  '/api/uploadthing': typeof ApiUploadthingRoute
   '/sign-in/$': typeof SignInSplatRoute
-  '/posts': typeof PostsIndexRoute
   '/projects/new': typeof SignedInProjectsNewRoute
   '/sprints/new': typeof SignedInSprintsNewRoute
-  '/posts/$postId/deep': typeof PostsPostIdDeepRoute
   '/projects/$projectId/settings': typeof SignedInProjectsProjectIdSettingsRoute
   '/projects/$projectId/tasks': typeof SignedInProjectsProjectIdTasksRouteWithChildren
   '/sprints/$sprintId/settings': typeof SignedInSprintsSprintIdSettingsRoute
@@ -171,12 +145,10 @@ export interface FileRoutesById {
   '/_signed-in/dashboard': typeof SignedInDashboardRoute
   '/_signed-in/labels': typeof SignedInLabelsRoute
   '/_signed-in/statuses': typeof SignedInStatusesRoute
-  '/posts/$postId': typeof PostsPostIdRoute
+  '/api/uploadthing': typeof ApiUploadthingRoute
   '/sign-in/$': typeof SignInSplatRoute
-  '/posts/': typeof PostsIndexRoute
   '/_signed-in/projects/new': typeof SignedInProjectsNewRoute
   '/_signed-in/sprints/new': typeof SignedInSprintsNewRoute
-  '/posts_/$postId/deep': typeof PostsPostIdDeepRoute
   '/_signed-in/projects/$projectId/settings': typeof SignedInProjectsProjectIdSettingsRoute
   '/_signed-in/projects/$projectId/tasks': typeof SignedInProjectsProjectIdTasksRouteWithChildren
   '/_signed-in/sprints/$sprintId/settings': typeof SignedInSprintsSprintIdSettingsRoute
@@ -191,12 +163,10 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/labels'
     | '/statuses'
-    | '/posts/$postId'
+    | '/api/uploadthing'
     | '/sign-in/$'
-    | '/posts'
     | '/projects/new'
     | '/sprints/new'
-    | '/posts/$postId/deep'
     | '/projects/$projectId/settings'
     | '/projects/$projectId/tasks'
     | '/sprints/$sprintId/settings'
@@ -209,12 +179,10 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/labels'
     | '/statuses'
-    | '/posts/$postId'
+    | '/api/uploadthing'
     | '/sign-in/$'
-    | '/posts'
     | '/projects/new'
     | '/sprints/new'
-    | '/posts/$postId/deep'
     | '/projects/$projectId/settings'
     | '/projects/$projectId/tasks'
     | '/sprints/$sprintId/settings'
@@ -228,12 +196,10 @@ export interface FileRouteTypes {
     | '/_signed-in/dashboard'
     | '/_signed-in/labels'
     | '/_signed-in/statuses'
-    | '/posts/$postId'
+    | '/api/uploadthing'
     | '/sign-in/$'
-    | '/posts/'
     | '/_signed-in/projects/new'
     | '/_signed-in/sprints/new'
-    | '/posts_/$postId/deep'
     | '/_signed-in/projects/$projectId/settings'
     | '/_signed-in/projects/$projectId/tasks'
     | '/_signed-in/sprints/$sprintId/settings'
@@ -245,31 +211,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SignedInRoute: typeof SignedInRouteWithChildren
-  PostsPostIdRoute: typeof PostsPostIdRoute
+  ApiUploadthingRoute: typeof ApiUploadthingRoute
   SignInSplatRoute: typeof SignInSplatRoute
-  PostsIndexRoute: typeof PostsIndexRoute
-  PostsPostIdDeepRoute: typeof PostsPostIdDeepRoute
-}
-export interface FileServerRoutesByFullPath {
-  '/api/uploadthing': typeof ApiUploadthingServerRoute
-}
-export interface FileServerRoutesByTo {
-  '/api/uploadthing': typeof ApiUploadthingServerRoute
-}
-export interface FileServerRoutesById {
-  __root__: typeof rootServerRouteImport
-  '/api/uploadthing': typeof ApiUploadthingServerRoute
-}
-export interface FileServerRouteTypes {
-  fileServerRoutesByFullPath: FileServerRoutesByFullPath
-  fullPaths: '/api/uploadthing'
-  fileServerRoutesByTo: FileServerRoutesByTo
-  to: '/api/uploadthing'
-  id: '__root__' | '/api/uploadthing'
-  fileServerRoutesById: FileServerRoutesById
-}
-export interface RootServerRouteChildren {
-  ApiUploadthingServerRoute: typeof ApiUploadthingServerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -277,7 +220,7 @@ declare module '@tanstack/react-router' {
     '/_signed-in': {
       id: '/_signed-in'
       path: ''
-      fullPath: ''
+      fullPath: '/'
       preLoaderRoute: typeof SignedInRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -288,13 +231,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/posts/': {
-      id: '/posts/'
-      path: '/posts'
-      fullPath: '/posts'
-      preLoaderRoute: typeof PostsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/sign-in/$': {
       id: '/sign-in/$'
       path: '/sign-in/$'
@@ -302,11 +238,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignInSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/posts/$postId': {
-      id: '/posts/$postId'
-      path: '/posts/$postId'
-      fullPath: '/posts/$postId'
-      preLoaderRoute: typeof PostsPostIdRouteImport
+    '/api/uploadthing': {
+      id: '/api/uploadthing'
+      path: '/api/uploadthing'
+      fullPath: '/api/uploadthing'
+      preLoaderRoute: typeof ApiUploadthingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_signed-in/statuses': {
@@ -329,13 +265,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard'
       preLoaderRoute: typeof SignedInDashboardRouteImport
       parentRoute: typeof SignedInRoute
-    }
-    '/posts_/$postId/deep': {
-      id: '/posts_/$postId/deep'
-      path: '/posts/$postId/deep'
-      fullPath: '/posts/$postId/deep'
-      preLoaderRoute: typeof PostsPostIdDeepRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/_signed-in/sprints/new': {
       id: '/_signed-in/sprints/new'
@@ -392,17 +321,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/projects/$projectId/tasks/$taskId'
       preLoaderRoute: typeof SignedInProjectsProjectIdTasksTaskIdRouteImport
       parentRoute: typeof SignedInProjectsProjectIdTasksRoute
-    }
-  }
-}
-declare module '@tanstack/react-start/server' {
-  interface ServerFileRoutesByPath {
-    '/api/uploadthing': {
-      id: '/api/uploadthing'
-      path: '/api/uploadthing'
-      fullPath: '/api/uploadthing'
-      preLoaderRoute: typeof ApiUploadthingServerRouteImport
-      parentRoute: typeof rootServerRouteImport
     }
   }
 }
@@ -471,17 +389,19 @@ const SignedInRouteWithChildren = SignedInRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SignedInRoute: SignedInRouteWithChildren,
-  PostsPostIdRoute: PostsPostIdRoute,
+  ApiUploadthingRoute: ApiUploadthingRoute,
   SignInSplatRoute: SignInSplatRoute,
-  PostsIndexRoute: PostsIndexRoute,
-  PostsPostIdDeepRoute: PostsPostIdDeepRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-const rootServerRouteChildren: RootServerRouteChildren = {
-  ApiUploadthingServerRoute: ApiUploadthingServerRoute,
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
 }
-export const serverRouteTree = rootServerRouteImport
-  ._addFileChildren(rootServerRouteChildren)
-  ._addFileTypes<FileServerRouteTypes>()

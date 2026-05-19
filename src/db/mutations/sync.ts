@@ -1,16 +1,29 @@
-import fetch from "node-fetch";
+import { env } from "~/env";
 
-export async function sync(topic: string, payload: any) {
-  const appId = "676bb0d1-942d-465a-a706-4ee451177507";
-  const key = "OIV3S2Q-ZMPEFQI-RHMNAVY-F4UZDDA";
-  await fetch(
-    `https://sync-connect.pno.dev/stream/${appId}?key=${key}&topic=${topic}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+export async function sync(topic: string, payload: unknown) {
+  const baseUrl = env.SYNC_ENGINE_URL ?? "https://sync-connect.pno.dev";
+  try {
+    const response = await fetch(
+      `${baseUrl}/stream/${env.SYNC_APP_ID}?key=${env.SYNC_PUBLISH_KEY}&topic=${topic}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ payload }),
       },
-      body: JSON.stringify({ payload }),
+    );
+
+    if (!response.ok) {
+      const body = await response.text();
+      console.error(
+        `Sync failed for topic "${topic}" (app ${env.SYNC_APP_ID}, ${baseUrl}): ${response.status} ${body}`,
+      );
     }
-  );
+  } catch (error) {
+    console.error(
+      `Sync error for topic "${topic}" (app ${env.SYNC_APP_ID}, ${baseUrl}):`,
+      error,
+    );
+  }
 }

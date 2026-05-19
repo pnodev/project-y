@@ -15,14 +15,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { and, eq } from "drizzle-orm";
 import { getOwningIdentity } from "~/lib/utils";
-import { getAuth } from "@clerk/tanstack-react-start/server";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { auth } from "@clerk/tanstack-react-start/server";
 import { sync } from "./sync";
 
 const createLabel = createServerFn({ method: "POST" })
-  .validator(insertLabelValidator)
+  .inputValidator(insertLabelValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
     await db.insert(labels).values({
       ...data,
       id: uuid(),
@@ -57,9 +56,9 @@ export function useCreateLabelMutation() {
 }
 
 const updateLabel = createServerFn({ method: "POST" })
-  .validator(updateLabelValidator)
+  .inputValidator(updateLabelValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     await db
       .update(labels)
@@ -100,9 +99,9 @@ export function useUpdateLabelMutation() {
 }
 
 const updateMultipleLabels = createServerFn({ method: "POST" })
-  .validator(updateMultipleLabelsValidator)
+  .inputValidator(updateMultipleLabelsValidator)
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     await Promise.all(
       data.map(async (entry) => {
@@ -164,9 +163,9 @@ export function useUpdateMultipleLabelsMutation() {
 }
 
 const deleteLabel = createServerFn({ method: "POST" })
-  .validator(z.object({ id: z.string() }))
+  .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const user = await getAuth(getWebRequest());
+    const user = await auth();
 
     await db
       .delete(labels)
