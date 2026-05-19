@@ -1,20 +1,20 @@
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { OpenTask } from "~/components/OpenTask";
-import { commentsQueryOptions, useCommentsQuery } from "~/db/queries/comments";
-import { labelsQueryOptions, useLabelsQuery } from "~/db/queries/labels";
-import { statusesQueryOptions, useStatusesQuery } from "~/db/queries/statuses";
-import { taskQueryOptions, useTaskQuery } from "~/db/queries/tasks";
+import { useCommentsQuery } from "~/db/queries/comments";
+import { useLabelsQuery } from "~/db/queries/labels";
+import { useStatusesQuery } from "~/db/queries/statuses";
+import { useTaskQuery } from "~/db/queries/tasks";
+import { fetchTaskPageBundle } from "~/db/queries/bundles";
+import { hydrateTaskPageCache } from "~/db/queries/hydrate-query-cache";
 
 export const Route = createFileRoute(
   "/_signed-in/projects/$projectId/tasks/$taskId"
 )({
   loader: async ({ context, params }) => {
-    await Promise.all([
-      context.queryClient.ensureQueryData(taskQueryOptions(params.taskId)),
-      context.queryClient.ensureQueryData(labelsQueryOptions()),
-      context.queryClient.ensureQueryData(commentsQueryOptions(params.taskId)),
-      context.queryClient.ensureQueryData(statusesQueryOptions()),
-    ]);
+    const bundle = await fetchTaskPageBundle({
+      data: { taskId: params.taskId },
+    });
+    hydrateTaskPageCache(context.queryClient, params.taskId, bundle);
   },
   component: RouteComponent,
 });

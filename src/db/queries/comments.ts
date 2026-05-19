@@ -13,6 +13,44 @@ export type CommentWithAuthor = Omit<Comment, "author"> & {
   authorAvatar: string | null;
 };
 
+export async function getCommentsForTask(
+  owner: string,
+  taskId: string
+): Promise<CommentWithAuthor[]> {
+  const rawData = await db.query.comments.findMany({
+    where: (model, { eq: eqFn }) =>
+      and(eqFn(model.owner, owner), eqFn(model.taskId, taskId)),
+    orderBy: (fields) => [asc(fields.createdAt)],
+  });
+
+  const authorIds = [...new Set(rawData.map((comment) => comment.author))];
+  const authors =
+    authorIds.length > 0
+      ? await db
+          .select({
+            id: user.id,
+            firstname: user.firstname,
+            lastname: user.lastname,
+            image: user.image,
+          })
+          .from(user)
+          .where(inArray(user.id, authorIds))
+      : [];
+
+  const authorsById = new Map(authors.map((author) => [author.id, author]));
+
+  return rawData.map((comment) => {
+    const author = authorsById.get(comment.author);
+    return {
+      ...comment,
+      author: author
+        ? formatUserName(author.firstname, author.lastname)
+        : null,
+      authorAvatar: author?.image ?? null,
+    };
+  });
+}
+
 const fetchCommentsForTask = createServerFn({ method: "GET" })
   .inputValidator((data?: string) => data)
   .handler(async ({ data }): Promise<CommentWithAuthor[]> => {
@@ -21,43 +59,7 @@ const fetchCommentsForTask = createServerFn({ method: "GET" })
     }
 
     const session = await requireSession();
-    const rawData = await db.query.comments.findMany({
-      where: (model, { eq: eqFn }) =>
-        and(
-          eqFn(model.owner, getOwningIdentity(session)),
-          eqFn(model.taskId, data)
-        ),
-      orderBy: (fields) => [asc(fields.createdAt)],
-    });
-
-    const authorIds = [...new Set(rawData.map((comment) => comment.author))];
-    const authors =
-      authorIds.length > 0
-        ? await db
-            .select({
-              id: user.id,
-              firstname: user.firstname,
-              lastname: user.lastname,
-              image: user.image,
-            })
-            .from(user)
-            .where(inArray(user.id, authorIds))
-        : [];
-
-    const authorsById = new Map(
-      authors.map((author) => [author.id, author])
-    );
-
-    return rawData.map((comment) => {
-      const author = authorsById.get(comment.author);
-      return {
-        ...comment,
-        author: author
-          ? formatUserName(author.firstname, author.lastname)
-          : null,
-        authorAvatar: author?.image ?? null,
-      };
-    });
+    return getCommentsForTask(getOwningIdentity(session), data);
   });
 
 export const commentsQueryOptions = (taskId?: string) =>
