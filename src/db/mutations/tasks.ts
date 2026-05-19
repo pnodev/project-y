@@ -31,13 +31,22 @@ function getTaskListQueryKeys(
   queryClient: QueryClient,
   task: UpdateTask
 ): QueryKey[] {
-  const keys: QueryKey[] = [];
   const detail = queryClient.getQueryData<TaskWithRelations>(["tasks", task.id]);
-  const projectId = task.projectId ?? detail?.projectId;
-  const sprintId = task.sprintId ?? detail?.sprintId;
+  const projectIds = new Set<string>();
+  const sprintIds = new Set<string>();
 
-  if (projectId) keys.push(["tasks", projectId]);
-  if (sprintId) keys.push(["tasks", sprintId]);
+  if (detail?.projectId) projectIds.add(detail.projectId);
+  if (task.projectId) projectIds.add(task.projectId);
+  if (detail?.sprintId) sprintIds.add(detail.sprintId);
+  if (task.sprintId) sprintIds.add(task.sprintId);
+
+  const keys: QueryKey[] = [];
+  for (const projectId of projectIds) {
+    keys.push(["tasks", projectId]);
+  }
+  for (const sprintId of sprintIds) {
+    keys.push(["tasks", sprintId]);
+  }
 
   return keys;
 }
@@ -290,6 +299,11 @@ export function useUpdateTaskMutation() {
         for (const { queryKey, data } of snapshots) {
           queryClient.setQueryData(queryKey, data);
         }
+        await Promise.all(
+          snapshots.map(({ queryKey }) =>
+            queryClient.invalidateQueries({ queryKey })
+          )
+        );
         toast.error("Failed to update task");
         throw error;
       }
