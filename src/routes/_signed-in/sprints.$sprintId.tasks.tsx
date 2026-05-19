@@ -25,13 +25,29 @@ import {
 } from "~/components/views/board-view-store";
 import { BoardView } from "~/components/views/BoardView";
 import { useUpdateTaskMutation } from "~/db/mutations/tasks";
-import { useSprintQuery } from "~/db/queries/sprints";
-import { useStatusesQuery } from "~/db/queries/statuses";
-import { useTasksForSprintQuery } from "~/db/queries/tasks";
+import {
+  sprintQueryOptions,
+  useSprintQuery,
+} from "~/db/queries/sprints";
+import {
+  statusesQueryOptions,
+  useStatusesQuery,
+} from "~/db/queries/statuses";
+import {
+  tasksForSprintQueryOptions,
+  useTasksForSprintQuery,
+} from "~/db/queries/tasks";
 import { UpdateTask } from "~/db/schema";
 
 export const Route = createFileRoute("/_signed-in/sprints/$sprintId/tasks")({
-  loader: async ({ context, params }) => {},
+  loader: async ({ context, params }) => {
+    const { sprintId } = params;
+    await Promise.all([
+      context.queryClient.ensureQueryData(sprintQueryOptions(sprintId)),
+      context.queryClient.ensureQueryData(tasksForSprintQueryOptions(sprintId)),
+      context.queryClient.ensureQueryData(statusesQueryOptions()),
+    ]);
+  },
   component: RouteComponent,
 });
 

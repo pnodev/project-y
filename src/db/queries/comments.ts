@@ -20,16 +20,27 @@ const fetchCommentsForTask = createServerFn({ method: "GET" })
       orderBy: (fields, { asc }) => [asc(fields.createdAt)],
     });
 
-    return Promise.all(
-      rawData.map(async (comment) => {
-        const user = await clerkClient().users.getUser(comment.author);
-        return {
-          ...comment,
-          author: user.fullName,
-          authorAvatar: user.imageUrl,
-        };
-      }),
+    const authorIds = [...new Set(rawData.map((comment) => comment.author))];
+    const authorsById = new Map(
+      await Promise.all(
+        authorIds.map(async (authorId) => {
+          const user = await clerkClient().users.getUser(authorId);
+          return [
+            authorId,
+            { fullName: user.fullName, imageUrl: user.imageUrl },
+          ] as const;
+        }),
+      ),
     );
+
+    return rawData.map((comment) => {
+      const author = authorsById.get(comment.author);
+      return {
+        ...comment,
+        author: author?.fullName ?? null,
+        authorAvatar: author?.imageUrl ?? null,
+      };
+    });
   });
 
 export const commentsQueryOptions = (taskId?: string) =>
