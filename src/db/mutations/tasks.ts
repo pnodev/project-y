@@ -24,6 +24,23 @@ import { auth } from "@clerk/tanstack-react-start/server";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
 import { deleteAttachment } from "./attachments";
+import type { QueryClient, QueryKey } from "@tanstack/react-query";
+import { toast } from "sonner";
+
+function getTaskListQueryKeys(
+  queryClient: QueryClient,
+  task: UpdateTask
+): QueryKey[] {
+  const keys: QueryKey[] = [];
+  const detail = queryClient.getQueryData<TaskWithRelations>(["tasks", task.id]);
+  const projectId = task.projectId ?? detail?.projectId;
+  const sprintId = task.sprintId ?? detail?.sprintId;
+
+  if (projectId) keys.push(["tasks", projectId]);
+  if (sprintId) keys.push(["tasks", sprintId]);
+
+  return keys;
+}
 
 const createTask = createServerFn({ method: "POST" })
   .inputValidator(insertTaskValidator)
@@ -205,15 +222,19 @@ const updateTask = createServerFn({ method: "POST" })
   .inputValidator(updateTaskValidator)
   .handler(async ({ data }) => {
     const user = await auth();
+    const { id, ...updates } = data;
+    if (!id) {
+      throw new Error("Task id is required");
+    }
+
     await db
       .update(tasks)
       .set({
-        ...data,
+        ...updates,
+        updatedAt: updates.updatedAt ?? new Date(),
       })
-      .where(
-        and(eq(tasks.id, data.id!), eq(tasks.owner, getOwningIdentity(user)))
-      );
-    await sync(`task-update-${data.id}`, { data });
+      .where(and(eq(tasks.id, id), eq(tasks.owner, getOwningIdentity(user))));
+    await sync(`task-update-${id}`, { data });
   });
 
 export function useUpdateTaskMutation() {
@@ -223,18 +244,31 @@ export function useUpdateTaskMutation() {
 
   return useCallback(
     async (task: UpdateTask) => {
-      // Optimistically update the task in the cache
-      console.info("Optimistically updating task in cache", task.projectId);
+      const listQueryKeys = getTaskListQueryKeys(queryClient, task);
+      const detailQueryKey: QueryKey = ["tasks", task.id];
+
+      const snapshots = [
+        ...listQueryKeys.map((queryKey) => ({
+          queryKey,
+          data: queryClient.getQueryData(queryKey),
+        })),
+        {
+          queryKey: detailQueryKey,
+          data: queryClient.getQueryData(detailQueryKey),
+        },
+      ];
+
+      const patchTaskList = (oldData: TaskWithRelations[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map((t) => (t.id === task.id ? { ...t, ...task } : t));
+      };
+
+      for (const queryKey of listQueryKeys) {
+        queryClient.setQueryData(queryKey, patchTaskList);
+      }
       queryClient.setQueryData(
-        ["tasks", task.projectId],
-        (oldData: Task[] | undefined) => {
-          if (!oldData) return oldData;
-          return oldData.map((t) => (t.id === task.id ? { ...t, ...task } : t));
-        }
-      );
-      queryClient.setQueryData(
-        ["tasks", task.id],
-        (oldData: Task | undefined) => {
+        detailQueryKey,
+        (oldData: TaskWithRelations | undefined) => {
           if (!oldData) return oldData;
           return { ...oldData, ...task };
         }
@@ -244,14 +278,20 @@ export function useUpdateTaskMutation() {
         const result = await _updateTask({
           data: { ...task, updatedAt: new Date() },
         });
+
+        for (const queryKey of listQueryKeys) {
+          queryClient.invalidateQueries({ queryKey });
+        }
+        queryClient.invalidateQueries({ queryKey: detailQueryKey });
+        router.invalidate();
+
         return result;
       } catch (error) {
-        // If the mutation fails, roll back to the previous state
-        queryClient.invalidateQueries({ queryKey: ["tasks", task.projectId] });
-        queryClient.invalidateQueries({ queryKey: ["tasks", task.id] });
+        for (const { queryKey, data } of snapshots) {
+          queryClient.setQueryData(queryKey, data);
+        }
+        toast.error("Failed to update task");
         throw error;
-      } finally {
-        router.invalidate();
       }
     },
     [router, queryClient, _updateTask]

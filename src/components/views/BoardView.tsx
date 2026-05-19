@@ -37,11 +37,12 @@ export const BoardView = ({
     const statusId = (e.over?.id as string).split(":")[1];
     const task = tasks.find((t) => t.id === taskId);
     if (!task || !statusId || !task.projectId) return;
-    updateTask({
+    void updateTask({
       id: taskId,
       statusId,
       projectId: task.projectId,
-    });
+      sprintId: task.sprintId ?? undefined,
+    }).catch(() => undefined);
   };
   const sensors = useSensors(
     useSensor(PointerSensor, {
