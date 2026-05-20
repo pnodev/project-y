@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, X } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Calendar } from "~/components/ui/calendar";
@@ -11,6 +11,14 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 
+const DEFAULT_TIME = "00:00";
+
+function formatTimeValue(date: Date) {
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
 export function DateTimePicker({
   date,
   setDate,
@@ -20,8 +28,18 @@ export function DateTimePicker({
 }) {
   const [open, setOpen] = React.useState(false);
   const [time, setTime] = React.useState(
-    date ? date.toTimeString().slice(0, 5) : "0:00"
+    date ? formatTimeValue(date) : DEFAULT_TIME
   );
+
+  React.useEffect(() => {
+    setTime(date ? formatTimeValue(date) : DEFAULT_TIME);
+  }, [date]);
+
+  const handleClear = () => {
+    setDate?.(undefined);
+    setTime(DEFAULT_TIME);
+    setOpen(false);
+  };
 
   const handleTimeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const [hours, minutes] = event.target.value.split(":").map(Number);
@@ -76,19 +94,32 @@ export function DateTimePicker({
           </PopoverContent>
         </Popover>
       </div>
-      <div className="flex flex-col gap-3">
-        <Label htmlFor="time-picker" className="sr-only">
-          Time
-        </Label>
-        <Input
-          type="time"
-          id="time-picker"
-          step="60"
-          value={time}
-          onChange={handleTimeChange}
-          className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-        />
-      </div>
+      {date ? (
+        <div className="flex flex-col gap-3">
+          <Label htmlFor="time-picker" className="sr-only">
+            Time
+          </Label>
+          <Input
+            type="time"
+            id="time-picker"
+            step="60"
+            value={time}
+            onChange={handleTimeChange}
+            className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+          />
+        </div>
+      ) : null}
+      {date ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={handleClear}
+          aria-label="Clear due date"
+        >
+          <X />
+        </Button>
+      ) : null}
     </div>
   );
 }
