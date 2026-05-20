@@ -4,7 +4,7 @@ import { UploadDropzone } from "~/utils/uploadthing";
 import { useState } from "react";
 import { TaskLabel } from "./ui/TaskLabel";
 import { Button } from "./ui/button";
-import { CloudUpload, List, UploadIcon } from "lucide-react";
+import { CloudUpload, List } from "lucide-react";
 
 export function AttachmentArea({
   attachments,

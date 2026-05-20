@@ -50,7 +50,7 @@ export function useCreateAttachmentMutation() {
 
       return result;
     },
-    [_createAttachment]
+    [router, queryClient, _createAttachment]
   );
 }
 
@@ -86,6 +86,6 @@ export function useDeleteAttachmentMutation() {
 
       return result;
     },
-    [_deleteAttachment]
+    [router, queryClient, _deleteAttachment]
   );
 }

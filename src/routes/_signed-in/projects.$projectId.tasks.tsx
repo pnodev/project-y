@@ -9,7 +9,7 @@ import { Suspense, useCallback } from "react";
 import { useUpdateTaskMutation } from "~/db/mutations/tasks";
 
 import { BoardView } from "~/components/views/BoardView";
-import { Priority, UpdateTask } from "~/db/schema";
+import { UpdateTask } from "~/db/schema";
 import { PageLayout } from "~/components/PageLayout";
 import { useStatusesQuery } from "~/db/queries/statuses";
 import { useProjectQuery } from "~/db/queries/projects";

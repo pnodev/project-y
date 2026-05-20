@@ -36,7 +36,7 @@ export function SubTaskItem({
     } else {
       setPreventClose(false);
     }
-  }, [isEditing]);
+  }, [isEditing, setPreventClose]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

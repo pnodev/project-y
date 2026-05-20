@@ -1,4 +1,3 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { Outlet, createFileRoute } from "@tanstack/react-router";
 import { FormEvent, useCallback } from "react";
 import { ColorSelect, selectableColorClasses } from "~/components/ColorSelect";

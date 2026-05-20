@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "vite dev --port 3001",
     "build": "vite build && tsc --noEmit",
+    "lint": "eslint src --max-warnings 0",
     "preview": "vite preview",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
@@ -70,26 +71,21 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@netlify/vite-plugin-tanstack-start": "^1.3.14",
     "@tanstack/devtools-vite": "^0.7.0",
     "@types/node": "^22.10.2",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^10.4.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
     "tailwind-scrollbar": "^4.0.2",
     "tw-animate-css": "^1.3.5",
     "typescript": "^5.8.3",
+    "typescript-eslint": "^8.59.4",
     "vite": "^8.0.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "zod": "^4.4.3"
-    },
-    "onlyBuiltDependencies": [
-      "@parcel/watcher",
-      "@tailwindcss/oxide",
-      "esbuild",
-      "lightningcss"
-    ]
   }
 }

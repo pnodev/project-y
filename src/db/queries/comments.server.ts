@@ -1,6 +1,6 @@
 import "@tanstack/react-start/server-only";
 
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, inArray } from "drizzle-orm";
 import { db } from "~/db";
 import { user } from "~/db/auth-schema";
 import { formatUserName } from "~/lib/utils";

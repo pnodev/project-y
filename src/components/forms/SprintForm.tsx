@@ -1,4 +1,4 @@
-import { useForm, UseFormReturn } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "~/components/ui/button";
@@ -11,16 +11,7 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
-import { Textarea } from "~/components/ui/textarea";
-import {
-  CreateProject,
-  CreateSprint,
-  Project,
-  Sprint,
-  UpdateProject,
-  UpdateSprint,
-} from "~/db/schema";
-import { UploadButton } from "~/utils/uploadthing";
+import { CreateSprint, Sprint, UpdateSprint } from "~/db/schema";
 import {
   PageSection,
   PageSectionContent,
@@ -29,7 +20,7 @@ import {
 import { toast } from "sonner";
 import { useSprintsQuery } from "~/db/queries/sprints";
 import { DatePicker } from "../ui/date-picker";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Alert, AlertDescription } from "../ui/alert";
 import { Clock10 } from "lucide-react";
 

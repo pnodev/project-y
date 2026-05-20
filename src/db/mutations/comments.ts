@@ -41,6 +41,6 @@ export function useCreateCommentMutation() {
 
       return result;
     },
-    [_createComment]
+    [router, queryClient, _createComment]
   );
 }

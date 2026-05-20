@@ -1,9 +1,6 @@
 import { createServerFn, useServerFn } from "@tanstack/react-start";
 import {
-  comments,
-  CreateComment,
   CreateProject,
-  insertCommentValidator,
   insertProjectValidator,
   projects,
   tasks,
@@ -52,7 +49,7 @@ export function useCreateProjectMutation() {
 
       return result;
     },
-    [_createProject]
+    [router, queryClient, _createProject]
   );
 }
 
@@ -94,7 +91,7 @@ export function useUpdateProjectMutation() {
 
       return result;
     },
-    [_updateProject]
+    [router, queryClient, _updateProject]
   );
 }
 

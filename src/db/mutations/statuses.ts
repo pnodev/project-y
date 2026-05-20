@@ -3,6 +3,7 @@ import { db } from "~/db";
 import {
   CreateStatus,
   insertStatusValidator,
+  Status,
   statuses,
   tasks,
   updateMultipleStatusesValidator,
@@ -138,7 +139,7 @@ export function useUpdateMultipleStatusesMutation() {
   return useCallback(
     async (statuses: UpdateStatus[]) => {
       // Generic update function that works for both cache types
-      const updateCache = (oldData: any[] | undefined) => {
+      const updateCache = (oldData: Status[] | undefined) => {
         if (!oldData) return oldData;
         const statusMap = new Map(statuses.map((s) => [s.id, s]));
         return oldData.map((s) => {

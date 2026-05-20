@@ -5,7 +5,7 @@ export function useEventSource({
   callback,
 }: {
   topics: string[];
-  callback: (data: any) => void;
+  callback: (data: unknown) => void;
 }) {
   const topicsKey = [...topics].sort().join("\0");
 
