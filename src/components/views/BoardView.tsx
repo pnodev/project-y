@@ -22,7 +22,7 @@ type TaskViewProps = {
   sprintId?: string;
   statuses: Status[];
   labels: Label[];
-  location: "project" | "sprint";
+  location: "project" | "sprint" | "all";
   updateTask: (task: UpdateTask) => Promise<void>;
 };
 
@@ -128,6 +128,11 @@ export const BoardView = ({
       .sort(taskComparator());
   };
 
+  const showProject = location === "sprint" || location === "all";
+  const showSprint = location === "project" || location === "all";
+  const taskLinkTo =
+    location === "all" ? ("all" as const) : undefined;
+
   const renderColumnCards = (columnTasks: TaskWithRelations[]) => {
     const sorted = sortColumnTasks(columnTasks);
     const columnTaskIds = sorted.map((t) => t.id);
@@ -136,8 +141,9 @@ export const BoardView = ({
         key={task.id}
         task={task}
         columnTaskIds={columnTaskIds}
-        showSprint={!sprintId}
-        showProject={!!sprintId}
+        showSprint={showSprint}
+        showProject={showProject}
+        taskLinkTo={taskLinkTo}
       />
     ));
   };
@@ -202,8 +208,9 @@ export const BoardView = ({
         {activeTask && (
           <TaskCardComponent
             task={activeTask}
-            showSprint={!sprintId}
-            showProject={!!sprintId}
+            showSprint={showSprint}
+            showProject={showProject}
+            taskLinkTo={taskLinkTo}
           />
         )}
       </DragOverlay>

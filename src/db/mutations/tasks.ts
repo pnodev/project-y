@@ -24,6 +24,23 @@ import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ALL_TASKS_SCOPE } from "~/db/queries/tasks";
+
+const allTasksListQueryKey: QueryKey = ["tasks", ALL_TASKS_SCOPE];
+
+function maybeIncludeAllTasksListKey(
+  queryClient: QueryClient,
+  keys: QueryKey[]
+): QueryKey[] {
+  const state = queryClient.getQueryState(allTasksListQueryKey);
+  if (state?.dataUpdatedAt) {
+    const key = JSON.stringify(allTasksListQueryKey);
+    if (!keys.some((k) => JSON.stringify(k) === key)) {
+      return [...keys, allTasksListQueryKey];
+    }
+  }
+  return keys;
+}
 
 function getTaskListQueryKeys(
   queryClient: QueryClient,
@@ -46,7 +63,7 @@ function getTaskListQueryKeys(
     keys.push(["tasks", sprintId]);
   }
 
-  return keys;
+  return maybeIncludeAllTasksListKey(queryClient, keys);
 }
 
 function getBatchTaskListQueryKeys(
@@ -84,7 +101,7 @@ function getBatchTaskListQueryKeys(
     }
   }
 
-  return result;
+  return maybeIncludeAllTasksListKey(queryClient, result);
 }
 
 type BatchTaskPatch = {
@@ -168,6 +185,7 @@ export function useCreateTaskMutation() {
           queryKey: ["tasks", task.sprintId],
         });
       }
+      queryClient.invalidateQueries({ queryKey: allTasksListQueryKey });
 
       return result;
     },

@@ -38,11 +38,13 @@ export default function TaskCard({
   columnTaskIds,
   showSprint,
   showProject,
+  taskLinkTo,
 }: {
   task: TaskWithRelations;
   columnTaskIds: string[];
   showSprint?: boolean;
   showProject?: boolean;
+  taskLinkTo?: "project" | "sprint" | "all";
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `task:${task.id}`,
@@ -63,6 +65,7 @@ export default function TaskCard({
           key={task.id}
           showSprint={showSprint}
           showProject={showProject}
+          taskLinkTo={taskLinkTo}
         />
       }
     >
@@ -100,6 +103,7 @@ export default function TaskCard({
             columnTaskIds={columnTaskIds}
             showSprint={showSprint}
             showProject={showProject}
+            taskLinkTo={taskLinkTo}
             isSelected={isSelected}
             isHovered={isHovered}
           />
@@ -115,7 +119,7 @@ const TaskCardLinkWrapper = ({
   children,
   onSelectClick,
 }: {
-  to: "project" | "sprint";
+  to: "project" | "sprint" | "all";
   params: Record<string, string | undefined>;
   children: React.ReactNode;
   onSelectClick: (event: React.MouseEvent) => void;
@@ -130,6 +134,19 @@ const TaskCardLinkWrapper = ({
       clearTaskSelectionState();
     }
   };
+
+  if (to === "all") {
+    return (
+      <Link
+        to="/tasks/$taskId"
+        title="All Projects"
+        params={{ taskId: params.taskId as string }}
+        onClick={handleClick}
+      >
+        {children}
+      </Link>
+    );
+  }
 
   if (to === "project") {
     return (
@@ -166,6 +183,7 @@ export const TaskCardComponent = ({
   columnTaskIds = [],
   showSprint = true,
   showProject = true,
+  taskLinkTo,
   isSelected = false,
   isHovered = false,
 }: {
@@ -173,6 +191,7 @@ export const TaskCardComponent = ({
   columnTaskIds?: string[];
   showSprint?: boolean;
   showProject?: boolean;
+  taskLinkTo?: "project" | "sprint" | "all";
   isSelected?: boolean;
   isHovered?: boolean;
 }) => {
@@ -212,7 +231,7 @@ export const TaskCardComponent = ({
 
   return (
     <TaskCardLinkWrapper
-      to={showSprint ? "project" : "sprint"}
+      to={taskLinkTo ?? (showSprint ? "project" : "sprint")}
       params={{
         projectId: task.projectId || undefined,
         taskId: task.id,
