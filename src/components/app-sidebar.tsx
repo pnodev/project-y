@@ -110,9 +110,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <a href="#">
-                <div className="bg-[#093148] font-bold text-[#ffe50a] flex aspect-square size-8 items-center justify-center rounded font-mono">
-                  PY
-                </div>
+                <img src="/logo.svg" alt="Project Y" className="size-8" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">Project Y</span>
                   <span className="truncate text-xs">Enterprise</span>
