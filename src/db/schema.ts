@@ -187,7 +187,7 @@ export const comments = createTable(
     id: uuid("id").primaryKey(),
     taskId: uuid("task_id")
       .notNull()
-      .references(() => tasks.id),
+      .references(() => tasks.id, { onDelete: "cascade" }),
     owner: varchar("owner", { length: 256 }).notNull(),
     author: varchar("author", { length: 256 }).notNull(),
     content: text("content").notNull(),
@@ -262,7 +262,7 @@ export const labelsToTasks = createTable(
       .references(() => labels.id),
     taskId: uuid("task_id")
       .notNull()
-      .references(() => tasks.id),
+      .references(() => tasks.id, { onDelete: "cascade" }),
   },
   (t) => [primaryKey({ columns: [t.labelId, t.taskId] })]
 );

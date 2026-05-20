@@ -6,6 +6,18 @@ import { db } from "~/db";
 import { attachments } from "../schema";
 import { sync } from "./sync";
 
+export async function deleteAttachmentFilesFromStorage(
+  providerFileIds: string[],
+) {
+  if (providerFileIds.length === 0) return;
+
+  const utapi = new UTApi();
+  const deleteResult = await utapi.deleteFiles(providerFileIds);
+  if (!deleteResult.success) {
+    throw new Error("Failed to delete attachment file from storage");
+  }
+}
+
 export async function deleteAttachmentForOwner(
   owner: string,
   attachmentId: string,
@@ -16,11 +28,7 @@ export async function deleteAttachmentForOwner(
   });
   if (!attachment) return;
 
-  const utapi = new UTApi();
-  const deleteResult = await utapi.deleteFiles([attachment.providerFileId]);
-  if (!deleteResult.success) {
-    throw new Error("Failed to delete attachment file from storage");
-  }
+  await deleteAttachmentFilesFromStorage([attachment.providerFileId]);
 
   await db
     .delete(attachments)
