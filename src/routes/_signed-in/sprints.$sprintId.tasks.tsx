@@ -27,6 +27,7 @@ import { BoardView } from "~/components/views/BoardView";
 import { useUpdateTaskMutation } from "~/db/mutations/tasks";
 import { useSprintQuery } from "~/db/queries/sprints";
 import { useStatusesQuery } from "~/db/queries/statuses";
+import { useLabelsQuery } from "~/db/queries/labels";
 import { useTasksForSprintQuery } from "~/db/queries/tasks";
 import { fetchSprintBoardBundle } from "~/db/queries/bundles";
 import { hydrateSprintBoardCache } from "~/db/queries/hydrate-query-cache";
@@ -46,6 +47,7 @@ function RouteComponent() {
   const tasksQuery = useTasksForSprintQuery(params.sprintId);
   const sprintQuery = useSprintQuery(params.sprintId);
   const statusesQuery = useStatusesQuery();
+  const labelsQuery = useLabelsQuery();
 
   const updateTask = useUpdateTaskMutation();
 
@@ -148,6 +150,8 @@ function RouteComponent() {
           tasks={tasksQuery.data}
           sprintId={params.sprintId}
           statuses={statusesQuery.data}
+          labels={labelsQuery.data ?? []}
+          location="sprint"
           updateTask={handleUpdateTask}
         />
         <Suspense
