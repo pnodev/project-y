@@ -13,10 +13,12 @@ import { Route as SignedInRouteImport } from './routes/_signed-in'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
 import { Route as ApiUploadthingRouteImport } from './routes/api/uploadthing'
+import { Route as SignedInTasksRouteImport } from './routes/_signed-in/tasks'
 import { Route as SignedInStatusesRouteImport } from './routes/_signed-in/statuses'
 import { Route as SignedInLabelsRouteImport } from './routes/_signed-in/labels'
 import { Route as SignedInDashboardRouteImport } from './routes/_signed-in/dashboard'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as SignedInTasksTaskIdRouteImport } from './routes/_signed-in/tasks.$taskId'
 import { Route as SignedInSprintsNewRouteImport } from './routes/_signed-in/sprints.new'
 import { Route as SignedInSettingsOrganizationRouteImport } from './routes/_signed-in/settings.organization'
 import { Route as SignedInSettingsAccountRouteImport } from './routes/_signed-in/settings.account'
@@ -48,6 +50,11 @@ const ApiUploadthingRoute = ApiUploadthingRouteImport.update({
   path: '/api/uploadthing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignedInTasksRoute = SignedInTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => SignedInRoute,
+} as any)
 const SignedInStatusesRoute = SignedInStatusesRouteImport.update({
   id: '/statuses',
   path: '/statuses',
@@ -67,6 +74,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SignedInTasksTaskIdRoute = SignedInTasksTaskIdRouteImport.update({
+  id: '/$taskId',
+  path: '/$taskId',
+  getParentRoute: () => SignedInTasksRoute,
 } as any)
 const SignedInSprintsNewRoute = SignedInSprintsNewRouteImport.update({
   id: '/sprints/new',
@@ -137,12 +149,14 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof SignedInDashboardRoute
   '/labels': typeof SignedInLabelsRoute
   '/statuses': typeof SignedInStatusesRoute
+  '/tasks': typeof SignedInTasksRouteWithChildren
   '/api/uploadthing': typeof ApiUploadthingRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/projects/new': typeof SignedInProjectsNewRoute
   '/settings/account': typeof SignedInSettingsAccountRoute
   '/settings/organization': typeof SignedInSettingsOrganizationRouteWithChildren
   '/sprints/new': typeof SignedInSprintsNewRoute
+  '/tasks/$taskId': typeof SignedInTasksTaskIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/projects/$projectId/settings': typeof SignedInProjectsProjectIdSettingsRoute
   '/projects/$projectId/tasks': typeof SignedInProjectsProjectIdTasksRouteWithChildren
@@ -157,12 +171,14 @@ export interface FileRoutesByTo {
   '/dashboard': typeof SignedInDashboardRoute
   '/labels': typeof SignedInLabelsRoute
   '/statuses': typeof SignedInStatusesRoute
+  '/tasks': typeof SignedInTasksRouteWithChildren
   '/api/uploadthing': typeof ApiUploadthingRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/projects/new': typeof SignedInProjectsNewRoute
   '/settings/account': typeof SignedInSettingsAccountRoute
   '/settings/organization': typeof SignedInSettingsOrganizationRouteWithChildren
   '/sprints/new': typeof SignedInSprintsNewRoute
+  '/tasks/$taskId': typeof SignedInTasksTaskIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/projects/$projectId/settings': typeof SignedInProjectsProjectIdSettingsRoute
   '/projects/$projectId/tasks': typeof SignedInProjectsProjectIdTasksRouteWithChildren
@@ -179,12 +195,14 @@ export interface FileRoutesById {
   '/_signed-in/dashboard': typeof SignedInDashboardRoute
   '/_signed-in/labels': typeof SignedInLabelsRoute
   '/_signed-in/statuses': typeof SignedInStatusesRoute
+  '/_signed-in/tasks': typeof SignedInTasksRouteWithChildren
   '/api/uploadthing': typeof ApiUploadthingRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/_signed-in/projects/new': typeof SignedInProjectsNewRoute
   '/_signed-in/settings/account': typeof SignedInSettingsAccountRoute
   '/_signed-in/settings/organization': typeof SignedInSettingsOrganizationRouteWithChildren
   '/_signed-in/sprints/new': typeof SignedInSprintsNewRoute
+  '/_signed-in/tasks/$taskId': typeof SignedInTasksTaskIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/_signed-in/projects/$projectId/settings': typeof SignedInProjectsProjectIdSettingsRoute
   '/_signed-in/projects/$projectId/tasks': typeof SignedInProjectsProjectIdTasksRouteWithChildren
@@ -201,12 +219,14 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/labels'
     | '/statuses'
+    | '/tasks'
     | '/api/uploadthing'
     | '/sign-in/$'
     | '/projects/new'
     | '/settings/account'
     | '/settings/organization'
     | '/sprints/new'
+    | '/tasks/$taskId'
     | '/api/auth/$'
     | '/projects/$projectId/settings'
     | '/projects/$projectId/tasks'
@@ -221,12 +241,14 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/labels'
     | '/statuses'
+    | '/tasks'
     | '/api/uploadthing'
     | '/sign-in/$'
     | '/projects/new'
     | '/settings/account'
     | '/settings/organization'
     | '/sprints/new'
+    | '/tasks/$taskId'
     | '/api/auth/$'
     | '/projects/$projectId/settings'
     | '/projects/$projectId/tasks'
@@ -242,12 +264,14 @@ export interface FileRouteTypes {
     | '/_signed-in/dashboard'
     | '/_signed-in/labels'
     | '/_signed-in/statuses'
+    | '/_signed-in/tasks'
     | '/api/uploadthing'
     | '/sign-in/$'
     | '/_signed-in/projects/new'
     | '/_signed-in/settings/account'
     | '/_signed-in/settings/organization'
     | '/_signed-in/sprints/new'
+    | '/_signed-in/tasks/$taskId'
     | '/api/auth/$'
     | '/_signed-in/projects/$projectId/settings'
     | '/_signed-in/projects/$projectId/tasks'
@@ -296,6 +320,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUploadthingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_signed-in/tasks': {
+      id: '/_signed-in/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof SignedInTasksRouteImport
+      parentRoute: typeof SignedInRoute
+    }
     '/_signed-in/statuses': {
       id: '/_signed-in/statuses'
       path: '/statuses'
@@ -323,6 +354,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_signed-in/tasks/$taskId': {
+      id: '/_signed-in/tasks/$taskId'
+      path: '/$taskId'
+      fullPath: '/tasks/$taskId'
+      preLoaderRoute: typeof SignedInTasksTaskIdRouteImport
+      parentRoute: typeof SignedInTasksRoute
     }
     '/_signed-in/sprints/new': {
       id: '/_signed-in/sprints/new'
@@ -404,6 +442,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface SignedInTasksRouteChildren {
+  SignedInTasksTaskIdRoute: typeof SignedInTasksTaskIdRoute
+}
+
+const SignedInTasksRouteChildren: SignedInTasksRouteChildren = {
+  SignedInTasksTaskIdRoute: SignedInTasksTaskIdRoute,
+}
+
+const SignedInTasksRouteWithChildren = SignedInTasksRoute._addFileChildren(
+  SignedInTasksRouteChildren,
+)
+
 interface SignedInSettingsOrganizationRouteChildren {
   SignedInSettingsOrganizationNewRoute: typeof SignedInSettingsOrganizationNewRoute
 }
@@ -452,6 +502,7 @@ interface SignedInRouteChildren {
   SignedInDashboardRoute: typeof SignedInDashboardRoute
   SignedInLabelsRoute: typeof SignedInLabelsRoute
   SignedInStatusesRoute: typeof SignedInStatusesRoute
+  SignedInTasksRoute: typeof SignedInTasksRouteWithChildren
   SignedInProjectsNewRoute: typeof SignedInProjectsNewRoute
   SignedInSettingsAccountRoute: typeof SignedInSettingsAccountRoute
   SignedInSettingsOrganizationRoute: typeof SignedInSettingsOrganizationRouteWithChildren
@@ -466,6 +517,7 @@ const SignedInRouteChildren: SignedInRouteChildren = {
   SignedInDashboardRoute: SignedInDashboardRoute,
   SignedInLabelsRoute: SignedInLabelsRoute,
   SignedInStatusesRoute: SignedInStatusesRoute,
+  SignedInTasksRoute: SignedInTasksRouteWithChildren,
   SignedInProjectsNewRoute: SignedInProjectsNewRoute,
   SignedInSettingsAccountRoute: SignedInSettingsAccountRoute,
   SignedInSettingsOrganizationRoute:

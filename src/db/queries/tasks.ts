@@ -185,6 +185,45 @@ export const useTasksForSprintQuery = (sprintId: string) => {
   return { ...queryData };
 };
 
+export const ALL_TASKS_SCOPE = "all" as const;
+
+const fetchAllTasks = createServerFn({ method: "GET" }).handler(
+  async (): Promise<TaskWithRelations[]> => {
+    const session = await requireSessionFromRequest();
+
+    const rawTasks = await db.query.tasks.findMany({
+      with: boardTaskRelationsForSprint,
+      where: (model, { eq }) =>
+        eq(model.owner, getOwningIdentity(session)),
+    });
+
+    return mapBoardTasks(rawTasks, { includeProject: true });
+  }
+);
+
+export const allTasksQueryOptions = () =>
+  queryOptions({
+    queryKey: ["tasks", ALL_TASKS_SCOPE],
+    queryFn: () => fetchAllTasks(),
+  });
+
+export const useAllTasksQuery = () => {
+  const queryData = useSuspenseQuery(allTasksQueryOptions());
+
+  useEventSource({
+    topics: [
+      "task-create",
+      "task-delete",
+      ...queryData.data.map((t) => `task-update-${t.id}`),
+    ],
+    callback: () => {
+      queryData.refetch();
+    },
+  });
+
+  return { ...queryData };
+};
+
 export const fetchTask = createServerFn({ method: "GET" })
   .inputValidator((d: string) => d)
   .handler(async ({ data }): Promise<TaskWithRelations | null> => {

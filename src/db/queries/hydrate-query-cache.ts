@@ -1,5 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type {
+  AllTasksBoardBundle,
   ProjectBoardBundle,
   SidebarBundle,
   SprintBoardBundle,
@@ -14,6 +15,7 @@ import { sprintsQueryOptions } from "~/db/queries/sprints";
 import { statusesQueryOptions } from "~/db/queries/statuses";
 import { taskQueryOptions } from "~/db/queries/tasks";
 import {
+  allTasksQueryOptions,
   tasksForSprintQueryOptions,
   tasksQueryOptions,
 } from "~/db/queries/tasks";
@@ -42,6 +44,18 @@ export function hydrateProjectBoardCache(
     );
   }
   queryClient.setQueryData(tasksQueryOptions(projectId).queryKey, data.tasks);
+  queryClient.setQueryData(
+    statusesQueryOptions().queryKey,
+    data.statuses as StatusesCache
+  );
+  queryClient.setQueryData(usersQueryOptions().queryKey, data.users);
+}
+
+export function hydrateAllTasksBoardCache(
+  queryClient: QueryClient,
+  data: AllTasksBoardBundle
+) {
+  queryClient.setQueryData(allTasksQueryOptions().queryKey, data.tasks);
   queryClient.setQueryData(
     statusesQueryOptions().queryKey,
     data.statuses as StatusesCache

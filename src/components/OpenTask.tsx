@@ -75,7 +75,7 @@ export function OpenTask({
   statuses: Status[];
   labels: Label[];
   comments: CommentWithAuthor[];
-  location: "project" | "sprint";
+  location: "project" | "sprint" | "all";
 }) {
   const navigate = useNavigate();
 
@@ -160,7 +160,9 @@ export function OpenTask({
     <Dialog
       open={!!task}
       onOpenChange={() => {
-        if (location === "project") {
+        if (location === "all") {
+          navigate({ to: "/tasks" });
+        } else if (location === "project") {
           navigate({
             to: `/projects/${task?.projectId}/tasks/$`,
           });
@@ -212,7 +214,10 @@ export function OpenTask({
                     await deleteTask(task.id);
                     setIsDeleting(false);
                     navigate({
-                      to: `/projects/${task.projectId}/tasks`,
+                      to:
+                        location === "all"
+                          ? "/tasks"
+                          : `/projects/${task.projectId}/tasks`,
                     });
                   }}
                   confirmText="Delete"

@@ -21,6 +21,12 @@ export type SprintBoardBundle = {
   users: AppUser[];
 };
 
+export type AllTasksBoardBundle = {
+  tasks: TaskWithRelations[];
+  statuses: Status[];
+  users: AppUser[];
+};
+
 export type TaskPageBundle = {
   task: TaskWithRelations | null;
   comments: CommentWithAuthor[];
@@ -113,6 +119,32 @@ export const fetchSprintBoardBundle = createServerFn({ method: "GET" })
       };
     }
   );
+
+export const fetchAllTasksBoardBundle = createServerFn({ method: "GET" }).handler(
+  async (): Promise<AllTasksBoardBundle> => {
+    const session = await requireSessionFromRequest();
+    const owner = getOwningIdentity(session);
+    const { getUsersForSession } = await import("~/db/queries/users.server");
+
+    const [rawTasks, statuses, users] = await Promise.all([
+      db.query.tasks.findMany({
+        with: boardTaskRelationsForSprint,
+        where: (model, { eq }) => eq(model.owner, owner),
+      }),
+      db.query.statuses.findMany({
+        where: (model, { eq }) => eq(model.owner, owner),
+        orderBy: (fields, { asc: ascFn }) => [ascFn(fields.order)],
+      }),
+      getUsersForSession(session),
+    ]);
+
+    return {
+      tasks: mapBoardTasks(rawTasks, { includeProject: true }),
+      statuses: statuses as Status[],
+      users,
+    };
+  }
+);
 
 export const fetchTaskPageBundle = createServerFn({ method: "GET" })
   .inputValidator((d: { taskId: string }) => d)

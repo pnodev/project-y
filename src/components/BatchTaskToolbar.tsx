@@ -53,7 +53,7 @@ export function BatchTaskToolbar({
   selectedTasks: TaskWithRelations[];
   statuses: Status[];
   labels: Label[];
-  location: "project" | "sprint";
+  location: "project" | "sprint" | "all";
 }) {
   const [isApplying, setIsApplying] = useState(false);
   const [assignUserIds, setAssignUserIds] = useState<string[]>([]);
@@ -256,7 +256,7 @@ export function BatchTaskToolbar({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {location === "project" ? (
+          {location === "project" || location === "all" ? (
             sprintDisabled ? (
               <span
                 className="hidden text-xs text-white/80 sm:inline whitespace-nowrap"
