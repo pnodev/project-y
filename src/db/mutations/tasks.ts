@@ -1,6 +1,7 @@
 import { createServerFn, useServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import {
+  comments,
   CreateTask,
   insertTaskValidator,
   Label,
@@ -141,6 +142,12 @@ function assertAllTasksOwned(
   throw new Error(
     `Not authorized to modify some tasks: ${missing.join(", ")}`
   );
+}
+
+async function deleteTaskDependents(taskIds: string[]) {
+  if (taskIds.length === 0) return;
+  await db.delete(comments).where(inArray(comments.taskId, taskIds));
+  await db.delete(labelsToTasks).where(inArray(labelsToTasks.taskId, taskIds));
 }
 
 const createTask = createServerFn({ method: "POST" })
@@ -430,6 +437,7 @@ const deleteTask = createServerFn({ method: "POST" })
         deleteAttachmentForOwner(owner, attachment.id)
       )
     );
+    await deleteTaskDependents([data.id]);
     await db
       .delete(tasks)
       .where(
@@ -584,6 +592,8 @@ const batchDeleteTasks = createServerFn({ method: "POST" })
         )
       )
     );
+
+    await deleteTaskDependents(data.taskIds);
 
     await db
       .delete(tasks)
