@@ -12,6 +12,7 @@ import { BoardView } from "~/components/views/BoardView";
 import { UpdateTask } from "~/db/schema";
 import { PageLayout } from "~/components/PageLayout";
 import { useStatusesQuery } from "~/db/queries/statuses";
+import { useLabelsQuery } from "~/db/queries/labels";
 import { useProjectQuery } from "~/db/queries/projects";
 import { EndlessLoadingSpinner } from "~/components/EndlessLoadingSpinner";
 import { useTasksQuery } from "~/db/queries/tasks";
@@ -49,6 +50,7 @@ function Home() {
   const tasksQuery = useTasksQuery(params.projectId);
   const projectQuery = useProjectQuery(params.projectId);
   const statusesQuery = useStatusesQuery();
+  const labelsQuery = useLabelsQuery();
 
   const updateTask = useUpdateTaskMutation();
 
@@ -150,6 +152,8 @@ function Home() {
           tasks={tasksQuery.data}
           projectId={params.projectId}
           statuses={statusesQuery.data}
+          labels={labelsQuery.data ?? []}
+          location="project"
           updateTask={handleUpdateTask}
         />
         <Suspense

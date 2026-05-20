@@ -5,6 +5,7 @@ import {
   insertTaskValidator,
   Label,
   labelsToTasks,
+  PRIORITY_VALUES,
   Task,
   taskAssignees,
   tasks,
@@ -47,6 +48,71 @@ function getTaskListQueryKeys(
 
   return keys;
 }
+
+function getBatchTaskListQueryKeys(
+  queryClient: QueryClient,
+  taskIds: string[]
+): QueryKey[] {
+  const keys = new Set<string>();
+  const result: QueryKey[] = [];
+
+  for (const taskId of taskIds) {
+    for (const queryKey of getTaskListQueryKeys(queryClient, { id: taskId })) {
+      const key = JSON.stringify(queryKey);
+      if (!keys.has(key)) {
+        keys.add(key);
+        result.push(queryKey);
+      }
+    }
+    const detail = queryClient.getQueryData<TaskWithRelations>([
+      "tasks",
+      taskId,
+    ]);
+    if (detail?.projectId) {
+      const listKey = JSON.stringify(["tasks", detail.projectId]);
+      if (!keys.has(listKey)) {
+        keys.add(listKey);
+        result.push(["tasks", detail.projectId]);
+      }
+    }
+    if (detail?.sprintId) {
+      const listKey = JSON.stringify(["tasks", detail.sprintId]);
+      if (!keys.has(listKey)) {
+        keys.add(listKey);
+        result.push(["tasks", detail.sprintId]);
+      }
+    }
+  }
+
+  return result;
+}
+
+type BatchTaskPatch = {
+  statusId?: string | null;
+  priority?: TaskWithRelations["priority"];
+  sprintId?: string | null;
+};
+
+const batchUpdateTasksValidator = z.object({
+  taskIds: z.array(z.string().uuid()).min(1),
+  statusId: z.string().uuid().nullable().optional(),
+  priority: z.enum(PRIORITY_VALUES).optional(),
+  sprintId: z.string().uuid().nullable().optional(),
+});
+
+const batchDeleteTasksValidator = z.object({
+  taskIds: z.array(z.string().uuid()).min(1),
+});
+
+const batchAssignTasksValidator = z.object({
+  taskIds: z.array(z.string().uuid()).min(1),
+  userIds: z.array(z.string()).min(1),
+});
+
+const batchSetLabelsForTasksValidator = z.object({
+  taskIds: z.array(z.string().uuid()).min(1),
+  labelIds: z.array(z.string().uuid()),
+});
 
 const createTask = createServerFn({ method: "POST" })
   .inputValidator(insertTaskValidator)
@@ -434,5 +500,376 @@ export function useSetLabelsForTaskMutation() {
       queryClient.invalidateQueries({ queryKey: ["tasks", task.id] });
     },
     [router, queryClient, _setLabelsForTask]
+  );
+}
+
+const batchUpdateTasks = createServerFn({ method: "POST" })
+  .inputValidator(batchUpdateTasksValidator)
+  .handler(async ({ data }) => {
+    const session = await requireSessionFromRequest();
+    const owner = getOwningIdentity(session);
+
+    const ownedTasks = await db.query.tasks.findMany({
+      where: (model, { eq, and, inArray }) =>
+        and(inArray(model.id, data.taskIds), eq(model.owner, owner)),
+    });
+    if (ownedTasks.length !== data.taskIds.length) return;
+
+    const { taskIds, ...updates } = data;
+    const setValues = Object.fromEntries(
+      Object.entries(updates).filter(([, value]) => value !== undefined)
+    );
+    if (Object.keys(setValues).length === 0) return;
+
+    await db
+      .update(tasks)
+      .set({ ...setValues, updatedAt: new Date() })
+      .where(and(inArray(tasks.id, taskIds), eq(tasks.owner, owner)));
+
+    for (const id of taskIds) {
+      await sync(`task-update-${id}`, { data: { id, ...setValues } });
+    }
+  });
+
+const batchDeleteTasks = createServerFn({ method: "POST" })
+  .inputValidator(batchDeleteTasksValidator)
+  .handler(async ({ data }) => {
+    const session = await requireSessionFromRequest();
+    const owner = getOwningIdentity(session);
+    const { deleteAttachmentForOwner } = await import("./attachments.server");
+
+    const ownedTasks = await db.query.tasks.findMany({
+      with: { attachments: true },
+      where: (model, { eq, and, inArray }) =>
+        and(inArray(model.id, data.taskIds), eq(model.owner, owner)),
+    });
+    if (ownedTasks.length !== data.taskIds.length) return;
+
+    await Promise.all(
+      ownedTasks.flatMap((task) =>
+        task.attachments.map((attachment) =>
+          deleteAttachmentForOwner(owner, attachment.id)
+        )
+      )
+    );
+
+    await db
+      .delete(tasks)
+      .where(
+        and(inArray(tasks.id, data.taskIds), eq(tasks.owner, owner))
+      );
+
+    for (const id of data.taskIds) {
+      await sync(`task-delete`, { data: { id } });
+    }
+  });
+
+const batchAssignTasks = createServerFn({ method: "POST" })
+  .inputValidator(batchAssignTasksValidator)
+  .handler(async ({ data }) => {
+    const session = await requireSessionFromRequest();
+    const owner = getOwningIdentity(session);
+
+    const ownedTasks = await db.query.tasks.findMany({
+      where: (model, { eq, and, inArray }) =>
+        and(inArray(model.id, data.taskIds), eq(model.owner, owner)),
+    });
+    if (ownedTasks.length !== data.taskIds.length) return;
+
+    for (const taskId of data.taskIds) {
+      const existingAssignees = await db.query.taskAssignees.findMany({
+        where: (model, { eq }) => eq(model.taskId, taskId),
+      });
+      const newUserIds = data.userIds.filter(
+        (userId) => !existingAssignees.some((a) => a.userId === userId)
+      );
+      if (newUserIds.length > 0) {
+        await db.insert(taskAssignees).values(
+          newUserIds.map((userId) => ({
+            id: uuid(),
+            taskId,
+            owner,
+            userId,
+            assignedAt: new Date(),
+            updatedAt: new Date(),
+          }))
+        );
+      }
+      await sync(`task-update-${taskId}`, { data });
+    }
+  });
+
+const batchSetLabelsForTasks = createServerFn({ method: "POST" })
+  .inputValidator(batchSetLabelsForTasksValidator)
+  .handler(async ({ data }) => {
+    const session = await requireSessionFromRequest();
+    const owner = getOwningIdentity(session);
+
+    const ownedTasks = await db.query.tasks.findMany({
+      where: (model, { eq, and, inArray }) =>
+        and(inArray(model.id, data.taskIds), eq(model.owner, owner)),
+    });
+    if (ownedTasks.length !== data.taskIds.length) return;
+
+    if (data.labelIds.length > 0) {
+      const ownedLabels = await db.query.labels.findMany({
+        where: (model, { eq, and, inArray }) =>
+          and(inArray(model.id, data.labelIds), eq(model.owner, owner)),
+      });
+      if (ownedLabels.length !== data.labelIds.length) return;
+    }
+
+    await db
+      .delete(labelsToTasks)
+      .where(inArray(labelsToTasks.taskId, data.taskIds));
+
+    if (data.labelIds.length > 0) {
+      await db.insert(labelsToTasks).values(
+        data.taskIds.flatMap((taskId) =>
+          data.labelIds.map((labelId) => ({ taskId, labelId }))
+        )
+      );
+    }
+
+    for (const id of data.taskIds) {
+      await sync(`task-update-${id}`, { data });
+    }
+  });
+
+function snapshotTaskQueries(
+  queryClient: QueryClient,
+  taskIds: string[],
+  listQueryKeys: QueryKey[]
+) {
+  const detailKeys = taskIds.map((id): QueryKey => ["tasks", id]);
+  const allKeys = [
+    ...listQueryKeys.map((queryKey) => ({
+      queryKey,
+      data: queryClient.getQueryData(queryKey),
+    })),
+    ...detailKeys.map((queryKey) => ({
+      queryKey,
+      data: queryClient.getQueryData(queryKey),
+    })),
+  ];
+  return allKeys;
+}
+
+export function useBatchUpdateTasksMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _batchUpdateTasks = useServerFn(batchUpdateTasks);
+
+  return useCallback(
+    async (taskIds: string[], patch: BatchTaskPatch) => {
+      const listQueryKeys = getBatchTaskListQueryKeys(queryClient, taskIds);
+      const snapshots = snapshotTaskQueries(
+        queryClient,
+        taskIds,
+        listQueryKeys
+      );
+
+      const patchList = (oldData: TaskWithRelations[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map((t) =>
+          taskIds.includes(t.id) ? { ...t, ...patch, updatedAt: new Date() } : t
+        );
+      };
+
+      for (const queryKey of listQueryKeys) {
+        queryClient.setQueryData(queryKey, patchList);
+      }
+      for (const id of taskIds) {
+        queryClient.setQueryData(
+          ["tasks", id],
+          (oldData: TaskWithRelations | undefined) => {
+            if (!oldData) return oldData;
+            return { ...oldData, ...patch, updatedAt: new Date() };
+          }
+        );
+      }
+
+      try {
+        await _batchUpdateTasks({ data: { taskIds, ...patch } });
+        for (const queryKey of listQueryKeys) {
+          queryClient.invalidateQueries({ queryKey });
+        }
+        for (const id of taskIds) {
+          queryClient.invalidateQueries({ queryKey: ["tasks", id] });
+        }
+        router.invalidate();
+      } catch (error) {
+        for (const { queryKey, data } of snapshots) {
+          queryClient.setQueryData(queryKey, data);
+        }
+        toast.error("Failed to update tasks");
+        throw error;
+      }
+    },
+    [router, queryClient, _batchUpdateTasks]
+  );
+}
+
+export function useBatchDeleteTasksMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _batchDeleteTasks = useServerFn(batchDeleteTasks);
+
+  return useCallback(
+    async (taskIds: string[]) => {
+      const listQueryKeys = getBatchTaskListQueryKeys(queryClient, taskIds);
+      const snapshots = snapshotTaskQueries(
+        queryClient,
+        taskIds,
+        listQueryKeys
+      );
+
+      const removeFromList = (oldData: TaskWithRelations[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.filter((t) => !taskIds.includes(t.id));
+      };
+
+      for (const queryKey of listQueryKeys) {
+        queryClient.setQueryData(queryKey, removeFromList);
+      }
+
+      try {
+        await _batchDeleteTasks({ data: { taskIds } });
+        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        router.invalidate();
+      } catch (error) {
+        for (const { queryKey, data } of snapshots) {
+          queryClient.setQueryData(queryKey, data);
+        }
+        toast.error("Failed to delete tasks");
+        throw error;
+      }
+    },
+    [router, queryClient, _batchDeleteTasks]
+  );
+}
+
+export function useBatchAssignTasksMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _batchAssignTasks = useServerFn(batchAssignTasks);
+
+  return useCallback(
+    async (selectedTasks: TaskWithRelations[], userIds: string[]) => {
+      const taskIds = selectedTasks.map((t) => t.id);
+      const listQueryKeys = getBatchTaskListQueryKeys(queryClient, taskIds);
+      const snapshots = snapshotTaskQueries(
+        queryClient,
+        taskIds,
+        listQueryKeys
+      );
+
+      const patchList = (oldData: TaskWithRelations[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map((t) => {
+          if (!taskIds.includes(t.id)) return t;
+          const existingIds = new Set(t.assignees.map((a) => a.userId));
+          const newAssignees = userIds
+            .filter((id) => !existingIds.has(id))
+            .map((userId) => ({
+              id: uuid(),
+              taskId: t.id,
+              userId,
+              owner: t.owner,
+              assignedAt: new Date(),
+              updatedAt: new Date(),
+            }));
+          return {
+            ...t,
+            assignees: [...t.assignees, ...newAssignees],
+            updatedAt: new Date(),
+          };
+        });
+      };
+
+      for (const queryKey of listQueryKeys) {
+        queryClient.setQueryData(queryKey, patchList);
+      }
+
+      try {
+        await _batchAssignTasks({ data: { taskIds, userIds } });
+        for (const queryKey of listQueryKeys) {
+          queryClient.invalidateQueries({ queryKey });
+        }
+        for (const id of taskIds) {
+          queryClient.invalidateQueries({ queryKey: ["tasks", id] });
+        }
+        router.invalidate();
+      } catch (error) {
+        for (const { queryKey, data } of snapshots) {
+          queryClient.setQueryData(queryKey, data);
+        }
+        toast.error("Failed to assign tasks");
+        throw error;
+      }
+    },
+    [router, queryClient, _batchAssignTasks]
+  );
+}
+
+export function useBatchSetLabelsForTasksMutation() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const _batchSetLabelsForTasks = useServerFn(batchSetLabelsForTasks);
+
+  return useCallback(
+    async (taskIds: string[], labelIds: string[]) => {
+      const labels: Label[] = queryClient.getQueryData(["labels"]) || [];
+      const resolvedLabels = labelIds
+        .map((id) => labels.find((l) => l.id === id))
+        .filter((l): l is Label => l != null);
+
+      const listQueryKeys = getBatchTaskListQueryKeys(queryClient, taskIds);
+      const snapshots = snapshotTaskQueries(
+        queryClient,
+        taskIds,
+        listQueryKeys
+      );
+
+      const patchList = (oldData: TaskWithRelations[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map((t) =>
+          taskIds.includes(t.id)
+            ? { ...t, labels: resolvedLabels, updatedAt: new Date() }
+            : t
+        );
+      };
+
+      for (const queryKey of listQueryKeys) {
+        queryClient.setQueryData(queryKey, patchList);
+      }
+      for (const id of taskIds) {
+        queryClient.setQueryData(
+          ["tasks", id],
+          (oldData: TaskWithRelations | undefined) => {
+            if (!oldData) return oldData;
+            return { ...oldData, labels: resolvedLabels, updatedAt: new Date() };
+          }
+        );
+      }
+
+      try {
+        await _batchSetLabelsForTasks({ data: { taskIds, labelIds } });
+        for (const queryKey of listQueryKeys) {
+          queryClient.invalidateQueries({ queryKey });
+        }
+        for (const id of taskIds) {
+          queryClient.invalidateQueries({ queryKey: ["tasks", id] });
+        }
+        router.invalidate();
+      } catch (error) {
+        for (const { queryKey, data } of snapshots) {
+          queryClient.setQueryData(queryKey, data);
+        }
+        toast.error("Failed to update labels");
+        throw error;
+      }
+    },
+    [router, queryClient, _batchSetLabelsForTasks]
   );
 }

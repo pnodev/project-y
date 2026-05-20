@@ -6,18 +6,23 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import TaskCard, { TaskCardComponent } from "~/components/TaskCard";
 import TaskColumn from "~/components/TaskColumn";
-import { Priority, Status, TaskWithRelations, UpdateTask } from "~/db/schema";
+import { Label, Priority, Status, TaskWithRelations, UpdateTask } from "~/db/schema";
 import { useStore } from "@tanstack/react-store";
 import { BoardViewStore } from "./board-view-store";
+import { registerBoardSelectionKeyboard } from "./board-selection";
+import { BatchTaskToolbar } from "~/components/BatchTaskToolbar";
+import { cn } from "~/lib/utils";
 
 type TaskViewProps = {
   tasks: TaskWithRelations[];
   projectId?: string;
   sprintId?: string;
   statuses: Status[];
+  labels: Label[];
+  location: "project" | "sprint";
   updateTask: (task: UpdateTask) => Promise<void>;
 };
 
@@ -26,10 +31,26 @@ export const BoardView = ({
   projectId,
   sprintId,
   statuses,
+  labels,
+  location,
   updateTask,
 }: TaskViewProps) => {
   const priorityOrder: Priority[] = ["low", "medium", "high", "critical"];
   const [activeTask, setActiveTask] = useState<TaskWithRelations | null>(null);
+  const selectedTaskIds = useStore(
+    BoardViewStore,
+    (state) => state.selectedTaskIds
+  );
+
+  const selectedTasks = useMemo(
+    () => tasks.filter((t) => selectedTaskIds.includes(t.id)),
+    [tasks, selectedTaskIds]
+  );
+
+  useEffect(
+    () => registerBoardSelectionKeyboard(() => tasks.map((t) => t.id)),
+    [tasks]
+  );
 
   const handleDrop = (e: DragEndEvent) => {
     setActiveTask(null);
@@ -98,6 +119,29 @@ export const BoardView = ({
     }
   };
 
+  const sortColumnTasks = (columnTasks: TaskWithRelations[]) => {
+    return [...columnTasks]
+      .sort(
+        (a, b) =>
+          priorityOrder.indexOf(b.priority) - priorityOrder.indexOf(a.priority)
+      )
+      .sort(taskComparator());
+  };
+
+  const renderColumnCards = (columnTasks: TaskWithRelations[]) => {
+    const sorted = sortColumnTasks(columnTasks);
+    const columnTaskIds = sorted.map((t) => t.id);
+    return sorted.map((task) => (
+      <TaskCard
+        key={task.id}
+        task={task}
+        columnTaskIds={columnTaskIds}
+        showSprint={!sprintId}
+        showProject={!!sprintId}
+      />
+    ));
+  };
+
   return (
     <DndContext
       onDragEnd={handleDrop}
@@ -108,70 +152,50 @@ export const BoardView = ({
         if (task) setActiveTask(task);
       }}
     >
-      {/* Setting the height to 1px is a hack to make flex-grow work */}
-      {/* Without some kind of concrete height, the flex-grow doesn't work */}
-      {/* Doesn't really matter what the height is, as long as it's not a percentage */}
-      {/* TODO: It could make sense to set a fixed height on the view container */}
-      <div className="h-px grow pb-3">
-        <div className="flex gap-3 h-full">
-          {tasksByStatus["unassigned"] ? (
-            <TaskColumn
-              projectId={projectId}
-              sprintId={sprintId}
-              key="unassigned"
-              numberOfTasks={tasksByStatus["unassigned"]?.length || 0}
-            >
-              {[...tasksByStatus["unassigned"]]
-                .sort(
-                  (a, b) =>
-                    priorityOrder.indexOf(b.priority) -
-                    priorityOrder.indexOf(a.priority)
-                )
-                .sort(taskComparator())
-                .map((task) => {
-                  return (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      showSprint={!sprintId}
-                      showProject={!!sprintId}
-                    />
-                  );
-                })}
-            </TaskColumn>
-          ) : null}
-          {[...statuses].map((status) => {
-            return (
+      <div className="flex flex-col gap-2 h-full min-h-0">
+        {selectedTasks.length > 0 ? (
+          <BatchTaskToolbar
+            selectedTasks={selectedTasks}
+            statuses={statuses}
+            labels={labels}
+            location={location}
+          />
+        ) : null}
+        {/* Setting the height to 1px is a hack to make flex-grow work */}
+        <div
+          className={cn(
+            "h-px grow min-h-0",
+            selectedTasks.length > 0 ? "pb-16" : "pb-3"
+          )}
+        >
+          <div className="flex gap-3 h-full">
+            {tasksByStatus["unassigned"] ? (
               <TaskColumn
                 projectId={projectId}
                 sprintId={sprintId}
-                key={status.id}
-                status={status}
-                numberOfTasks={tasksByStatus[status.id]?.length || 0}
+                key="unassigned"
+                numberOfTasks={tasksByStatus["unassigned"]?.length || 0}
               >
-                {tasksByStatus[status.id]
-                  ? [...tasksByStatus[status.id]]
-                      .sort(
-                        (a, b) =>
-                          priorityOrder.indexOf(b.priority) -
-                          priorityOrder.indexOf(a.priority)
-                      )
-                      .sort(taskComparator())
-                      .map((task) => {
-                        return (
-                          <TaskCard
-                            key={task.id}
-                            task={task}
-                            showSprint={!sprintId}
-                            showProject={!!sprintId}
-                          />
-                        );
-                      })
-                  : null}
+                {renderColumnCards(tasksByStatus["unassigned"])}
               </TaskColumn>
-            );
-          })}
-          <div className="min-w-3 h-px"></div>
+            ) : null}
+            {[...statuses].map((status) => {
+              return (
+                <TaskColumn
+                  projectId={projectId}
+                  sprintId={sprintId}
+                  key={status.id}
+                  status={status}
+                  numberOfTasks={tasksByStatus[status.id]?.length || 0}
+                >
+                  {tasksByStatus[status.id]
+                    ? renderColumnCards(tasksByStatus[status.id])
+                    : null}
+                </TaskColumn>
+              );
+            })}
+            <div className="min-w-3 h-px"></div>
+          </div>
         </div>
       </div>
       <DragOverlay dropAnimation={null}>

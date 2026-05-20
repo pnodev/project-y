@@ -25,19 +25,35 @@ import {
 import { EndlessLoadingSpinner } from "./EndlessLoadingSpinner";
 import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
+import { useStore } from "@tanstack/react-store";
+import { BoardViewStore, toggleTaskId } from "./views/board-view-store";
+import {
+  clearTaskSelectionState,
+  handleTaskCardSelectClick,
+  setHoveredTaskId,
+} from "./views/board-selection";
 
 export default function TaskCard({
   task,
+  columnTaskIds,
   showSprint,
   showProject,
 }: {
   task: TaskWithRelations;
+  columnTaskIds: string[];
   showSprint?: boolean;
   showProject?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `task:${task.id}`,
   });
+  const isSelected = useStore(BoardViewStore, (state) =>
+    state.selectedTaskIds.includes(task.id)
+  );
+  const isHovered = useStore(
+    BoardViewStore,
+    (state) => state.hoveredTaskId === task.id
+  );
 
   return (
     <ClientOnly
@@ -52,16 +68,42 @@ export default function TaskCard({
     >
       <div
         ref={setNodeRef}
+        className="group relative"
         style={{ opacity: isDragging ? 0.2 : undefined }}
-        {...listeners}
-        {...attributes}
+        onMouseEnter={() => setHoveredTaskId(task.id)}
+        onMouseLeave={() => {
+          if (BoardViewStore.state.hoveredTaskId === task.id) {
+            setHoveredTaskId(null);
+          }
+        }}
       >
-        <TaskCardComponent
-          task={task}
-          key={task.id}
-          showSprint={showSprint}
-          showProject={showProject}
+        <button
+          type="button"
+          aria-label={`Select ${task.name}`}
+          className={cn(
+            "absolute -left-0.5 top-0 bottom-0 z-10 w-1.5 rounded-l-sm transition-colors",
+            "opacity-0 group-hover:opacity-100 hover:bg-primary/40",
+            isSelected && "opacity-100 bg-primary",
+            isHovered && !isSelected && "opacity-100 bg-primary/25"
+          )}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleTaskId(task.id);
+          }}
         />
+        <div className="min-w-0" {...listeners} {...attributes}>
+          <TaskCardComponent
+            task={task}
+            key={task.id}
+            columnTaskIds={columnTaskIds}
+            showSprint={showSprint}
+            showProject={showProject}
+            isSelected={isSelected}
+            isHovered={isHovered}
+          />
+        </div>
       </div>
     </ClientOnly>
   );
@@ -71,11 +113,24 @@ const TaskCardLinkWrapper = ({
   to,
   params,
   children,
+  onSelectClick,
 }: {
   to: "project" | "sprint";
   params: Record<string, string | undefined>;
   children: React.ReactNode;
+  onSelectClick: (event: React.MouseEvent) => void;
 }) => {
+  const handleClick = (e: React.MouseEvent) => {
+    if (e.shiftKey || e.metaKey || e.ctrlKey) {
+      e.preventDefault();
+      onSelectClick(e);
+      return;
+    }
+    if (BoardViewStore.state.selectedTaskIds.length > 0) {
+      clearTaskSelectionState();
+    }
+  };
+
   if (to === "project") {
     return (
       <Link
@@ -85,6 +140,7 @@ const TaskCardLinkWrapper = ({
           projectId: params.projectId as string,
           taskId: params.taskId as string,
         }}
+        onClick={handleClick}
       >
         {children}
       </Link>
@@ -98,6 +154,7 @@ const TaskCardLinkWrapper = ({
         sprintId: params.sprintId as string,
         taskId: params.taskId as string,
       }}
+      onClick={handleClick}
     >
       {children}
     </Link>
@@ -106,12 +163,18 @@ const TaskCardLinkWrapper = ({
 
 export const TaskCardComponent = ({
   task,
+  columnTaskIds = [],
   showSprint = true,
   showProject = true,
+  isSelected = false,
+  isHovered = false,
 }: {
   task: TaskWithRelations;
+  columnTaskIds?: string[];
   showSprint?: boolean;
   showProject?: boolean;
+  isSelected?: boolean;
+  isHovered?: boolean;
 }) => {
   const isOverdue = task.deadline && task.deadline < new Date();
   const usersQuery = useUsersQuery();
@@ -121,10 +184,10 @@ export const TaskCardComponent = ({
   const unassignTask = useUnassignTaskMutation();
   const [isAssigning, setIsAssigning] = useState(false);
 
-  const [isHovered, setIsHovered] = useState(false);
+  const [isCardHovered, setIsCardHovered] = useState(false);
   useEffect(() => {
     const handleKeyPress = async (event: KeyboardEvent) => {
-      if (currentUserId && isHovered && event.key === "m") {
+      if (currentUserId && isCardHovered && event.key === "m") {
         setIsAssigning(true);
         if (
           task.assignees.find((assignee) => assignee.userId === currentUserId)
@@ -141,7 +204,7 @@ export const TaskCardComponent = ({
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [isHovered, task, currentUserId, assignTask, unassignTask]);
+  }, [isCardHovered, task, currentUserId, assignTask, unassignTask]);
 
   const percentageComplete = Math.round(
     (task.subTasks.filter((t) => t.done).length / task.subTasks.length) * 100
@@ -155,14 +218,23 @@ export const TaskCardComponent = ({
         taskId: task.id,
         sprintId: task.sprintId || undefined,
       }}
+      onSelectClick={(event) =>
+        handleTaskCardSelectClick(task.id, columnTaskIds, {
+          shiftKey: event.shiftKey,
+          metaKey: event.metaKey,
+          ctrlKey: event.ctrlKey,
+        })
+      }
     >
       <Card
         className={cn(
-          "cursor-pointer",
-          isOverdue ? " outline-2 bg-red-50 outline-red-400" : ""
+          "cursor-pointer transition-colors",
+          isOverdue ? "outline-2 bg-red-50 outline-red-400" : "",
+          isSelected && "border-l-[3px] border-l-primary bg-primary/5",
+          isHovered && !isSelected && "bg-accent/30"
         )}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseEnter={() => setIsCardHovered(true)}
+        onMouseLeave={() => setIsCardHovered(false)}
       >
         <CardHeader className="p-3 -mt-1">
           {showProject ? (
