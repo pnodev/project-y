@@ -7,6 +7,10 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   resolve: { tsconfigPaths: true },
+  // postgres uses Node's Buffer; keep it out of the browser pre-bundle in dev.
+  optimizeDeps: {
+    exclude: ["postgres"],
+  },
   server: {
     port: 3001,
   },

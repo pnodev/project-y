@@ -5,21 +5,19 @@ import {
   insertAttachmentValidator,
 } from "../schema";
 import { requireSessionFromRequest } from "~/lib/session";
-import { db } from "..";
 import { v7 as uuid } from "uuid";
 import { getOwningIdentity } from "~/lib/utils";
 import { useCallback } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { sync } from "./sync";
 import z from "zod";
-import { and, eq } from "drizzle-orm";
-import { UTApi } from "uploadthing/server";
 
 const createAttachment = createServerFn({ method: "POST" })
   .inputValidator(insertAttachmentValidator)
   .handler(async ({ data }) => {
     const session = await requireSessionFromRequest();
+    const { db } = await import("~/db");
+    const { sync } = await import("./sync");
 
     await db.insert(attachments).values({
       ...data,
@@ -56,38 +54,11 @@ export function useCreateAttachmentMutation() {
   );
 }
 
-export async function deleteAttachmentForOwner(
-  owner: string,
-  attachmentId: string
-) {
-  const attachment = await db.query.attachments.findFirst({
-    where: (model, { eq, and }) =>
-      and(eq(model.id, attachmentId), eq(model.owner, owner)),
-  });
-  if (!attachment) return;
-
-  const utapi = new UTApi();
-  const deleteResult = await utapi.deleteFiles([attachment.providerFileId]);
-  if (!deleteResult.success) {
-    throw new Error("Failed to delete attachment file from storage");
-  }
-
-  await db
-    .delete(attachments)
-    .where(
-      and(eq(attachments.id, attachmentId), eq(attachments.owner, owner))
-    );
-
-  await sync(`attachment-update-${attachmentId}`, { data: { id: attachmentId } });
-  await sync(`task-update-${attachment.taskId}`, { data: { id: attachmentId } });
-
-  return { id: attachmentId, taskId: attachment.taskId };
-}
-
 export const deleteAttachment = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
     const session = await requireSessionFromRequest();
+    const { deleteAttachmentForOwner } = await import("./attachments.server");
     return deleteAttachmentForOwner(getOwningIdentity(session), data.id);
   });
 

@@ -23,7 +23,6 @@ import z from "zod";
 import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
-import { deleteAttachmentForOwner } from "./attachments";
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -322,6 +321,7 @@ const deleteTask = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
     const session = await requireSessionFromRequest();
+    const { deleteAttachmentForOwner } = await import("./attachments.server");
     const task = await db.query.tasks.findFirst({
       with: {
         attachments: true,
