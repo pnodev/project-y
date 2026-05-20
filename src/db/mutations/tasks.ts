@@ -1,6 +1,7 @@
 import { createServerFn, useServerFn } from "@tanstack/react-start";
 import { db } from "~/db";
 import {
+  attachments,
   comments,
   CreateTask,
   insertTaskValidator,
@@ -146,7 +147,7 @@ function assertAllTasksOwned(
 
 async function deleteTaskDependents(
   taskIds: string[],
-  trx: Pick<typeof db, "delete"> = db
+  trx: Pick<typeof db, "delete">
 ) {
   if (taskIds.length === 0) return;
   await trx.delete(comments).where(inArray(comments.taskId, taskIds));
@@ -425,7 +426,9 @@ const deleteTask = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
     const session = await requireSessionFromRequest();
-    const { deleteAttachmentForOwner } = await import("./attachments.server");
+    const { deleteAttachmentFilesFromStorage } = await import(
+      "./attachments.server"
+    );
     const task = await db.query.tasks.findFirst({
       with: {
         attachments: true,
@@ -435,17 +438,22 @@ const deleteTask = createServerFn({ method: "POST" })
     });
     if (!task) return;
     const owner = getOwningIdentity(session);
-    await Promise.all(
-      task.attachments.map((attachment) =>
-        deleteAttachmentForOwner(owner, attachment.id)
-      )
-    );
+    const attachmentIds = task.attachments.map((a) => a.id);
+    const providerFileIds = task.attachments.map((a) => a.providerFileId);
+
     await db.transaction(async (trx) => {
       await deleteTaskDependents([data.id], trx);
+      if (attachmentIds.length > 0) {
+        await trx
+          .delete(attachments)
+          .where(inArray(attachments.id, attachmentIds));
+      }
       await trx
         .delete(tasks)
         .where(and(eq(tasks.id, data.id), eq(tasks.owner, owner)));
     });
+
+    await deleteAttachmentFilesFromStorage(providerFileIds);
     await sync(`task-delete`, { data });
   });
 
@@ -579,7 +587,9 @@ const batchDeleteTasks = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const session = await requireSessionFromRequest();
     const owner = getOwningIdentity(session);
-    const { deleteAttachmentForOwner } = await import("./attachments.server");
+    const { deleteAttachmentFilesFromStorage } = await import(
+      "./attachments.server"
+    );
 
     const ownedTasks = await db.query.tasks.findMany({
       with: { attachments: true },
@@ -588,22 +598,25 @@ const batchDeleteTasks = createServerFn({ method: "POST" })
     });
     assertAllTasksOwned(ownedTasks, data.taskIds);
 
-    await Promise.all(
-      ownedTasks.flatMap((task) =>
-        task.attachments.map((attachment) =>
-          deleteAttachmentForOwner(owner, attachment.id)
-        )
-      )
-    );
+    const taskAttachments = ownedTasks.flatMap((task) => task.attachments);
+    const attachmentIds = taskAttachments.map((a) => a.id);
+    const providerFileIds = taskAttachments.map((a) => a.providerFileId);
 
     await db.transaction(async (trx) => {
       await deleteTaskDependents(data.taskIds, trx);
+      if (attachmentIds.length > 0) {
+        await trx
+          .delete(attachments)
+          .where(inArray(attachments.id, attachmentIds));
+      }
       await trx
         .delete(tasks)
         .where(
           and(inArray(tasks.id, data.taskIds), eq(tasks.owner, owner))
         );
     });
+
+    await deleteAttachmentFilesFromStorage(providerFileIds);
 
     for (const id of data.taskIds) {
       await sync(`task-delete`, { data: { id } });
