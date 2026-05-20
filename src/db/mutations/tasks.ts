@@ -144,10 +144,13 @@ function assertAllTasksOwned(
   );
 }
 
-async function deleteTaskDependents(taskIds: string[]) {
+async function deleteTaskDependents(
+  taskIds: string[],
+  trx: Pick<typeof db, "delete"> = db
+) {
   if (taskIds.length === 0) return;
-  await db.delete(comments).where(inArray(comments.taskId, taskIds));
-  await db.delete(labelsToTasks).where(inArray(labelsToTasks.taskId, taskIds));
+  await trx.delete(comments).where(inArray(comments.taskId, taskIds));
+  await trx.delete(labelsToTasks).where(inArray(labelsToTasks.taskId, taskIds));
 }
 
 const createTask = createServerFn({ method: "POST" })
@@ -437,12 +440,12 @@ const deleteTask = createServerFn({ method: "POST" })
         deleteAttachmentForOwner(owner, attachment.id)
       )
     );
-    await deleteTaskDependents([data.id]);
-    await db
-      .delete(tasks)
-      .where(
-        and(eq(tasks.id, data.id), eq(tasks.owner, getOwningIdentity(session))),
-      );
+    await db.transaction(async (trx) => {
+      await deleteTaskDependents([data.id], trx);
+      await trx
+        .delete(tasks)
+        .where(and(eq(tasks.id, data.id), eq(tasks.owner, owner)));
+    });
     await sync(`task-delete`, { data });
   });
 
@@ -593,13 +596,14 @@ const batchDeleteTasks = createServerFn({ method: "POST" })
       )
     );
 
-    await deleteTaskDependents(data.taskIds);
-
-    await db
-      .delete(tasks)
-      .where(
-        and(inArray(tasks.id, data.taskIds), eq(tasks.owner, owner))
-      );
+    await db.transaction(async (trx) => {
+      await deleteTaskDependents(data.taskIds, trx);
+      await trx
+        .delete(tasks)
+        .where(
+          and(inArray(tasks.id, data.taskIds), eq(tasks.owner, owner))
+        );
+    });
 
     for (const id of data.taskIds) {
       await sync(`task-delete`, { data: { id } });
