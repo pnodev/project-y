@@ -65,6 +65,7 @@ export default function TaskCard({
           key={task.id}
           showSprint={showSprint}
           showProject={showProject}
+          taskLinkTo={taskLinkTo}
         />
       }
     >

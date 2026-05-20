@@ -213,12 +213,17 @@ export function OpenTask({
                     setIsDeleting(true);
                     await deleteTask(task.id);
                     setIsDeleting(false);
-                    navigate({
-                      to:
-                        location === "all"
-                          ? "/tasks"
-                          : `/projects/${task.projectId}/tasks`,
-                    });
+                    if (location === "all") {
+                      navigate({ to: "/tasks" });
+                    } else if (location === "project") {
+                      navigate({
+                        to: `/projects/${task.projectId}/tasks`,
+                      });
+                    } else {
+                      navigate({
+                        to: `/sprints/${task.sprintId}/tasks`,
+                      });
+                    }
                   }}
                   confirmText="Delete"
                   cancelText="Cancel"
