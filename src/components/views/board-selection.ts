@@ -73,7 +73,7 @@ export function handleTaskCardSelectClick(
       BoardViewStore.setState((s) => ({
         ...s,
         selectedTaskIds: [...new Set([...s.selectedTaskIds, taskId])],
-        selectionAnchorId: anchor,
+        selectionAnchorId: taskId,
       }));
       return;
     }

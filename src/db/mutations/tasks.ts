@@ -114,6 +114,18 @@ const batchSetLabelsForTasksValidator = z.object({
   labelIds: z.array(z.string().uuid()),
 });
 
+function assertAllTasksOwned(
+  ownedTasks: { id: string }[],
+  taskIds: string[]
+) {
+  if (ownedTasks.length === taskIds.length) return;
+  const ownedIds = new Set(ownedTasks.map((t) => t.id));
+  const missing = taskIds.filter((id) => !ownedIds.has(id));
+  throw new Error(
+    `Not authorized to modify some tasks: ${missing.join(", ")}`
+  );
+}
+
 const createTask = createServerFn({ method: "POST" })
   .inputValidator(insertTaskValidator)
   .handler(async ({ data }) => {
@@ -513,13 +525,15 @@ const batchUpdateTasks = createServerFn({ method: "POST" })
       where: (model, { eq, and, inArray }) =>
         and(inArray(model.id, data.taskIds), eq(model.owner, owner)),
     });
-    if (ownedTasks.length !== data.taskIds.length) return;
+    assertAllTasksOwned(ownedTasks, data.taskIds);
 
     const { taskIds, ...updates } = data;
     const setValues = Object.fromEntries(
       Object.entries(updates).filter(([, value]) => value !== undefined)
     );
-    if (Object.keys(setValues).length === 0) return;
+    if (Object.keys(setValues).length === 0) {
+      throw new Error("No updatable fields provided");
+    }
 
     await db
       .update(tasks)
@@ -543,7 +557,7 @@ const batchDeleteTasks = createServerFn({ method: "POST" })
       where: (model, { eq, and, inArray }) =>
         and(inArray(model.id, data.taskIds), eq(model.owner, owner)),
     });
-    if (ownedTasks.length !== data.taskIds.length) return;
+    assertAllTasksOwned(ownedTasks, data.taskIds);
 
     await Promise.all(
       ownedTasks.flatMap((task) =>
@@ -574,27 +588,41 @@ const batchAssignTasks = createServerFn({ method: "POST" })
       where: (model, { eq, and, inArray }) =>
         and(inArray(model.id, data.taskIds), eq(model.owner, owner)),
     });
-    if (ownedTasks.length !== data.taskIds.length) return;
+    assertAllTasksOwned(ownedTasks, data.taskIds);
+
+    const existingAssignees = await db.query.taskAssignees.findMany({
+      where: (model, { inArray }) => inArray(model.taskId, data.taskIds),
+    });
+    const assigneesByTaskId = new Map<string, typeof existingAssignees>();
+    for (const assignee of existingAssignees) {
+      const list = assigneesByTaskId.get(assignee.taskId) ?? [];
+      list.push(assignee);
+      assigneesByTaskId.set(assignee.taskId, list);
+    }
+
+    const newAssigneeRows: (typeof taskAssignees.$inferInsert)[] = [];
+    for (const taskId of data.taskIds) {
+      const taskAssigneesList = assigneesByTaskId.get(taskId) ?? [];
+      const newUserIds = data.userIds.filter(
+        (userId) => !taskAssigneesList.some((a) => a.userId === userId)
+      );
+      for (const userId of newUserIds) {
+        newAssigneeRows.push({
+          id: uuid(),
+          taskId,
+          owner,
+          userId,
+          assignedAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+    }
+
+    if (newAssigneeRows.length > 0) {
+      await db.insert(taskAssignees).values(newAssigneeRows);
+    }
 
     for (const taskId of data.taskIds) {
-      const existingAssignees = await db.query.taskAssignees.findMany({
-        where: (model, { eq }) => eq(model.taskId, taskId),
-      });
-      const newUserIds = data.userIds.filter(
-        (userId) => !existingAssignees.some((a) => a.userId === userId)
-      );
-      if (newUserIds.length > 0) {
-        await db.insert(taskAssignees).values(
-          newUserIds.map((userId) => ({
-            id: uuid(),
-            taskId,
-            owner,
-            userId,
-            assignedAt: new Date(),
-            updatedAt: new Date(),
-          }))
-        );
-      }
       await sync(`task-update-${taskId}`, { data });
     }
   });
@@ -609,14 +637,16 @@ const batchSetLabelsForTasks = createServerFn({ method: "POST" })
       where: (model, { eq, and, inArray }) =>
         and(inArray(model.id, data.taskIds), eq(model.owner, owner)),
     });
-    if (ownedTasks.length !== data.taskIds.length) return;
+    assertAllTasksOwned(ownedTasks, data.taskIds);
 
     if (data.labelIds.length > 0) {
       const ownedLabels = await db.query.labels.findMany({
         where: (model, { eq, and, inArray }) =>
           and(inArray(model.id, data.labelIds), eq(model.owner, owner)),
       });
-      if (ownedLabels.length !== data.labelIds.length) return;
+      if (ownedLabels.length !== data.labelIds.length) {
+        throw new Error("Not authorized: some labels are not owned by the user");
+      }
     }
 
     await db
@@ -787,8 +817,31 @@ export function useBatchAssignTasksMutation() {
         });
       };
 
+      const patchDetail = (oldData: TaskWithRelations | undefined) => {
+        if (!oldData || !taskIds.includes(oldData.id)) return oldData;
+        const existingIds = new Set(oldData.assignees.map((a) => a.userId));
+        const newAssignees = userIds
+          .filter((id) => !existingIds.has(id))
+          .map((userId) => ({
+            id: uuid(),
+            taskId: oldData.id,
+            userId,
+            owner: oldData.owner,
+            assignedAt: new Date(),
+            updatedAt: new Date(),
+          }));
+        return {
+          ...oldData,
+          assignees: [...oldData.assignees, ...newAssignees],
+          updatedAt: new Date(),
+        };
+      };
+
       for (const queryKey of listQueryKeys) {
         queryClient.setQueryData(queryKey, patchList);
+      }
+      for (const id of taskIds) {
+        queryClient.setQueryData(["tasks", id], patchDetail);
       }
 
       try {

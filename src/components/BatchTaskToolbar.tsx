@@ -202,8 +202,9 @@ export function BatchTaskToolbar({
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                disabled={isApplying}
+                disabled={isApplying || labelDraftIds.length === 0}
                 onClick={() => {
+                  if (labelDraftIds.length === 0) return;
                   void runAction(() => batchSetLabels(taskIds, labelDraftIds));
                 }}
               >
@@ -249,7 +250,7 @@ export function BatchTaskToolbar({
                   );
                 }}
               >
-                Add {assignUserIds.length || ""} assignee
+                Add {assignUserIds.length} assignee
                 {assignUserIds.length === 1 ? "" : "s"}
               </DropdownMenuItem>
             </DropdownMenuContent>
