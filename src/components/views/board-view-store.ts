@@ -1,4 +1,4 @@
-import { Store, useStore } from "@tanstack/react-store";
+import { Store } from "@tanstack/react-store";
 
 export type SortByType = "due" | "created" | "updated";
 type BoardViewState = {

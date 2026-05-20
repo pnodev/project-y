@@ -1,4 +1,4 @@
-import { Link, useMatch, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { type LucideIcon } from "lucide-react";
 
 import {

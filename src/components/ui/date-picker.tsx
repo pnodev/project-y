@@ -36,7 +36,7 @@ export function DatePicker({
 
   React.useEffect(() => {
     onChange(date);
-  }, [date]);
+  }, [date, onChange]);
 
   return (
     <div className="flex flex-col gap-3">

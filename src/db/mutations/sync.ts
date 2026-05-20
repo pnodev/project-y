@@ -1,3 +1,5 @@
+import "@tanstack/react-start/server-only";
+
 import { env } from "~/env";
 
 const DEFAULT_SYNC_ENGINE_URL = "https://sync-connect.pno.dev";

@@ -1,10 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { asc } from "drizzle-orm";
 import { db } from "~/db";
-import type { CommentWithAuthor } from "~/db/queries/comments";
-import { getCommentsForTask } from "~/db/queries/comments";
+import type { CommentWithAuthor } from "~/db/queries/comments.server";
 import type { AppUser } from "~/db/queries/users";
-import { getUsersForSession } from "~/db/queries/users";
 import type { Label, Project, Sprint, Status, TaskWithRelations } from "~/db/schema";
 import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
@@ -50,6 +48,7 @@ export const fetchProjectBoardBundle = createServerFn({ method: "GET" })
     }): Promise<ProjectBoardBundle> => {
       const session = await requireSessionFromRequest();
       const owner = getOwningIdentity(session);
+      const { getUsersForSession } = await import("~/db/queries/users.server");
 
       const [project, rawTasks, statuses, users] = await Promise.all([
         db.query.projects.findFirst({
@@ -87,6 +86,7 @@ export const fetchSprintBoardBundle = createServerFn({ method: "GET" })
     }): Promise<SprintBoardBundle> => {
       const session = await requireSessionFromRequest();
       const owner = getOwningIdentity(session);
+      const { getUsersForSession } = await import("~/db/queries/users.server");
 
       const [sprint, rawTasks, statuses, users] = await Promise.all([
         db.query.sprints.findFirst({
@@ -122,6 +122,9 @@ export const fetchTaskPageBundle = createServerFn({ method: "GET" })
     }): Promise<TaskPageBundle> => {
       const session = await requireSessionFromRequest();
       const owner = getOwningIdentity(session);
+      const { getCommentsForTask } = await import(
+        "~/db/queries/comments.server"
+      );
 
       const [taskRow, comments, labels, statuses] = await Promise.all([
         db.query.tasks.findFirst({

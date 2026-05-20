@@ -3,6 +3,7 @@ import { db } from "~/db";
 import {
   CreateLabel,
   insertLabelValidator,
+  Label,
   labels,
   UpdateLabel,
   updateLabelValidator,
@@ -134,7 +135,7 @@ export function useUpdateMultipleLabelsMutation() {
   return useCallback(
     async (labels: UpdateLabel[]) => {
       // Generic update function that works for both cache types
-      const updateCache = (oldData: any[] | undefined) => {
+      const updateCache = (oldData: Label[] | undefined) => {
         if (!oldData) return oldData;
         const labelMap = new Map(labels.map((s) => [s.id, s]));
         return oldData.map((s) => {

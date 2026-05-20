@@ -3,6 +3,7 @@ import {
   CreateSubTask,
   insertSubTaskValidator,
   SubTask,
+  TaskWithRelations,
   subTaskAssignees,
   subTasks,
   UpdateSubTask,
@@ -85,15 +86,18 @@ export function useUpdateSubTaskMutation() {
       const previousTasks = queryClient.getQueryData(["tasks", subTask.taskId]);
 
       // Optimistically update the UI
-      queryClient.setQueryData(["tasks", subTask.taskId], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          subTasks: old.subTasks.map((task: any) =>
-            task.id === subTask.id ? { ...task, ...subTask } : task
-          ),
-        };
-      });
+      queryClient.setQueryData(
+        ["tasks", subTask.taskId],
+        (old: TaskWithRelations | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            subTasks: old.subTasks.map((task) =>
+              task.id === subTask.id ? { ...task, ...subTask } : task,
+            ),
+          };
+        },
+      );
 
       try {
         const result = await _updateSubTask({ data: subTask });

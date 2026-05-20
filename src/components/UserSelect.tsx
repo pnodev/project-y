@@ -15,12 +15,6 @@ import { cn, getInitials } from "~/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage, AvatarList } from "./ui/avatar";
 import { EndlessLoadingSpinner } from "./EndlessLoadingSpinner";
 
-type User = {
-  id: string;
-  name: string;
-  avatar: string;
-};
-
 export function UserSelect({
   selectedUserIds,
   isAssigning,

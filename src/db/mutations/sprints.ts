@@ -49,7 +49,7 @@ export function useCreateSprintMutation() {
 
       return result;
     },
-    [_createSprint]
+    [router, queryClient, _createSprint]
   );
 }
 
@@ -89,7 +89,7 @@ export function useUpdateSprintMutation() {
 
       return result;
     },
-    [_updateSprint]
+    [router, queryClient, _updateSprint]
   );
 }
 
@@ -139,6 +139,6 @@ export function useDeleteSprintMutation() {
 
       return result;
     },
-    [_deleteSprint]
+    [router, queryClient, _deleteSprint]
   );
 }

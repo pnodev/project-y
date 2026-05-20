@@ -1,8 +1,7 @@
-import { useUsersQuery } from "~/db/queries/users";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { Check, ChevronsUpDown, Cross, X } from "lucide-react";
+import { Check, ChevronsUpDown, X } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -11,16 +10,9 @@ import {
   CommandItem,
   CommandList,
 } from "./ui/command";
-import { cn, getInitials } from "~/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage, AvatarList } from "./ui/avatar";
+import { cn } from "~/lib/utils";
 import { EndlessLoadingSpinner } from "./EndlessLoadingSpinner";
 import { useSprintsQuery } from "~/db/queries/sprints";
-
-type User = {
-  id: string;
-  name: string;
-  avatar: string;
-};
 
 export function SprintSelect({
   selectedSprintId,

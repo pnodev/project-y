@@ -1,8 +1,6 @@
 import * as React from "react";
 import {
   Building2,
-  Calendar,
-  CalendarPlus,
   Clock,
   ClockFading,
   ClockPlus,
@@ -36,108 +34,72 @@ type NavItem = {
   highlighted?: boolean;
 };
 
-const data = {
-  navMain: [
-    {
-      title: "Projects",
-      url: "#",
-      icon: Folder,
-      isActive: true,
-      items: [
-        {
-          title: "Add Project",
-          url: "/projects/new",
-          icon: FolderPlus,
-        },
-      ] as NavItem[],
-    },
-    {
-      title: "Sprints",
-      url: "#",
-      icon: ClockFading,
-      isActive: true,
-      items: [
-        {
-          title: "Add Sprint",
-          url: "/sprints/new",
-          icon: ClockPlus,
-        },
-      ] as NavItem[],
-    },
-  ],
-  // navSecondary: [
-  //   {
-  //     title: "Support",
-  //     url: "#",
-  //     icon: LifeBuoy,
-  //   },
-  //   {
-  //     title: "Feedback",
-  //     url: "#",
-  //     icon: Send,
-  //   },
-  // ],
-  settings: [
-    {
-      name: "Account",
-      url: "/settings/account",
-      icon: User,
-    },
-    {
-      name: "Organization",
-      url: "/settings/organization",
-      icon: Building2,
-    },
-    {
-      name: "Statuses",
-      url: "/statuses",
-      icon: Flag,
-    },
-    {
-      name: "Labels",
-      url: "/labels",
-      icon: Tag,
-    },
-  ],
-};
+const settingsNav = [
+  {
+    name: "Account",
+    url: "/settings/account",
+    icon: User,
+  },
+  {
+    name: "Organization",
+    url: "/settings/organization",
+    icon: Building2,
+  },
+  {
+    name: "Statuses",
+    url: "/statuses",
+    icon: Flag,
+  },
+  {
+    name: "Labels",
+    url: "/labels",
+    icon: Tag,
+  },
+];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const projectsQuery = useProjectsQuery();
   const sprintsQuery = useSprintsQuery();
 
-  data.navMain[0].items = [];
-  data.navMain[0].items.push({
-    title: "All",
-    url: "/tasks",
-    icon: Folder,
-  });
-  projectsQuery.data.forEach((project) => {
-    data.navMain[0].items.push({
-      title: project.name,
-      url: `/projects/${project.id}/tasks`,
-      icon: project.logo || Folder,
-    });
-  });
-  data.navMain[0].items.push({
-    title: "Add Project",
-    url: "/projects/new",
-    icon: FolderPlus,
-  });
+  const navMain = React.useMemo(() => {
+    const projectItems: NavItem[] = [
+      { title: "All", url: "/tasks", icon: Folder },
+      ...projectsQuery.data.map((project) => ({
+        title: project.name,
+        url: `/projects/${project.id}/tasks`,
+        icon: project.logo || Folder,
+      })),
+      { title: "Add Project", url: "/projects/new", icon: FolderPlus },
+    ];
 
-  data.navMain[1].items = [];
-  sprintsQuery.data.forEach((sprint) => {
-    data.navMain[1].items.push({
-      title: sprint.name,
-      url: `/sprints/${sprint.id}/tasks`,
-      icon: Clock,
-      highlighted: sprint.start < new Date() && sprint.end > new Date(),
-    });
-  });
-  data.navMain[1].items.push({
-    title: "Add Sprint",
-    url: "/sprints/new",
-    icon: ClockPlus,
-  });
+    const sprintItems: NavItem[] = [
+      ...sprintsQuery.data.map((sprint) => ({
+        title: sprint.name,
+        url: `/sprints/${sprint.id}/tasks`,
+        icon: Clock,
+        highlighted: sprint.start < new Date() && sprint.end > new Date(),
+      })),
+      { title: "Add Sprint", url: "/sprints/new", icon: ClockPlus },
+    ];
+
+    return [
+      {
+        title: "Projects",
+        url: "#",
+        icon: Folder,
+        isActive: true,
+        items: projectItems,
+      },
+      {
+        title: "Sprints",
+        url: "#",
+        icon: ClockFading,
+        isActive: true,
+        items: sprintItems,
+      },
+    ];
+  }, [projectsQuery.data, sprintsQuery.data]);
+
   return (
     <Sidebar
       className="top-(--header-height) h-[calc(100svh-var(--header-height))]!"
@@ -161,8 +123,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} title="Tasks" />
-        <NavSettings settings={data.settings} />
+        <NavMain items={navMain} title="Tasks" />
+        <NavSettings settings={settingsNav} />
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>

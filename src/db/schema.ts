@@ -12,7 +12,6 @@ import {
   pgEnum,
   primaryKey,
   index,
-  json,
   boolean,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";

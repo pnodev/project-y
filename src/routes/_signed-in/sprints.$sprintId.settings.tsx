@@ -59,7 +59,9 @@ function RouteComponent() {
             confirmText="Delete"
             cancelText="Cancel"
           >
-            <Button variant={"destructive"}>Delete Sprint</Button>
+            <Button variant={"destructive"} disabled={isDeleting}>
+              Delete Sprint
+            </Button>
           </ConfirmDialog>
         </PageSectionContent>
       </PageSection>

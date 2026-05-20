@@ -9,7 +9,6 @@ import {
   Calendar,
   ClockFading,
   Flag,
-  Folder,
   Paperclip,
   TextIcon,
   Users,

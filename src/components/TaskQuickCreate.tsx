@@ -16,7 +16,6 @@ import {
   SelectValue,
 } from "./ui/select";
 import { useProjectsQuery } from "~/db/queries/projects";
-import { DialogOverlay } from "@radix-ui/react-dialog";
 
 export default function TaskQuickCreate({
   status,
@@ -48,7 +47,7 @@ export default function TaskQuickCreate({
     if (quickCreateOpen === status && ref.current) {
       ref.current.focus();
     }
-  }, [quickCreateOpen]);
+  }, [quickCreateOpen, status]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

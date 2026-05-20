@@ -1,3 +1,5 @@
+import "@tanstack/react-start/server-only";
+
 import { redirect } from "@tanstack/react-router";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { auth } from "~/lib/auth";
