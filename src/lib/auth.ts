@@ -79,11 +79,20 @@ export const auth = betterAuth({
     enabled: true,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
-      void sendEmail({
-        to: user.email,
-        subject: "Reset your Project Y password",
-        text: `Reset your password by opening this link:\n\n${url}\n\nIf you did not request this, you can ignore this email.`,
-      });
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: "Reset your Project Y password",
+          text: `Reset your password by opening this link:\n\n${url}\n\nIf you did not request this, you can ignore this email.`,
+        });
+      } catch (error) {
+        console.error("Failed to send reset password email", {
+          email: user.email,
+          url,
+          error,
+        });
+        throw error;
+      }
     },
   },
   socialProviders:
@@ -99,11 +108,20 @@ export const auth = betterAuth({
     organization({
       async sendInvitationEmail(data) {
         const inviteLink = `${env.BETTER_AUTH_URL}/accept-invitation/${data.id}`;
-        void sendEmail({
-          to: data.email,
-          subject: "You're invited to Project Y",
-          text: `You've been invited to join an organization on Project Y.\n\nAccept the invitation: ${inviteLink}`,
-        });
+        try {
+          await sendEmail({
+            to: data.email,
+            subject: "You're invited to Project Y",
+            text: `You've been invited to join an organization on Project Y.\n\nAccept the invitation: ${inviteLink}`,
+          });
+        } catch (error) {
+          console.error("Failed to send organization invitation email", {
+            email: data.email,
+            inviteLink,
+            error,
+          });
+          throw error;
+        }
       },
     }),
     tanstackStartCookies(),

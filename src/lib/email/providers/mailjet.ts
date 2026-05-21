@@ -1,6 +1,15 @@
 import Mailjet, { type SendEmailV3_1 } from "node-mailjet";
 import type { EmailMessage, EmailProvider } from "~/lib/email/types";
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export type MailjetProviderConfig = {
   apiKey: string;
   apiSecret: string;
@@ -26,7 +35,7 @@ export function createMailjetEmailProvider(
             To: [{ Email: to }],
             Subject: subject,
             TextPart: text,
-            HTMLPart: html ?? text.replace(/\n/g, "<br>"),
+            HTMLPart: html ?? escapeHtml(text).replace(/\n/g, "<br>"),
           },
         ],
       };

@@ -16,19 +16,21 @@ export function ForgotPasswordForm() {
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
 
-    const { error } = await authClient.requestPasswordReset({
-      email,
-      redirectTo: "/reset-password",
-    });
+    try {
+      const { error } = await authClient.requestPasswordReset({
+        email,
+        redirectTo: "/reset-password",
+      });
 
-    setIsLoading(false);
+      if (error) {
+        toast.error(error.message ?? "Failed to send reset email");
+        return;
+      }
 
-    if (error) {
-      toast.error(error.message ?? "Failed to send reset email");
-      return;
+      setSubmitted(true);
+    } finally {
+      setIsLoading(false);
     }
-
-    setSubmitted(true);
   };
 
   if (submitted) {

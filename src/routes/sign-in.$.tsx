@@ -32,19 +32,21 @@ function RouteComponent() {
     setIsLoading(true);
     const formData = new FormData(e.currentTarget);
 
-    const { error } = await authClient.signIn.email({
-      email: formData.get("email") as string,
-      password: formData.get("password") as string,
-    });
+    try {
+      const { error } = await authClient.signIn.email({
+        email: formData.get("email") as string,
+        password: formData.get("password") as string,
+      });
 
-    setIsLoading(false);
+      if (error) {
+        toast.error(error.message ?? "Sign in failed");
+        return;
+      }
 
-    if (error) {
-      toast.error(error.message ?? "Sign in failed");
-      return;
+      navigate({ to: "/dashboard" });
+    } finally {
+      setIsLoading(false);
     }
-
-    navigate({ to: "/dashboard" });
   };
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -55,22 +57,24 @@ function RouteComponent() {
     const firstname = formData.get("firstname") as string;
     const lastname = formData.get("lastname") as string;
 
-    const { error } = await authClient.signUp.email({
-      email: formData.get("email") as string,
-      password: formData.get("password") as string,
-      name: formatUserName(firstname, lastname),
-      firstname,
-      lastname,
-    });
+    try {
+      const { error } = await authClient.signUp.email({
+        email: formData.get("email") as string,
+        password: formData.get("password") as string,
+        name: formatUserName(firstname, lastname),
+        firstname,
+        lastname,
+      });
 
-    setIsLoading(false);
+      if (error) {
+        toast.error(error.message ?? "Sign up failed");
+        return;
+      }
 
-    if (error) {
-      toast.error(error.message ?? "Sign up failed");
-      return;
+      navigate({ to: "/dashboard" });
+    } finally {
+      setIsLoading(false);
     }
-
-    navigate({ to: "/dashboard" });
   };
 
   return (

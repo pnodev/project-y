@@ -44,20 +44,22 @@ export function ResetPasswordForm({ token, hasError }: ResetPasswordFormProps) {
 
     setIsLoading(true);
 
-    const { error } = await authClient.resetPassword({
-      newPassword,
-      token,
-    });
+    try {
+      const { error } = await authClient.resetPassword({
+        newPassword,
+        token,
+      });
 
-    setIsLoading(false);
+      if (error) {
+        toast.error(error.message ?? "Failed to reset password");
+        return;
+      }
 
-    if (error) {
-      toast.error(error.message ?? "Failed to reset password");
-      return;
+      toast.success("Password updated. You can sign in now.");
+      navigate({ to: "/sign-in/$" });
+    } finally {
+      setIsLoading(false);
     }
-
-    toast.success("Password updated. You can sign in now.");
-    navigate({ to: "/sign-in/$" });
   };
 
   return (

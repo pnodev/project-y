@@ -10,19 +10,26 @@ function getEmailProvider(): EmailProvider {
   return provider;
 }
 
-/** Fire-and-forget; logs errors without blocking the caller (Better Auth pattern). */
-export function sendEmail(message: EmailMessage) {
-  void getEmailProvider()
-    .send(message)
-    .catch((error) => {
-      console.error(
-        `[email] Failed to send via ${getEmailProvider().name}:`,
-        error
-      );
-    });
+/** Logs errors without blocking unless the returned promise is awaited. */
+export function sendEmail(message: EmailMessage): Promise<void> {
+  let emailProvider: EmailProvider;
+  try {
+    emailProvider = getEmailProvider();
+  } catch (error) {
+    console.error("[email] Failed to initialize email provider:", error);
+    return Promise.reject(error);
+  }
+
+  return emailProvider.send(message).catch((error) => {
+    console.error(
+      `[email] Failed to send via ${emailProvider.name}:`,
+      error
+    );
+    throw error;
+  });
 }
 
 /** @deprecated Prefer `sendEmail` — kept for existing auth hooks. */
 export function sendAuthEmail(message: EmailMessage) {
-  sendEmail(message);
+  void sendEmail(message);
 }

@@ -32,10 +32,16 @@ function GoogleIcon() {
 export function GoogleSignInButton({ disabled }: GoogleSignInButtonProps) {
   const handleGoogleSignIn = async () => {
     try {
-      await authClient.signIn.social({
+      const { error } = await authClient.signIn.social({
         provider: "google",
         callbackURL: "/dashboard",
       });
+
+      if (error) {
+        console.error("Google sign-in failed", { provider: "google", error });
+        toast.error(error.message ?? "Google sign-in failed. Please try again.");
+        return;
+      }
     } catch (error) {
       console.error("Google sign-in failed", { provider: "google", error });
       toast.error("Google sign-in failed. Please try again.");

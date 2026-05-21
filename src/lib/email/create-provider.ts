@@ -18,6 +18,12 @@ function resolveProviderName(): EmailProviderName {
     return "mailjet";
   }
 
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Email provider not configured for production. Set EMAIL_PROVIDER or provide MAILJET_API_KEY, MAILJET_API_SECRET, and EMAIL_FROM."
+    );
+  }
+
   return "console";
 }
 
