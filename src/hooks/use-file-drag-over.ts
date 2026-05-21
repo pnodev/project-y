@@ -35,6 +35,8 @@ export function useFileDragOver(
       if (!isFileDragEvent(event)) return;
       event.preventDefault();
 
+      depthRef.current = Math.max(0, depthRef.current - 1);
+
       const container = containerRef.current;
       if (
         container &&
@@ -44,7 +46,6 @@ export function useFileDragOver(
         return;
       }
 
-      depthRef.current = Math.max(0, depthRef.current - 1);
       if (depthRef.current === 0) {
         setIsFileDragOver(false);
       }

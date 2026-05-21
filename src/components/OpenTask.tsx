@@ -174,10 +174,12 @@ export function OpenTask({
   });
 
   useEffect(() => {
-    if (!task) return;
+    if (!task?.id) return;
     setTaskTab(task.subTasks.length > 0 ? "subtasks" : "attachments");
     clearFileDragOver();
-  }, [task?.id, task?.subTasks.length, clearFileDragOver]);
+    // Intentionally only when switching tasks — not when subtask count changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- task?.id
+  }, [task?.id, clearFileDragOver]);
 
   const handleTaskPanelDragEnter = useCallback(
     (event: React.DragEvent) => {
