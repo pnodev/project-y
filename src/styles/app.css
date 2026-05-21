@@ -142,4 +142,22 @@
   transform-origin: left;
 }
 
+.auth-shell {
+  --brand-navy: #093149;
+  --brand-yellow: #ffe50a;
+}
+
+.auth-shell .auth-link {
+  @apply text-sm font-medium text-primary transition-colors hover:text-[var(--brand-yellow)];
+}
+
+.auth-brand-pattern {
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in srgb, var(--brand-yellow) 25%, transparent) 1px,
+    transparent 0
+  );
+  background-size: 24px 24px;
+}
+
 @plugin 'tailwind-scrollbar';

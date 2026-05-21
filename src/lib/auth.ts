@@ -7,6 +7,7 @@ import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { db } from "~/db";
 import * as authSchema from "~/db/auth-schema";
 import { env } from "~/env";
+import { sendEmail } from "~/lib/email";
 import { formatUserName } from "~/lib/utils";
 
 export const auth = betterAuth({
@@ -76,6 +77,23 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, url }) => {
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: "Reset your Project Y password",
+          text: `Reset your password by opening this link:\n\n${url}\n\nIf you did not request this, you can ignore this email.`,
+        });
+      } catch (error) {
+        console.error("Failed to send reset password email", {
+          email: user.email,
+          url,
+          error,
+        });
+        throw error;
+      }
+    },
   },
   socialProviders:
     env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
@@ -90,15 +108,20 @@ export const auth = betterAuth({
     organization({
       async sendInvitationEmail(data) {
         const inviteLink = `${env.BETTER_AUTH_URL}/accept-invitation/${data.id}`;
-        if (process.env.NODE_ENV === "development") {
-          console.info(
-            `[organization invite] ${data.email} → ${inviteLink}`
-          );
-          return;
+        try {
+          await sendEmail({
+            to: data.email,
+            subject: "You're invited to Project Y",
+            text: `You've been invited to join an organization on Project Y.\n\nAccept the invitation: ${inviteLink}`,
+          });
+        } catch (error) {
+          console.error("Failed to send organization invitation email", {
+            email: data.email,
+            inviteLink,
+            error,
+          });
+          throw error;
         }
-        throw new Error(
-          "Organization invitations require a production email provider. Configure sendInvitationEmail in src/lib/auth.ts."
-        );
       },
     }),
     tanstackStartCookies(),

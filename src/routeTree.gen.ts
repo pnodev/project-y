@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as SignedInRouteImport } from './routes/_signed-in'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
@@ -31,6 +33,16 @@ import { Route as SignedInProjectsProjectIdSettingsRouteImport } from './routes/
 import { Route as SignedInSprintsSprintIdTasksTaskIdRouteImport } from './routes/_signed-in/sprints.$sprintId.tasks.$taskId'
 import { Route as SignedInProjectsProjectIdTasksTaskIdRouteImport } from './routes/_signed-in/projects.$projectId.tasks.$taskId'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignedInRoute = SignedInRouteImport.update({
   id: '/_signed-in',
   getParentRoute: () => rootRouteImport,
@@ -146,6 +158,8 @@ const SignedInProjectsProjectIdTasksTaskIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof SignedInDashboardRoute
   '/labels': typeof SignedInLabelsRoute
   '/statuses': typeof SignedInStatusesRoute
@@ -168,6 +182,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof SignedInDashboardRoute
   '/labels': typeof SignedInLabelsRoute
   '/statuses': typeof SignedInStatusesRoute
@@ -192,6 +208,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_signed-in': typeof SignedInRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/_signed-in/dashboard': typeof SignedInDashboardRoute
   '/_signed-in/labels': typeof SignedInLabelsRoute
   '/_signed-in/statuses': typeof SignedInStatusesRoute
@@ -216,6 +234,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/forgot-password'
+    | '/reset-password'
     | '/dashboard'
     | '/labels'
     | '/statuses'
@@ -238,6 +258,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/forgot-password'
+    | '/reset-password'
     | '/dashboard'
     | '/labels'
     | '/statuses'
@@ -261,6 +283,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_signed-in'
+    | '/forgot-password'
+    | '/reset-password'
     | '/_signed-in/dashboard'
     | '/_signed-in/labels'
     | '/_signed-in/statuses'
@@ -285,6 +309,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SignedInRoute: typeof SignedInRouteWithChildren
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ApiUploadthingRoute: typeof ApiUploadthingRoute
   SignInSplatRoute: typeof SignInSplatRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -292,6 +318,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_signed-in': {
       id: '/_signed-in'
       path: ''
@@ -539,6 +579,8 @@ const SignedInRouteWithChildren = SignedInRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SignedInRoute: SignedInRouteWithChildren,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ApiUploadthingRoute: ApiUploadthingRoute,
   SignInSplatRoute: SignInSplatRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
