@@ -9,6 +9,7 @@ import {
   Calendar,
   ClockFading,
   Flag,
+  Folder,
   Paperclip,
   TextIcon,
   Users,
@@ -255,17 +256,26 @@ export const TaskCardComponent = ({
         onMouseEnter={() => setIsCardHovered(true)}
         onMouseLeave={() => setIsCardHovered(false)}
       >
-        <CardHeader className="p-3 -mt-1">
-          {showProject ? (
-            <div className="flex items-center gap-2 -mt-2 -mx-3 px-3 py-1.5 bg-yellow-50 border-b rounded-t-sm  text-xs">
-              {task.project.logo ? (
-                <img src={task.project.logo} className="size-3.5" />
+        <CardHeader className="space-y-2 p-3">
+          {showProject || task.labels.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-1">
+              {showProject ? (
+                <span
+                  className="inline-flex max-w-full shrink-0 items-center gap-1 rounded-md border border-border/60 bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                  title={task.project.name}
+                >
+                  {task.project.logo ? (
+                    <img
+                      src={task.project.logo}
+                      alt=""
+                      className="size-3 shrink-0 rounded-sm"
+                    />
+                  ) : (
+                    <Folder className="size-3 shrink-0 opacity-70" />
+                  )}
+                  <span className="truncate">{task.project.name}</span>
+                </span>
               ) : null}
-              {task.project.name}
-            </div>
-          ) : null}
-          {task.labels.length ? (
-            <div className="mb-4 flex flex-wrap gap-1">
               {task.labels.map((label) => (
                 <LabelBadge
                   key={label.id}
