@@ -15,8 +15,8 @@ export function listGridStyle(_flags: ListColumnFlags): CSSProperties {
       "minmax(180px, 2fr)",
       "minmax(100px, 1.2fr)",
       "108px",
-      "96px",
-      "minmax(120px, 1fr)",
+      "7.5rem",
+      "minmax(140px, 1.2fr)",
     ].join(" "),
   };
 }

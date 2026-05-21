@@ -225,16 +225,18 @@ function ListSection({
       </div>
 
       {sortedTasks.length > 0 ? (
-        sortedTasks.map((task) => (
-          <TaskListRow
-            key={task.id}
-            task={task}
-            orderedTaskIds={orderedTaskIds}
-            location={location}
-            columnFlags={columnFlags}
-            updateTask={updateTask}
-          />
-        ))
+        <div>
+          {sortedTasks.map((task) => (
+            <TaskListRow
+              key={task.id}
+              task={task}
+              orderedTaskIds={orderedTaskIds}
+              location={location}
+              columnFlags={columnFlags}
+              updateTask={updateTask}
+            />
+          ))}
+        </div>
       ) : (
         <p className="px-4 py-6 text-center text-xs text-muted-foreground/60">
           Drop tasks here

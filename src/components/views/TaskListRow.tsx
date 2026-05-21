@@ -1,15 +1,19 @@
 import { useDraggable } from "@dnd-kit/core";
-import { useMemo } from "react";
+import { useState } from "react";
 import { useStore } from "@tanstack/react-store";
-import { GripVertical } from "lucide-react";
+import { GripVertical, UserPlus } from "lucide-react";
+import { UserSelect } from "~/components/UserSelect";
 import { PrioritySwitch } from "~/components/PrioritySwitch";
 import { Checkbox } from "~/components/ui/checkbox";
 import { DateDisplay } from "~/components/ui/date-display";
 import { LabelBadge } from "~/components/ui/label-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { useUsersQuery } from "~/db/queries/users";
+import {
+  useAssignTaskMutation,
+  useUnassignTaskMutation,
+} from "~/db/mutations/tasks";
 import type { Priority, TaskWithRelations, UpdateTask } from "~/db/schema";
-import { cn, getInitials } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import {
   handleTaskSelectClick,
   setHoveredTaskId,
@@ -56,14 +60,9 @@ export function TaskListRow({
   isOverlay?: boolean;
 }) {
   const { showSprint } = columnFlags;
-  const usersQuery = useUsersQuery();
-  const usersById = useMemo(() => {
-    const map = new Map<string, NonNullable<typeof usersQuery.data>[number]>();
-    for (const user of usersQuery.data ?? []) {
-      map.set(user.id, user);
-    }
-    return map;
-  }, [usersQuery.data]);
+  const assignTask = useAssignTaskMutation();
+  const unassignTask = useUnassignTaskMutation();
+  const [isAssigningUser, setIsAssigningUser] = useState(false);
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `task:${task.id}`,
@@ -73,16 +72,9 @@ export function TaskListRow({
   const isSelected = useStore(TaskViewStore, (state) =>
     state.selectedTaskIds.includes(task.id)
   );
-  const isHovered = useStore(
-    TaskViewStore,
-    (state) => state.hoveredTaskId === task.id
-  );
   const isOverdue = task.deadline && task.deadline < new Date();
   const subtitle = taskSubtitle(task, columnFlags);
-  const primaryAssignee = task.assignees[0]
-    ? usersById.get(task.assignees[0].userId)
-    : undefined;
-  const extraAssignees = task.assignees.length - 1;
+  const assigneeIds = task.assignees.map((a) => a.userId);
 
   const handlePriorityChange = (priority: Priority) => {
     void updateTask({
@@ -91,6 +83,24 @@ export function TaskListRow({
       projectId: task.projectId,
       sprintId: task.sprintId ?? undefined,
     }).catch(() => undefined);
+  };
+
+  const handleAssigneeChange = async (ids: string[]) => {
+    setIsAssigningUser(true);
+    try {
+      const add = ids.filter(
+        (id) => !task.assignees.some((assignee) => assignee.userId === id)
+      );
+      const remove = task.assignees
+        .map((a) => a.userId)
+        .filter((id) => !ids.includes(id));
+      await Promise.all([
+        assignTask(task, add),
+        unassignTask(task, remove),
+      ]);
+    } finally {
+      setIsAssigningUser(false);
+    }
   };
 
   return (
@@ -102,7 +112,7 @@ export function TaskListRow({
         "py-3",
         isOverlay &&
           "rounded-md bg-background shadow-lg ring-1 ring-border/50",
-        !isOverlay && "hover:bg-muted/50",
+        !isOverlay && "border-b border-border/40 hover:bg-muted/50",
         !isOverlay && isSelected && "bg-primary/[0.04]",
         !isOverlay && isDragging && "opacity-50"
       )}
@@ -223,39 +233,44 @@ export function TaskListRow({
 
       <div
         className={cn(
-          "text-right text-xs tabular-nums",
+          "whitespace-nowrap text-right text-xs tabular-nums",
           isOverdue ? "font-medium text-red-600" : "text-muted-foreground"
         )}
       >
         {task.deadline ? (
-          <DateDisplay date={task.deadline} />
+          <DateDisplay date={task.deadline} variant="compact" />
         ) : (
           <span className="text-muted-foreground/40">—</span>
         )}
       </div>
 
-      <div className="flex min-w-0 items-center justify-end gap-2">
-        {primaryAssignee ? (
-          <>
-            <Avatar className="size-7 shrink-0">
-              <AvatarImage
-                src={primaryAssignee.avatar || undefined}
-                alt={primaryAssignee.name}
-              />
-              <AvatarFallback className="text-[10px]">
-                {getInitials(primaryAssignee.name)}
-              </AvatarFallback>
+      <div
+        className="flex min-w-0 justify-end"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        {!isOverlay ? (
+          <UserSelect
+            variant="inline"
+            size="sm"
+            isAssigning={isAssigningUser}
+            selectedUserIds={assigneeIds}
+            onValueChange={(ids) => void handleAssigneeChange(ids)}
+            emptyTriggerComponent={
+              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                <UserPlus className="size-3.5" />
+                Assign
+              </span>
+            }
+          />
+        ) : assigneeIds.length > 0 ? (
+          <span className="inline-flex items-center gap-2 text-sm">
+            <Avatar className="size-7">
+              <AvatarFallback className="text-[10px]">?</AvatarFallback>
             </Avatar>
-            <span className="min-w-0 truncate text-sm text-foreground/90">
-              {primaryAssignee.name}
-              {extraAssignees > 0 ? (
-                <span className="text-muted-foreground">
-                  {" "}
-                  +{extraAssignees}
-                </span>
-              ) : null}
+            <span className="truncate text-muted-foreground">
+              {assigneeIds.length} assigned
             </span>
-          </>
+          </span>
         ) : (
           <span className="text-xs text-muted-foreground/40">—</span>
         )}
