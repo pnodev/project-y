@@ -23,13 +23,15 @@ function PathlessLayoutComponent() {
   return (
     <div className="[--header-height:calc(--spacing(14))]">
       <TopLoadingState isActive={routerState.isLoading} />
-      <SidebarProvider className="flex flex-col">
-        <SiteHeader />
-        <div className="flex flex-1">
+      <SidebarProvider className="flex min-h-svh overflow-x-hidden">
+        <div className="flex min-w-0 flex-1">
           <AppSidebar />
-          <SidebarInset>
-            <Outlet />
-          </SidebarInset>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <SiteHeader />
+            <SidebarInset className="min-w-0 flex-1">
+              <Outlet />
+            </SidebarInset>
+          </div>
         </div>
       </SidebarProvider>
     </div>

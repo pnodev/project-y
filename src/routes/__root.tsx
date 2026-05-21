@@ -33,6 +33,16 @@ export const Route = createRootRouteWithContext<{
       }),
     ],
     links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      {
+        rel: "preconnect",
+        href: "https://fonts.gstatic.com",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..600&display=swap",
+      },
       { rel: "stylesheet", href: appCss },
       {
         rel: "apple-touch-icon",
