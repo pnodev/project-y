@@ -70,6 +70,8 @@ function RouteComponent() {
       }
 
       navigate({ to: "/dashboard" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Sign in failed");
     } finally {
       setIsLoading(false);
     }
@@ -100,6 +102,8 @@ function RouteComponent() {
 
       setPendingVerificationEmail(email);
       toast.success("Check your email to confirm your account");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Sign up failed");
     } finally {
       setIsLoading(false);
     }

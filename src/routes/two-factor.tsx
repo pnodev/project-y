@@ -12,23 +12,28 @@ export const Route = createFileRoute("/two-factor")({
 function RouteComponent() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [trustDevice, setTrustDevice] = useState(true);
+  const [trustDevice, setTrustDevice] = useState(false);
 
   const handleVerify = async (code: string) => {
     setIsLoading(true);
-    const { error } = await authClient.twoFactor.verifyTotp({
-      code,
-      trustDevice,
-    });
-    setIsLoading(false);
+    try {
+      const { error } = await authClient.twoFactor.verifyTotp({
+        code,
+        trustDevice,
+      });
 
-    if (error) {
-      toast.error(error.message ?? "Invalid code");
-      return;
+      if (error) {
+        toast.error(error.message ?? "Invalid code");
+        return;
+      }
+
+      toast.success("Signed in");
+      navigate({ to: "/dashboard" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Invalid code");
+    } finally {
+      setIsLoading(false);
     }
-
-    toast.success("Signed in");
-    navigate({ to: "/dashboard" });
   };
 
   const handleBackupCode = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -37,19 +42,24 @@ function RouteComponent() {
     const formData = new FormData(e.currentTarget);
     const code = (formData.get("backupCode") as string).trim();
 
-    const { error } = await authClient.twoFactor.verifyBackupCode({
-      code,
-      trustDevice,
-    });
-    setIsLoading(false);
+    try {
+      const { error } = await authClient.twoFactor.verifyBackupCode({
+        code,
+        trustDevice,
+      });
 
-    if (error) {
-      toast.error(error.message ?? "Invalid backup code");
-      return;
+      if (error) {
+        toast.error(error.message ?? "Invalid backup code");
+        return;
+      }
+
+      toast.success("Signed in");
+      navigate({ to: "/dashboard" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Invalid backup code");
+    } finally {
+      setIsLoading(false);
     }
-
-    toast.success("Signed in");
-    navigate({ to: "/dashboard" });
   };
 
   return (

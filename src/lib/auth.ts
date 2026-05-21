@@ -23,11 +23,20 @@ export const auth = betterAuth({
     sendOnSignIn: true,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
-      void sendEmail({
-        to: user.email,
-        subject: "Confirm your Project Y account",
-        text: `Please confirm your email address to activate your account (double opt-in).\n\nOpen this link:\n${url}\n\nIf you did not create an account, you can ignore this email.`,
-      });
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: "Confirm your Project Y account",
+          text: `Please confirm your email address to activate your account (double opt-in).\n\nOpen this link:\n${url}\n\nIf you did not create an account, you can ignore this email.`,
+        });
+      } catch (error) {
+        console.error("Failed to send verification email", {
+          email: user.email,
+          url,
+          error,
+        });
+        throw error;
+      }
     },
   },
   user: {

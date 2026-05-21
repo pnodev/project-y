@@ -37,6 +37,7 @@ export function TotpCodeForm({
           maxLength={6}
           minLength={6}
           required
+          disabled={isLoading}
           placeholder="000000"
           className="font-mono tracking-widest"
         />

@@ -12,18 +12,27 @@ export function VerifyEmailPending({ email }: VerifyEmailPendingProps) {
 
   const handleResend = async () => {
     setIsResending(true);
-    const { error } = await authClient.sendVerificationEmail({
-      email,
-      callbackURL: "/dashboard",
-    });
-    setIsResending(false);
+    try {
+      const { error } = await authClient.sendVerificationEmail({
+        email,
+        callbackURL: "/dashboard",
+      });
 
-    if (error) {
-      toast.error(error.message ?? "Could not resend verification email");
-      return;
+      if (error) {
+        toast.error(error.message ?? "Could not resend verification email");
+        return;
+      }
+
+      toast.success("Verification email sent");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not resend verification email"
+      );
+    } finally {
+      setIsResending(false);
     }
-
-    toast.success("Verification email sent");
   };
 
   return (

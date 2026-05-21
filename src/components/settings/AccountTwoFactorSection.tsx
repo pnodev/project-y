@@ -30,6 +30,7 @@ export function AccountTwoFactorSection() {
     null
   );
   const [isEnabling, setIsEnabling] = useState(false);
+  const [isVerifyingSetup, setIsVerifyingSetup] = useState(false);
   const [isDisabling, setIsDisabling] = useState(false);
   const [disablePassword, setDisablePassword] = useState("");
 
@@ -37,56 +38,83 @@ export function AccountTwoFactorSection() {
     e.preventDefault();
 
     setIsEnabling(true);
-    const { data, error } = await authClient.twoFactor.enable({
-      ...(password ? { password } : {}),
-      issuer: "Project Y",
-    });
-    setIsEnabling(false);
+    try {
+      const { data, error } = await authClient.twoFactor.enable({
+        ...(password ? { password } : {}),
+        issuer: "Project Y",
+      });
 
-    if (error) {
-      toast.error(error.message ?? "Could not enable two-factor authentication");
-      return;
+      if (error) {
+        toast.error(error.message ?? "Could not enable two-factor authentication");
+        return;
+      }
+
+      if (!data?.totpURI) {
+        toast.error("Could not start two-factor setup");
+        return;
+      }
+
+      setSetup({
+        totpURI: data.totpURI,
+        backupCodes: data.backupCodes ?? [],
+      });
+      setPassword("");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not enable two-factor authentication"
+      );
+    } finally {
+      setIsEnabling(false);
     }
-
-    if (!data?.totpURI) {
-      toast.error("Could not start two-factor setup");
-      return;
-    }
-
-    setSetup({
-      totpURI: data.totpURI,
-      backupCodes: data.backupCodes ?? [],
-    });
-    setPassword("");
   };
 
   const handleVerifySetup = async (code: string) => {
-    const { error } = await authClient.twoFactor.verifyTotp({ code });
-    if (error) {
-      toast.error(error.message ?? "Invalid code");
-      return;
-    }
+    if (isVerifyingSetup) return;
 
-    setSavedBackupCodes(setup?.backupCodes ?? []);
-    setSetup(null);
-    toast.success("Two-factor authentication enabled");
+    setIsVerifyingSetup(true);
+    try {
+      const { error } = await authClient.twoFactor.verifyTotp({ code });
+      if (error) {
+        toast.error(error.message ?? "Invalid code");
+        return;
+      }
+
+      setSavedBackupCodes(setup?.backupCodes ?? []);
+      setSetup(null);
+      toast.success("Two-factor authentication enabled");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Invalid code");
+    } finally {
+      setIsVerifyingSetup(false);
+    }
   };
 
   const handleDisable = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsDisabling(true);
-    const { error } = await authClient.twoFactor.disable({
-      ...(disablePassword ? { password: disablePassword } : {}),
-    });
-    setIsDisabling(false);
+    try {
+      const { error } = await authClient.twoFactor.disable({
+        ...(disablePassword ? { password: disablePassword } : {}),
+      });
 
-    if (error) {
-      toast.error(error.message ?? "Could not disable two-factor authentication");
-      return;
+      if (error) {
+        toast.error(error.message ?? "Could not disable two-factor authentication");
+        return;
+      }
+
+      setDisablePassword("");
+      toast.success("Two-factor authentication disabled");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not disable two-factor authentication"
+      );
+    } finally {
+      setIsDisabling(false);
     }
-
-    setDisablePassword("");
-    toast.success("Two-factor authentication disabled");
   };
 
   if (setup) {
@@ -101,7 +129,7 @@ export function AccountTwoFactorSection() {
             <p className="break-all font-mono text-xs">{setup.totpURI}</p>
           </div>
           <TotpCodeForm
-            isLoading={false}
+            isLoading={isVerifyingSetup}
             onSubmit={handleVerifySetup}
             submitLabel="Confirm authenticator"
           />
