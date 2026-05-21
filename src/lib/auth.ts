@@ -7,7 +7,7 @@ import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { db } from "~/db";
 import * as authSchema from "~/db/auth-schema";
 import { env } from "~/env";
-import { sendAuthEmail } from "~/lib/email";
+import { sendEmail } from "~/lib/email";
 import { formatUserName } from "~/lib/utils";
 
 export const auth = betterAuth({
@@ -79,7 +79,7 @@ export const auth = betterAuth({
     enabled: true,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
-      void sendAuthEmail({
+      void sendEmail({
         to: user.email,
         subject: "Reset your Project Y password",
         text: `Reset your password by opening this link:\n\n${url}\n\nIf you did not request this, you can ignore this email.`,
@@ -99,15 +99,11 @@ export const auth = betterAuth({
     organization({
       async sendInvitationEmail(data) {
         const inviteLink = `${env.BETTER_AUTH_URL}/accept-invitation/${data.id}`;
-        if (process.env.NODE_ENV === "development") {
-          console.info(
-            `[organization invite] ${data.email} → ${inviteLink}`
-          );
-          return;
-        }
-        throw new Error(
-          "Organization invitations require a production email provider. Configure sendInvitationEmail in src/lib/auth.ts."
-        );
+        void sendEmail({
+          to: data.email,
+          subject: "You're invited to Project Y",
+          text: `You've been invited to join an organization on Project Y.\n\nAccept the invitation: ${inviteLink}`,
+        });
       },
     }),
     tanstackStartCookies(),
