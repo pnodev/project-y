@@ -21,6 +21,14 @@ export const uploadRouter = {
       maxFileSize: "4MB",
       maxFileCount: 10,
     },
+    video: {
+      maxFileSize: "64MB",
+      maxFileCount: 10,
+    },
+    pdf: {
+      maxFileSize: "16MB",
+      maxFileCount: 10,
+    },
   })
     .middleware(uploadAuthMiddleware)
     .onUploadComplete(async ({ metadata }) => {

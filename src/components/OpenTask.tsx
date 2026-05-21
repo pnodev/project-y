@@ -12,7 +12,7 @@ import {
   UpdateTask,
 } from "~/db/schema";
 import { RichtextEditor } from "~/components/RichtextEditor/Editor";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   useAssignTaskMutation,
   useDeleteTaskMutation,
@@ -58,6 +58,8 @@ import {
 import { ConfirmDialog } from "./ConfirmDialog";
 import { useCreateAttachmentMutation } from "~/db/mutations/attachments";
 import { AttachmentArea } from "./AttachmentArea";
+import { useFileDragOver } from "~/hooks/use-file-drag-over";
+import { allowFileDropPropagation } from "~/lib/file-drag";
 import { UserSelect } from "./UserSelect";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { SubTasks } from "./SubTasks";
@@ -155,6 +157,59 @@ export function OpenTask({
 
   const owner = useCurrentOwningIdentity();
   const [preventClose, setPreventClose] = useState(false);
+  const [taskTab, setTaskTab] = useState<"attachments" | "subtasks">(
+    "attachments"
+  );
+  const dialogContentRef = useRef<HTMLDivElement>(null);
+  const {
+    isFileDragOver,
+    onDragEnter: onTaskFileDragEnter,
+    onDragLeave: onTaskFileDragLeave,
+    onDragOver: onTaskFileDragOver,
+    onDrop: onTaskFileDrop,
+    onDragEnd: onTaskFileDragEnd,
+    clearFileDragOver,
+  } = useFileDragOver(dialogContentRef, {
+    onFileDragStart: () => setTaskTab("attachments"),
+  });
+
+  useEffect(() => {
+    if (!task) return;
+    setTaskTab(task.subTasks.length > 0 ? "subtasks" : "attachments");
+    clearFileDragOver();
+  }, [task?.id, task?.subTasks.length, clearFileDragOver]);
+
+  const handleTaskPanelDragEnter = useCallback(
+    (event: React.DragEvent) => {
+      allowFileDropPropagation(event);
+      onTaskFileDragEnter(event);
+    },
+    [onTaskFileDragEnter]
+  );
+
+  const handleTaskPanelDragLeave = useCallback(
+    (event: React.DragEvent) => {
+      allowFileDropPropagation(event);
+      onTaskFileDragLeave(event);
+    },
+    [onTaskFileDragLeave]
+  );
+
+  const handleTaskPanelDragOver = useCallback(
+    (event: React.DragEvent) => {
+      allowFileDropPropagation(event);
+      onTaskFileDragOver(event);
+    },
+    [onTaskFileDragOver]
+  );
+
+  const handleTaskPanelDrop = useCallback(
+    (event: React.DragEvent) => {
+      allowFileDropPropagation(event);
+      onTaskFileDrop(event);
+    },
+    [onTaskFileDrop]
+  );
 
   return (
     <Dialog
@@ -174,9 +229,15 @@ export function OpenTask({
       }}
     >
       <DialogContent
+        ref={dialogContentRef}
         size="large"
         isLoading={isDeleting}
         className="p-0 gap-0"
+        onDragEnter={handleTaskPanelDragEnter}
+        onDragLeave={handleTaskPanelDragLeave}
+        onDragOver={handleTaskPanelDragOver}
+        onDrop={handleTaskPanelDrop}
+        onDragEnd={onTaskFileDragEnd}
         onEscapeKeyDown={(e) => {
           if (preventClose) {
             e.preventDefault();
@@ -189,7 +250,9 @@ export function OpenTask({
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="gap-2.5">
-                  <img src={owner.avatar} className="h-5 w-5 rounded" />
+                  {owner.avatar ? (
+                    <img src={owner.avatar} className="h-5 w-5 rounded" alt="" />
+                  ) : null}
                   <span>{owner.name}</span>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
@@ -355,8 +418,9 @@ export function OpenTask({
               />
 
               <Tabs
-                defaultValue={
-                  task.subTasks.length > 0 ? "subtasks" : "attachments"
+                value={taskTab}
+                onValueChange={(value) =>
+                  setTaskTab(value as "attachments" | "subtasks")
                 }
               >
                 <TabsList>
@@ -383,6 +447,8 @@ export function OpenTask({
                   <AttachmentArea
                     attachments={task.attachments}
                     onUpload={handleUpload}
+                    fileDragOver={isFileDragOver}
+                    onDismissFileDrag={clearFileDragOver}
                   />
                 </TabsContent>
                 <TabsContent value="subtasks">

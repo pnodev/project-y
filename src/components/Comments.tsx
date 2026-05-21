@@ -46,7 +46,10 @@ export function Comments({
           <Card key={comment.id}>
             <CardHeader className="flex items-center flex-row space-x-2 py-2 space-y-0">
               <Avatar className="size-6 my-0">
-                <AvatarImage src={comment.authorAvatar} />
+                <AvatarImage
+                  src={comment.authorAvatar || undefined}
+                  alt=""
+                />
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
               <span className="font-medium text-xs">{comment.author}</span>

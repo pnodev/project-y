@@ -19,8 +19,11 @@ export function DateTimePicker({
   setDate?: (date: Date | undefined) => void;
 }) {
   const [open, setOpen] = React.useState(false);
+  const formatTime = (d: Date) =>
+    `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+
   const [time, setTime] = React.useState(
-    date ? date.toTimeString().slice(0, 5) : "0:00"
+    date ? formatTime(date) : "00:00"
   );
 
   const handleTimeChange = (event: React.ChangeEvent<HTMLInputElement>) => {

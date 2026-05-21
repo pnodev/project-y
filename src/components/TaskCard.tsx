@@ -321,7 +321,7 @@ export const TaskCardComponent = ({
                     return (
                       <Avatar key={assignee.id} className="size-5 my-0">
                         <AvatarImage
-                          src={assignee.avatar}
+                          src={assignee.avatar || undefined}
                           alt={assignee.name}
                         />
                         <AvatarFallback>
