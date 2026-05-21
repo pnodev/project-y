@@ -4,7 +4,7 @@ import { cn } from "~/lib/utils";
 import { Button } from "./ui/button";
 import { PlusIcon } from "lucide-react";
 import TaskQuickCreate from "./TaskQuickCreate";
-import { BoardViewStore } from "./views/board-view-store";
+import { TaskViewStore } from "./views/task-view-store";
 
 export default function TaskColumn({
   status,
@@ -82,7 +82,7 @@ export default function TaskColumn({
             projectId={projectId}
             sprintId={sprintId}
             onClose={() =>
-              BoardViewStore.setState((state) => {
+              TaskViewStore.setState((state) => {
                 return { ...state, quickCreateOpenFor: null };
               })
             }
@@ -92,7 +92,7 @@ export default function TaskColumn({
             variant={"background"}
             type="button"
             onClick={() =>
-              BoardViewStore.setState((state) => {
+              TaskViewStore.setState((state) => {
                 return { ...state, quickCreateOpenFor: status.id };
               })
             }

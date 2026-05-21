@@ -4,14 +4,22 @@ import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { SiteHeader } from "~/components/site-header";
 import { useOrganizationCacheClear } from "~/hooks/organization-cache-clear";
 import { fetchSidebarBundle } from "~/db/queries/bundles";
-import { hydrateSidebarCache } from "~/db/queries/hydrate-query-cache";
+import { fetchUserPreferences } from "~/db/queries/user-preferences";
+import {
+  hydrateSidebarCache,
+  hydrateUserPreferencesCache,
+} from "~/db/queries/hydrate-query-cache";
 import { useRouterState } from "@tanstack/react-router";
 import { TopLoadingState } from "~/components/TopLoadingState";
 
 export const Route = createFileRoute("/_signed-in")({
   loader: async ({ context }) => {
-    const bundle = await fetchSidebarBundle();
+    const [bundle, preferences] = await Promise.all([
+      fetchSidebarBundle(),
+      fetchUserPreferences(),
+    ]);
     hydrateSidebarCache(context.queryClient, bundle);
+    hydrateUserPreferencesCache(context.queryClient, preferences);
   },
   component: PathlessLayoutComponent,
 });

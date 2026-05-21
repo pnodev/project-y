@@ -1,4 +1,4 @@
-import { BoardViewStore } from "./board-view-store";
+import { TaskViewStore } from "./task-view-store";
 
 function isEditableTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
@@ -12,11 +12,11 @@ function isEditableTarget(target: EventTarget | null) {
 }
 
 export function setHoveredTaskId(id: string | null) {
-  BoardViewStore.setState((state) => ({ ...state, hoveredTaskId: id }));
+  TaskViewStore.setState((state) => ({ ...state, hoveredTaskId: id }));
 }
 
 export function clearTaskSelectionState() {
-  BoardViewStore.setState((state) => ({
+  TaskViewStore.setState((state) => ({
     ...state,
     selectedTaskIds: [],
     selectionAnchorId: null,
@@ -24,7 +24,7 @@ export function clearTaskSelectionState() {
 }
 
 export function selectAllTaskIds(taskIds: string[]) {
-  BoardViewStore.setState((state) => ({
+  TaskViewStore.setState((state) => ({
     ...state,
     selectedTaskIds: taskIds,
     selectionAnchorId: taskIds[0] ?? null,
@@ -32,11 +32,11 @@ export function selectAllTaskIds(taskIds: string[]) {
 }
 
 export function toggleHoveredTaskSelection() {
-  const { hoveredTaskId, selectedTaskIds } = BoardViewStore.state;
+  const { hoveredTaskId, selectedTaskIds } = TaskViewStore.state;
   if (!hoveredTaskId) return;
 
   if (selectedTaskIds.includes(hoveredTaskId)) {
-    BoardViewStore.setState((state) => ({
+    TaskViewStore.setState((state) => ({
       ...state,
       selectedTaskIds: state.selectedTaskIds.filter(
         (id) => id !== hoveredTaskId
@@ -47,7 +47,7 @@ export function toggleHoveredTaskSelection() {
           : state.selectionAnchorId,
     }));
   } else {
-    BoardViewStore.setState((state) => ({
+    TaskViewStore.setState((state) => ({
       ...state,
       selectedTaskIds: [...state.selectedTaskIds, hoveredTaskId],
       selectionAnchorId: state.selectionAnchorId ?? hoveredTaskId,
@@ -55,22 +55,22 @@ export function toggleHoveredTaskSelection() {
   }
 }
 
-export function handleTaskCardSelectClick(
+export function handleTaskSelectClick(
   taskId: string,
-  columnTaskIds: string[],
+  orderedTaskIds: string[],
   event: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }
 ) {
   const modifierKey = event.metaKey || event.ctrlKey;
 
   if (event.shiftKey) {
-    const state = BoardViewStore.state;
+    const state = TaskViewStore.state;
     const anchor =
       state.selectionAnchorId ?? state.selectedTaskIds[0] ?? taskId;
-    const anchorIndex = columnTaskIds.indexOf(anchor);
-    const targetIndex = columnTaskIds.indexOf(taskId);
+    const anchorIndex = orderedTaskIds.indexOf(anchor);
+    const targetIndex = orderedTaskIds.indexOf(taskId);
 
     if (anchorIndex === -1 || targetIndex === -1) {
-      BoardViewStore.setState((s) => ({
+      TaskViewStore.setState((s) => ({
         ...s,
         selectedTaskIds: [...new Set([...s.selectedTaskIds, taskId])],
         selectionAnchorId: taskId,
@@ -82,9 +82,9 @@ export function handleTaskCardSelectClick(
       anchorIndex < targetIndex
         ? [anchorIndex, targetIndex]
         : [targetIndex, anchorIndex];
-    const rangeIds = columnTaskIds.slice(start, end + 1);
+    const rangeIds = orderedTaskIds.slice(start, end + 1);
 
-    BoardViewStore.setState((s) => ({
+    TaskViewStore.setState((s) => ({
       ...s,
       selectedTaskIds: [...new Set([...s.selectedTaskIds, ...rangeIds])],
       selectionAnchorId: anchor,
@@ -93,13 +93,13 @@ export function handleTaskCardSelectClick(
   }
 
   if (modifierKey) {
-    const state = BoardViewStore.state;
+    const state = TaskViewStore.state;
     const isSelected = state.selectedTaskIds.includes(taskId);
     const selectedTaskIds = isSelected
       ? state.selectedTaskIds.filter((id) => id !== taskId)
       : [...state.selectedTaskIds, taskId];
 
-    BoardViewStore.setState((s) => ({
+    TaskViewStore.setState((s) => ({
       ...s,
       selectedTaskIds,
       selectionAnchorId: isSelected
@@ -111,12 +111,15 @@ export function handleTaskCardSelectClick(
     return;
   }
 
-  if (BoardViewStore.state.selectedTaskIds.length > 0) {
+  if (TaskViewStore.state.selectedTaskIds.length > 0) {
     clearTaskSelectionState();
   }
 }
 
-export function registerBoardSelectionKeyboard(
+/** @deprecated Use handleTaskSelectClick */
+export const handleTaskCardSelectClick = handleTaskSelectClick;
+
+export function registerTaskSelectionKeyboard(
   getAllTaskIds: () => string[]
 ): () => void {
   const handleKeyDown = (event: KeyboardEvent) => {
@@ -142,3 +145,6 @@ export function registerBoardSelectionKeyboard(
   window.addEventListener("keydown", handleKeyDown);
   return () => window.removeEventListener("keydown", handleKeyDown);
 }
+
+/** @deprecated Use registerTaskSelectionKeyboard */
+export const registerBoardSelectionKeyboard = registerTaskSelectionKeyboard;

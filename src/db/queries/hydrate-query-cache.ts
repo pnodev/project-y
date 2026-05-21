@@ -22,6 +22,10 @@ import {
   tasksQueryOptions,
 } from "~/db/queries/tasks";
 import { usersQueryOptions } from "~/db/queries/users";
+import {
+  userPreferencesQueryOptions,
+} from "~/db/queries/user-preferences";
+import type { UserPreferences } from "~/db/schema";
 
 type StatusesCache = NonNullable<
   Awaited<
@@ -117,4 +121,11 @@ export function hydrateDashboardCache(
   data: DashboardStats
 ) {
   queryClient.setQueryData(dashboardStatsQueryOptions().queryKey, data);
+}
+
+export function hydrateUserPreferencesCache(
+  queryClient: QueryClient,
+  data: UserPreferences
+) {
+  queryClient.setQueryData(userPreferencesQueryOptions().queryKey, data);
 }

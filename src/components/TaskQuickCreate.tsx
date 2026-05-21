@@ -4,7 +4,7 @@ import { Input } from "./ui/input";
 import { SimpleCard } from "./ui/simple-card";
 import { useCreateTaskMutation } from "~/db/mutations/tasks";
 import { useStore } from "@tanstack/react-store";
-import { BoardViewStore } from "./views/board-view-store";
+import { TaskViewStore } from "./views/task-view-store";
 import { SendHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
@@ -34,7 +34,7 @@ export default function TaskQuickCreate({
   const formRef = useRef<HTMLFormElement>(null);
   const navigate = useNavigate();
   const quickCreateOpen = useStore(
-    BoardViewStore,
+    TaskViewStore,
     (state) => state.quickCreateOpenFor
   );
   const [isCtrlKeyPressed, setIsCtrlKeyPressed] = useState(false);

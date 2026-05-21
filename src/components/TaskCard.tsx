@@ -27,12 +27,12 @@ import { EndlessLoadingSpinner } from "./EndlessLoadingSpinner";
 import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
 import { useStore } from "@tanstack/react-store";
-import { BoardViewStore, toggleTaskId } from "./views/board-view-store";
+import { TaskViewStore, toggleTaskId } from "./views/task-view-store";
 import {
   clearTaskSelectionState,
-  handleTaskCardSelectClick,
+  handleTaskSelectClick,
   setHoveredTaskId,
-} from "./views/board-selection";
+} from "./views/task-selection";
 
 export default function TaskCard({
   task,
@@ -50,11 +50,11 @@ export default function TaskCard({
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `task:${task.id}`,
   });
-  const isSelected = useStore(BoardViewStore, (state) =>
+  const isSelected = useStore(TaskViewStore, (state) =>
     state.selectedTaskIds.includes(task.id)
   );
   const isHovered = useStore(
-    BoardViewStore,
+    TaskViewStore,
     (state) => state.hoveredTaskId === task.id
   );
 
@@ -76,7 +76,7 @@ export default function TaskCard({
         style={{ opacity: isDragging ? 0.2 : undefined }}
         onMouseEnter={() => setHoveredTaskId(task.id)}
         onMouseLeave={() => {
-          if (BoardViewStore.state.hoveredTaskId === task.id) {
+          if (TaskViewStore.state.hoveredTaskId === task.id) {
             setHoveredTaskId(null);
           }
         }}
@@ -131,7 +131,7 @@ const TaskCardLinkWrapper = ({
       onSelectClick(e);
       return;
     }
-    if (BoardViewStore.state.selectedTaskIds.length > 0) {
+    if (TaskViewStore.state.selectedTaskIds.length > 0) {
       clearTaskSelectionState();
     }
   };
@@ -239,7 +239,7 @@ export const TaskCardComponent = ({
         sprintId: task.sprintId || undefined,
       }}
       onSelectClick={(event) =>
-        handleTaskCardSelectClick(task.id, columnTaskIds, {
+        handleTaskSelectClick(task.id, columnTaskIds, {
           shiftKey: event.shiftKey,
           metaKey: event.metaKey,
           ctrlKey: event.ctrlKey,

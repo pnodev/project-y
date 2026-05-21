@@ -5,10 +5,9 @@ import {
   useParams,
 } from "@tanstack/react-router";
 import { Suspense, useCallback } from "react";
+import { Settings } from "lucide-react";
 
 import { useUpdateTaskMutation } from "~/db/mutations/tasks";
-
-import { BoardView } from "~/components/views/BoardView";
 import { UpdateTask } from "~/db/schema";
 import { PageLayout } from "~/components/PageLayout";
 import { useStatusesQuery } from "~/db/queries/statuses";
@@ -18,23 +17,10 @@ import { EndlessLoadingSpinner } from "~/components/EndlessLoadingSpinner";
 import { useTasksQuery } from "~/db/queries/tasks";
 import { fetchProjectBoardBundle } from "~/db/queries/bundles";
 import { hydrateProjectBoardCache } from "~/db/queries/hydrate-query-cache";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
 import { Button } from "~/components/ui/button";
-import { ArrowDownWideNarrow, ArrowUpNarrowWide, Settings } from "lucide-react";
-import { useStore } from "@tanstack/react-store";
-import {
-  BoardViewStore,
-  SortByType,
-} from "~/components/views/board-view-store";
-import { ButtonGroup } from "~/components/ui/button-group";
+import { TaskViewSortControls } from "~/components/views/TaskViewSortControls";
+import { TaskViewSwitcher } from "~/components/views/TaskViewSwitcher";
+import { TaskViewsContainer } from "~/components/views/TaskViewsContainer";
 
 export const Route = createFileRoute("/_signed-in/projects/$projectId/tasks")({
   loader: async ({ context, params }) => {
@@ -66,16 +52,6 @@ function Home() {
     [updateTask, params.projectId]
   );
 
-  const sortBy = useStore(BoardViewStore, (state) => state.sortBy);
-  const sortDirection = useStore(
-    BoardViewStore,
-    (state) => state.sortDirection
-  );
-  const sortLabels = {
-    due: "Due Date",
-    created: "Created",
-    updated: "Updated",
-  };
   return (
     <PageLayout
       title={
@@ -83,61 +59,11 @@ function Home() {
       }
       actions={
         <div className="flex gap-2">
-          <DropdownMenu>
-            <ButtonGroup>
-              <Button
-                size={"sm"}
-                variant="outline"
-                title={
-                  sortDirection === "asc" ? "Sort Ascending" : "Sort Descending"
-                }
-                onClick={() =>
-                  BoardViewStore.setState((state) => {
-                    return {
-                      ...state,
-                      sortDirection: sortDirection === "asc" ? "desc" : "asc",
-                    };
-                  })
-                }
-              >
-                {sortDirection === "desc" ? (
-                  <ArrowDownWideNarrow />
-                ) : (
-                  <ArrowUpNarrowWide />
-                )}
-              </Button>
-              <DropdownMenuTrigger asChild>
-                <Button size={"sm"} variant="outline">
-                  {sortLabels[sortBy]}
-                </Button>
-              </DropdownMenuTrigger>
-            </ButtonGroup>
-            <DropdownMenuContent className="w-56">
-              <DropdownMenuLabel>Sort Tasks by</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup
-                value={sortBy}
-                onValueChange={(value) =>
-                  BoardViewStore.setState((state) => {
-                    return { ...state, sortBy: value as SortByType };
-                  })
-                }
-              >
-                <DropdownMenuRadioItem value="due">
-                  Due Date
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="created">
-                  Created Date
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="updated">
-                  Updated Date
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button size={"sm"} variant={"outline"} asChild>
+          <TaskViewSortControls />
+          <TaskViewSwitcher />
+          <Button size="sm" variant="outline" asChild>
             <Link
-              to={"/projects/$projectId/settings"}
+              to="/projects/$projectId/settings"
               params={{ projectId: params.projectId }}
               title="Project Settings"
             >
@@ -148,7 +74,7 @@ function Home() {
       }
     >
       <div className="flex flex-col gap-2 h-full grow-0">
-        <BoardView
+        <TaskViewsContainer
           tasks={tasksQuery.data}
           projectId={params.projectId}
           statuses={statusesQuery.data}
