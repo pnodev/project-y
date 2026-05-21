@@ -12,24 +12,32 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "~/components/ui/sidebar";
+import { cn } from "~/lib/utils";
+
+function isNavPathActive(pathname: string, url: string) {
+  if (url === "#") return false;
+  return pathname === url || pathname.startsWith(`${url}/`);
+}
+
+function isAddItem(title: string) {
+  return title.startsWith("Add ");
+}
 
 export function NavMain({
   title,
   items,
 }: {
-  title: string;
+  title?: string;
   items: {
     title: string;
     url: string;
     icon: LucideIcon;
-    isActive?: boolean;
     items?: {
       title: string;
       url: string;
@@ -38,68 +46,98 @@ export function NavMain({
     }[];
   }[];
 }) {
-  const routerState = useRouterState();
+  const { location } = useRouterState();
+  const pathname = location.pathname;
+
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>{title}</SidebarGroupLabel>
+    <SidebarGroup className="py-1">
+      {title ? (
+        <SidebarGroupLabel className="text-sidebar-foreground/45 mb-1.5 px-4 text-[11px] font-medium tracking-wider uppercase">
+          {title}
+        </SidebarGroupLabel>
+      ) : null}
       <SidebarMenu>
-        {items.map((item) => (
-          <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                tooltip={item.title}
-                isActive={routerState.location.pathname === item.url}
-              >
-                <Link to={item.url}>
-                  <item.icon />
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-              {item.items?.length ? (
-                <>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuAction className="data-[state=open]:rotate-90">
-                      <ChevronRight />
-                      <span className="sr-only">Toggle</span>
-                    </SidebarMenuAction>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {item.items?.map((subItem) => (
+        {items.map((item) => {
+          const hasChildren = Boolean(item.items?.length);
+          if (!hasChildren) {
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isNavPathActive(pathname, item.url)}
+                  className="font-medium"
+                >
+                  <Link to={item.url}>
+                    <item.icon className="text-sidebar-foreground/50" />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          }
+
+          return (
+            <Collapsible
+              key={item.title}
+              defaultOpen
+              className="group/collapsible"
+            >
+              <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton
+                    className="pr-3 font-medium [&>svg:last-child]:transition-transform [&>svg:last-child]:duration-200 group-data-[state=open]/collapsible:[&>svg:last-child]:rotate-90"
+                  >
+                    <item.icon className="text-sidebar-foreground/50" />
+                    <span className="flex-1">{item.title}</span>
+                    <ChevronRight className="text-sidebar-foreground/45 size-4 shrink-0" />
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <SidebarMenuSub>
+                    {item.items?.map((subItem) => {
+                      const active = isNavPathActive(pathname, subItem.url);
+                      const isAction = isAddItem(subItem.title);
+                      const logoUrl =
+                        typeof subItem.icon === "string" ? subItem.icon : undefined;
+
+                      return (
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton
-                            isActive={
-                              routerState.location.pathname === subItem.url
-                            }
                             asChild
+                            isActive={active}
+                            className={cn(
+                              isAction &&
+                                "font-normal text-muted-foreground hover:text-sidebar-foreground data-[active=true]:font-medium data-[active=true]:text-sidebar-primary"
+                            )}
                           >
                             <Link to={subItem.url}>
-                              {typeof subItem.icon === "string" &&
-                              subItem.icon ? (
+                              {logoUrl ? (
                                 <img
-                                  src={subItem.icon}
-                                  className="size-4 block"
-                                  alt={subItem.title}
+                                  src={logoUrl}
+                                  className="size-4 shrink-0 rounded-sm"
+                                  alt=""
                                 />
-                              ) : (
-                                subItem.icon && <subItem.icon />
-                              )}
-                              <span>{subItem.title}</span>
-                              {subItem.highlighted && (
-                                <span className="block bg-indigo-500 size-1.5 rounded-full"></span>
-                              )}
+                              ) : subItem.icon && !isAction ? (
+                                <subItem.icon className="text-sidebar-foreground/45 size-4 shrink-0" />
+                              ) : null}
+                              <span className="flex-1">{subItem.title}</span>
+                              {subItem.highlighted ? (
+                                <span
+                                  className="bg-sidebar-primary size-1.5 shrink-0 rounded-full"
+                                  aria-hidden
+                                />
+                              ) : null}
                             </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </>
-              ) : null}
-            </SidebarMenuItem>
-          </Collapsible>
-        ))}
+                      );
+                    })}
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </SidebarMenuItem>
+            </Collapsible>
+          );
+        })}
       </SidebarMenu>
     </SidebarGroup>
   );

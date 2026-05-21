@@ -33,6 +33,10 @@ export const Route = createRootRouteWithContext<{
       }),
     ],
     links: [
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..600&display=swap",
+      },
       { rel: "stylesheet", href: appCss },
       {
         rel: "apple-touch-icon",

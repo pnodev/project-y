@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { NavMain } from "~/components/nav-main";
+import { NavOrganization } from "~/components/nav-organization";
 import { NavSettings } from "~/components/nav-settings";
 import {
   Sidebar,
@@ -87,46 +88,45 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: "Projects",
         url: "#",
         icon: Folder,
-        isActive: true,
         items: projectItems,
       },
       {
         title: "Sprints",
         url: "#",
         icon: ClockFading,
-        isActive: true,
         items: sprintItems,
       },
     ];
   }, [projectsQuery.data, sprintsQuery.data]);
 
   return (
-    <Sidebar
-      className="top-(--header-height) h-[calc(100svh-var(--header-height))]!"
-      {...props}
-    >
-      <SidebarHeader>
+    <Sidebar {...props}>
+      <SidebarHeader className="px-4 py-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <a href="#">
-                <img src="/logo.svg" alt="Project Y" className="size-8" />
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">Project Y</span>
-                  <span className="truncate text-xs">Enterprise</span>
-                </div>
+            <SidebarMenuButton
+              size="lg"
+              asChild
+              className="h-10 rounded-none px-0 hover:bg-transparent active:bg-transparent data-[active=true]:bg-transparent"
+            >
+              <a href="/dashboard">
+                <img src="/logo.svg" alt="Project Y" className="size-7" />
+                <span className="truncate font-medium">Project Y</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMain} title="Tasks" />
+        <NavMain items={navMain} />
         <NavSettings settings={settingsNav} />
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
-      <SidebarFooter>
-        <p className="text-xs text-gray-500 text-center">v{version}</p>
+      <SidebarFooter className="gap-0 p-0">
+        <NavOrganization />
+        <p className="text-muted-foreground py-2 text-center text-xs">
+          v{version}
+        </p>
       </SidebarFooter>
     </Sidebar>
   );
