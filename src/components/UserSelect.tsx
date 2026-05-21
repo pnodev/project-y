@@ -52,7 +52,10 @@ export function UserSelect({
                     if (!user) return null;
                     return (
                       <Avatar key={user.id} className={avatarSize}>
-                        <AvatarImage src={user.avatar} alt={user.name} />
+                        <AvatarImage
+                          src={user.avatar || undefined}
+                          alt={user.name}
+                        />
                         <AvatarFallback>
                           {getInitials(user.name)}
                         </AvatarFallback>
@@ -88,7 +91,10 @@ export function UserSelect({
                     }}
                   >
                     <Avatar className="size-5">
-                      <AvatarImage src={u.avatar} alt={u.name} />
+                      <AvatarImage
+                        src={u.avatar || undefined}
+                        alt={u.name}
+                      />
                       <AvatarFallback>CN</AvatarFallback>
                     </Avatar>
                     {u.name}

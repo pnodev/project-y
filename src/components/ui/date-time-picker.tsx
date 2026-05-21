@@ -27,6 +27,9 @@ export function DateTimePicker({
   setDate?: (date: Date | undefined) => void;
 }) {
   const [open, setOpen] = React.useState(false);
+  const formatTime = (d: Date) =>
+    `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+
   const [time, setTime] = React.useState(
     date ? formatTimeValue(date) : DEFAULT_TIME
   );

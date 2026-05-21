@@ -75,7 +75,8 @@ export function NavMain({
                             asChild
                           >
                             <Link to={subItem.url}>
-                              {typeof subItem.icon === "string" ? (
+                              {typeof subItem.icon === "string" &&
+                              subItem.icon ? (
                                 <img
                                   src={subItem.icon}
                                   className="size-4 block"

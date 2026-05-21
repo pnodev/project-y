@@ -48,8 +48,8 @@ export const DetailListItem = ({
         {Icon && typeof Icon !== "string" ? (
           <Icon className={cn("inline mr-2 size-3.5", statusColor)} />
         ) : null}
-        {Icon && typeof Icon === "string" ? (
-          <img src={Icon} className={cn("inline mr-2 size-3.5", statusColor)} />
+        {typeof Icon === "string" && Icon ? (
+          <img src={Icon} className={cn("inline mr-2 size-3.5", statusColor)} alt="" />
         ) : null}
         <TaskLabel
           className={cn(
