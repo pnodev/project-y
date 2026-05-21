@@ -1,18 +1,30 @@
-import { useMemo } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  useDroppable,
+} from "@dnd-kit/core";
+import { useMemo, useState } from "react";
 import { useStore } from "@tanstack/react-store";
 import { PlusIcon } from "lucide-react";
 import TaskQuickCreate from "~/components/TaskQuickCreate";
 import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { cn } from "~/lib/utils";
-import type { Status } from "~/db/schema";
+import type { TaskWithRelations } from "~/db/schema";
+import { ListColumnHeader } from "./ListColumnHeader";
 import { TaskListRow } from "./TaskListRow";
-import { groupTasksByStatus } from "./task-view-grouping";
+import type { ListColumnFlags } from "./list-view-layout";
+import { groupTasksByStatus, type TaskStatusSection } from "./task-view-grouping";
 import { sortTasks } from "./task-sort";
+import {
+  useTaskViewSensors,
+  getStatusDropId,
+  handleTaskStatusDrop,
+} from "./task-view-dnd";
 import { TaskViewStore } from "./task-view-store";
 import type { TaskViewProps } from "./task-view-types";
 
-const colorClassesColumnBackground = {
+const statusDotClass = {
   red: "bg-red-500",
   orange: "bg-orange-500",
   yellow: "bg-yellow-500",
@@ -27,8 +39,8 @@ const colorClassesColumnBackground = {
   fuchsia: "bg-fuchsia-500",
   pink: "bg-pink-500",
   rose: "bg-rose-500",
-  neutral: "bg-neutral-500",
-};
+  neutral: "bg-neutral-400",
+} as const;
 
 export function ListView({
   tasks,
@@ -38,14 +50,19 @@ export function ListView({
   location,
   updateTask,
 }: TaskViewProps) {
+  const [activeTask, setActiveTask] = useState<TaskWithRelations | null>(null);
+  const sensors = useTaskViewSensors();
+
   const sortBy = useStore(TaskViewStore, (state) => state.sortBy);
   const sortDirection = useStore(
     TaskViewStore,
     (state) => state.sortDirection
   );
 
-  const showProject = location === "sprint" || location === "all";
-  const showSprint = location === "project" || location === "all";
+  const columnFlags: ListColumnFlags = {
+    showProject: location === "sprint" || location === "all",
+    showSprint: location === "project" || location === "all",
+  };
 
   const sectionsWithSortedTasks = useMemo(() => {
     return groupTasksByStatus(tasks, statuses).map((section) => ({
@@ -59,30 +76,64 @@ export function ListView({
     [sectionsWithSortedTasks]
   );
 
+  const visibleSections = sectionsWithSortedTasks.filter((section) => {
+    const isUnknown = section.key.startsWith("unknown-");
+    return section.sortedTasks.length > 0 || section.status || isUnknown;
+  });
+
   return (
-    <ScrollArea className="h-full min-h-0">
-      <div className="flex flex-col gap-6 pb-3 pr-3">
-        {sectionsWithSortedTasks.map((section) => (
-          <ListSection
-            key={section.key}
-            section={section}
-            sortedTasks={section.sortedTasks}
-            statuses={statuses}
-            orderedTaskIds={orderedTaskIds}
-            location={location}
-            showProject={showProject}
-            showSprint={showSprint}
-            projectId={projectId}
-            sprintId={sprintId}
-            updateTask={updateTask}
-          />
-        ))}
-      </div>
-    </ScrollArea>
+    <DndContext
+      sensors={sensors}
+      onDragStart={(event) => {
+        const taskId = String(event.active.id).split(":")[1];
+        const task = tasks.find((t) => t.id === taskId);
+        if (task) setActiveTask(task);
+      }}
+      onDragEnd={(event) => {
+        setActiveTask(null);
+        handleTaskStatusDrop(event, tasks, updateTask);
+      }}
+    >
+      <ScrollArea className="h-full min-h-0">
+        <div className="pb-3 pr-2">
+          <div className="overflow-hidden rounded-lg border border-border/50 bg-background">
+            <ListColumnHeader flags={columnFlags} />
+            {visibleSections.map((section, index) => (
+              <ListSection
+                key={section.key}
+                section={section}
+                sortedTasks={section.sortedTasks}
+                orderedTaskIds={orderedTaskIds}
+                columnFlags={columnFlags}
+                location={location}
+                projectId={projectId}
+                sprintId={sprintId}
+                updateTask={updateTask}
+                isFirst={index === 0}
+              />
+            ))}
+          </div>
+        </div>
+      </ScrollArea>
+      <DragOverlay dropAnimation={null}>
+        {activeTask ? (
+          <div className="min-w-[800px]">
+            <TaskListRow
+              task={activeTask}
+              orderedTaskIds={orderedTaskIds}
+              columnFlags={columnFlags}
+              location={location}
+              updateTask={updateTask}
+              isOverlay
+            />
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }
 
-function sectionTitle(section: ReturnType<typeof groupTasksByStatus>[number]) {
+function sectionTitle(section: TaskStatusSection) {
   if (section.status) return section.status.name;
   if (section.key.startsWith("unknown-")) return "Unknown status";
   return "Unassigned";
@@ -91,57 +142,58 @@ function sectionTitle(section: ReturnType<typeof groupTasksByStatus>[number]) {
 function ListSection({
   section,
   sortedTasks,
-  statuses,
   orderedTaskIds,
+  columnFlags,
   location,
-  showProject,
-  showSprint,
   projectId,
   sprintId,
   updateTask,
+  isFirst,
 }: {
-  section: ReturnType<typeof groupTasksByStatus>[number];
+  section: TaskStatusSection;
   sortedTasks: TaskViewProps["tasks"];
-  statuses: Status[];
   orderedTaskIds: string[];
+  columnFlags: ListColumnFlags;
   location: TaskViewProps["location"];
-  showProject: boolean;
-  showSprint: boolean;
   projectId?: string;
   sprintId?: string;
   updateTask: TaskViewProps["updateTask"];
+  isFirst: boolean;
 }) {
   const status = section.status;
   const isUnknown = section.key.startsWith("unknown-");
-
-  if (sortedTasks.length === 0 && !status && !isUnknown) {
-    return null;
-  }
+  const dropId = getStatusDropId(section);
+  const { isOver, setNodeRef } = useDroppable({ id: dropId });
 
   return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2">
-        <h2
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "transition-colors",
+        isOver && "bg-primary/[0.03]",
+        !isFirst && "border-t border-border/40"
+      )}
+    >
+      <div className="flex items-center justify-between gap-3 px-4 py-2">
+        <div
           className={cn(
-            "flex items-center gap-2 text-sm font-semibold",
-            !status && "text-yellow-900"
+            "flex items-center gap-2 text-sm font-medium text-foreground",
+            !status && !isUnknown && "text-yellow-900/90"
           )}
         >
           <span
             className={cn(
-              "size-2.5 shrink-0 rounded-full",
-              colorClassesColumnBackground[
-                (status?.color || "neutral") as keyof typeof colorClassesColumnBackground
-              ]
+              "size-2 shrink-0 rounded-full",
+              statusDotClass[(status?.color || "neutral") as keyof typeof statusDotClass]
             )}
           />
           {sectionTitle(section)}
-          <span className="text-xs font-normal text-muted-foreground">
-            ({sortedTasks.length})
+          <span className="font-normal text-muted-foreground">
+            {sortedTasks.length}
           </span>
-        </h2>
+        </div>
         {status ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <TaskQuickCreate
               status={status.id}
               projectId={projectId}
@@ -155,8 +207,9 @@ function ListSection({
             />
             <Button
               size="sm"
-              variant="outline"
+              variant="ghost"
               type="button"
+              className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground"
               onClick={() =>
                 TaskViewStore.setState((state) => ({
                   ...state,
@@ -164,49 +217,29 @@ function ListSection({
                 }))
               }
             >
-              <PlusIcon />
-              Add Task
+              <PlusIcon className="size-3.5" />
+              Add task
             </Button>
           </div>
         ) : null}
       </div>
+
       {sortedTasks.length > 0 ? (
-        <div className="overflow-x-auto rounded-md border">
-          <table className="w-full min-w-[800px] border-collapse text-sm">
-            <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
-              <tr className="border-b text-left text-xs text-muted-foreground">
-                <th className="w-10 px-2 py-2" />
-                <th className="min-w-[200px] px-2 py-2 font-medium">Title</th>
-                <th className="w-36 px-2 py-2 font-medium">Status</th>
-                <th className="w-32 px-2 py-2 font-medium">Priority</th>
-                <th className="w-28 px-2 py-2 font-medium">Due</th>
-                <th className="w-28 px-2 py-2 font-medium">Assignees</th>
-                <th className="min-w-[120px] px-2 py-2 font-medium">Labels</th>
-                {showProject ? (
-                  <th className="w-36 px-2 py-2 font-medium">Project</th>
-                ) : null}
-                {showSprint ? (
-                  <th className="w-32 px-2 py-2 font-medium">Sprint</th>
-                ) : null}
-              </tr>
-            </thead>
-            <tbody>
-              {sortedTasks.map((task) => (
-                <TaskListRow
-                  key={task.id}
-                  task={task}
-                  orderedTaskIds={orderedTaskIds}
-                  statuses={statuses}
-                  location={location}
-                  showProject={showProject}
-                  showSprint={showSprint}
-                  updateTask={updateTask}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-    </section>
+        sortedTasks.map((task) => (
+          <TaskListRow
+            key={task.id}
+            task={task}
+            orderedTaskIds={orderedTaskIds}
+            location={location}
+            columnFlags={columnFlags}
+            updateTask={updateTask}
+          />
+        ))
+      ) : (
+        <p className="px-4 py-6 text-center text-xs text-muted-foreground/60">
+          Drop tasks here
+        </p>
+      )}
+    </div>
   );
 }

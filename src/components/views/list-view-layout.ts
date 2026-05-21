@@ -1,0 +1,43 @@
+import type { CSSProperties } from "react";
+
+export const LIST_ROW_X = "px-4";
+
+export type ListColumnFlags = {
+  showProject: boolean;
+  showSprint: boolean;
+};
+
+export function listGridStyle(_flags: ListColumnFlags): CSSProperties {
+  return {
+    gridTemplateColumns: [
+      "36px",
+      "20px",
+      "minmax(180px, 2fr)",
+      "minmax(100px, 1.2fr)",
+      "108px",
+      "96px",
+      "minmax(120px, 1fr)",
+    ].join(" "),
+  };
+}
+
+export type ListColumnKey =
+  | "select"
+  | "drag"
+  | "title"
+  | "labels"
+  | "priority"
+  | "due"
+  | "assignees";
+
+export function listColumnLabels(): { key: ListColumnKey; label: string }[] {
+  return [
+    { key: "select", label: "" },
+    { key: "drag", label: "" },
+    { key: "title", label: "Task" },
+    { key: "labels", label: "Labels" },
+    { key: "priority", label: "Priority" },
+    { key: "due", label: "Due" },
+    { key: "assignees", label: "Assignees" },
+  ];
+}

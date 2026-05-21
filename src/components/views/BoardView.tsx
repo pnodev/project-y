@@ -1,16 +1,13 @@
-import {
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
+import { DndContext, DragOverlay } from "@dnd-kit/core";
 import { useMemo, useState } from "react";
 import TaskCard, { TaskCardComponent } from "~/components/TaskCard";
 import TaskColumn from "~/components/TaskColumn";
 import { useStore } from "@tanstack/react-store";
 import { sortTasks } from "./task-sort";
+import {
+  useTaskViewSensors,
+  handleTaskStatusDrop,
+} from "./task-view-dnd";
 import { TaskViewStore } from "./task-view-store";
 import type { TaskViewProps } from "./task-view-types";
 
@@ -32,27 +29,7 @@ export const BoardView = ({
     (state) => state.sortDirection
   );
 
-  const handleDrop = (e: DragEndEvent) => {
-    setActiveTask(null);
-    const taskId = (e.active.id as string).split(":")[1];
-    const statusId = (e.over?.id as string).split(":")[1];
-    const task = tasks.find((t) => t.id === taskId);
-    if (!task || !statusId || !task.projectId) return;
-    void updateTask({
-      id: taskId,
-      statusId,
-      projectId: task.projectId,
-      sprintId: task.sprintId ?? undefined,
-    }).catch(() => undefined);
-  };
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    })
-  );
+  const sensors = useTaskViewSensors();
 
   const tasksByStatus = useMemo(() => {
     return tasks.reduce(
@@ -100,7 +77,10 @@ export const BoardView = ({
 
   return (
     <DndContext
-      onDragEnd={handleDrop}
+      onDragEnd={(event) => {
+        setActiveTask(null);
+        handleTaskStatusDrop(event, tasks, updateTask);
+      }}
       sensors={sensors}
       onDragStart={(event) => {
         const taskId = (event.active.id as string).split(":")[1];

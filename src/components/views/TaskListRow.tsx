@@ -1,27 +1,14 @@
+import { useDraggable } from "@dnd-kit/core";
 import { useMemo } from "react";
 import { useStore } from "@tanstack/react-store";
-import { ClockFading, Folder } from "lucide-react";
+import { GripVertical } from "lucide-react";
 import { PrioritySwitch } from "~/components/PrioritySwitch";
-import { StatusSwitch } from "~/components/StatusSwitch";
-import { Badge } from "~/components/ui/badge";
 import { Checkbox } from "~/components/ui/checkbox";
 import { DateDisplay } from "~/components/ui/date-display";
 import { LabelBadge } from "~/components/ui/label-badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage, AvatarList } from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { useUsersQuery } from "~/db/queries/users";
-import type {
-  Priority,
-  Status,
-  TaskWithRelations,
-  UpdateTask,
-} from "~/db/schema";
+import type { Priority, TaskWithRelations, UpdateTask } from "~/db/schema";
 import { cn, getInitials } from "~/lib/utils";
 import {
   handleTaskSelectClick,
@@ -30,24 +17,45 @@ import {
 import { TaskViewStore, toggleTaskId } from "./task-view-store";
 import { TaskViewLink } from "./task-view-link";
 import type { TaskViewLocation } from "./task-view-types";
+import {
+  listGridStyle,
+  LIST_ROW_X,
+  type ListColumnFlags,
+} from "./list-view-layout";
+
+const priorityDotClass: Record<Priority, string> = {
+  low: "bg-blue-500",
+  medium: "bg-neutral-400",
+  high: "bg-orange-500",
+  critical: "bg-red-500",
+};
+
+function taskSubtitle(
+  task: TaskWithRelations,
+  flags: ListColumnFlags
+): string | null {
+  const parts: string[] = [];
+  if (flags.showProject) parts.push(task.project.name);
+  if (flags.showSprint && task.sprint) parts.push(task.sprint.name);
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
 
 export function TaskListRow({
   task,
   orderedTaskIds,
-  statuses,
   location,
-  showProject,
-  showSprint,
+  columnFlags,
   updateTask,
+  isOverlay = false,
 }: {
   task: TaskWithRelations;
   orderedTaskIds: string[];
-  statuses: Status[];
   location: TaskViewLocation;
-  showProject: boolean;
-  showSprint: boolean;
+  columnFlags: ListColumnFlags;
   updateTask: (task: UpdateTask) => Promise<void>;
+  isOverlay?: boolean;
 }) {
+  const { showSprint } = columnFlags;
   const usersQuery = useUsersQuery();
   const usersById = useMemo(() => {
     const map = new Map<string, NonNullable<typeof usersQuery.data>[number]>();
@@ -56,6 +64,12 @@ export function TaskListRow({
     }
     return map;
   }, [usersQuery.data]);
+
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `task:${task.id}`,
+    disabled: isOverlay,
+  });
+
   const isSelected = useStore(TaskViewStore, (state) =>
     state.selectedTaskIds.includes(task.id)
   );
@@ -63,17 +77,12 @@ export function TaskListRow({
     TaskViewStore,
     (state) => state.hoveredTaskId === task.id
   );
-  const currentStatus = statuses.find((s) => s.id === task.statusId);
   const isOverdue = task.deadline && task.deadline < new Date();
-
-  const handleStatusChange = (statusId: string) => {
-    void updateTask({
-      id: task.id,
-      statusId,
-      projectId: task.projectId,
-      sprintId: task.sprintId ?? undefined,
-    }).catch(() => undefined);
-  };
+  const subtitle = taskSubtitle(task, columnFlags);
+  const primaryAssignee = task.assignees[0]
+    ? usersById.get(task.assignees[0].userId)
+    : undefined;
+  const extraAssignees = task.assignees.length - 1;
 
   const handlePriorityChange = (priority: Priority) => {
     void updateTask({
@@ -85,34 +94,58 @@ export function TaskListRow({
   };
 
   return (
-    <tr
+    <div
+      ref={isOverlay ? undefined : setNodeRef}
       className={cn(
-        "border-b border-border/60 transition-colors",
-        isSelected && "bg-primary/5",
-        isHovered && !isSelected && "bg-accent/30"
+        "group grid items-center gap-x-4 text-sm transition-colors",
+        LIST_ROW_X,
+        "py-3",
+        isOverlay &&
+          "rounded-md bg-background shadow-lg ring-1 ring-border/50",
+        !isOverlay && "hover:bg-muted/50",
+        !isOverlay && isSelected && "bg-primary/[0.04]",
+        !isOverlay && isDragging && "opacity-50"
       )}
-      onMouseEnter={() => setHoveredTaskId(task.id)}
+      style={listGridStyle(columnFlags)}
+      onMouseEnter={() => !isOverlay && setHoveredTaskId(task.id)}
       onMouseLeave={() => {
-        if (TaskViewStore.state.hoveredTaskId === task.id) {
+        if (!isOverlay && TaskViewStore.state.hoveredTaskId === task.id) {
           setHoveredTaskId(null);
         }
       }}
     >
-      <td className="w-10 px-2 py-2">
+      {!isOverlay ? (
         <Checkbox
           checked={isSelected}
           onCheckedChange={() => toggleTaskId(task.id)}
           aria-label={`Select ${task.name}`}
         />
-      </td>
-      <td className="min-w-[200px] px-2 py-2">
+      ) : (
+        <span />
+      )}
+
+      <button
+        type="button"
+        className={cn(
+          "flex justify-center text-muted-foreground/40",
+          "opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing",
+          isOverlay ? "cursor-grabbing opacity-100" : "cursor-grab touch-none"
+        )}
+        aria-label={`Drag ${task.name}`}
+        {...listeners}
+        {...attributes}
+      >
+        <GripVertical className="size-4" />
+      </button>
+
+      <div className="min-w-0">
         <TaskViewLink
           location={location}
           showSprint={showSprint}
           projectId={task.projectId}
           sprintId={task.sprintId}
           taskId={task.id}
-          className="font-medium text-foreground hover:underline line-clamp-2"
+          className="block truncate font-medium text-foreground hover:underline"
           onSelectClick={(event) =>
             handleTaskSelectClick(task.id, orderedTaskIds, {
               shiftKey: event.shiftKey,
@@ -123,63 +156,16 @@ export function TaskListRow({
         >
           {task.name}
         </TaskViewLink>
-      </td>
-      <td className="w-36 px-2 py-2">
-        {currentStatus ? (
-          <StatusSwitch
-            status={currentStatus}
-            statuses={statuses}
-            onValueChange={handleStatusChange}
-          />
-        ) : (
-          <Select onValueChange={handleStatusChange}>
-            <SelectTrigger size="sm" className="w-full">
-              <SelectValue placeholder="Set status" />
-            </SelectTrigger>
-            <SelectContent>
-              {statuses.map((status) => (
-                <SelectItem key={status.id} value={status.id}>
-                  {status.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </td>
-      <td className="w-32 px-2 py-2">
-        <PrioritySwitch
-          priority={task.priority}
-          onValueChange={handlePriorityChange}
-        />
-      </td>
-      <td
-        className={cn(
-          "w-28 px-2 py-2 text-sm",
-          isOverdue && "text-red-600 font-medium"
-        )}
-      >
-        {task.deadline ? <DateDisplay date={task.deadline} /> : "—"}
-      </td>
-      <td className="w-28 px-2 py-2">
-        <AvatarList>
-          {task.assignees.map((taskAssignee) => {
-            const assignee = usersById.get(taskAssignee.userId);
-            if (!assignee) return null;
-            return (
-              <Avatar key={assignee.id} className="size-6">
-                <AvatarImage
-                  src={assignee.avatar || undefined}
-                  alt={assignee.name}
-                />
-                <AvatarFallback>{getInitials(assignee.name)}</AvatarFallback>
-              </Avatar>
-            );
-          })}
-        </AvatarList>
-      </td>
-      <td className="min-w-[120px] px-2 py-2">
-        <div className="flex flex-wrap gap-1">
-          {task.labels.map((label) => (
+        {subtitle ? (
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+            {subtitle}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="flex min-w-0 items-center gap-1 overflow-hidden">
+        {task.labels.length > 0 ? (
+          task.labels.slice(0, 2).map((label) => (
             <LabelBadge
               key={label.id}
               color={label.color || "neutral"}
@@ -187,44 +173,93 @@ export function TaskListRow({
             >
               {label.name}
             </LabelBadge>
-          ))}
-        </div>
-      </td>
-      {showProject ? (
-        <td className="w-36 px-2 py-2">
-          <span className="inline-flex max-w-full items-center gap-1 text-xs text-muted-foreground">
-            {task.project.logo ? (
-              <img
-                src={task.project.logo}
-                alt=""
-                className="size-4 shrink-0 rounded-sm"
-              />
-            ) : (
-              <Folder className="size-3.5 shrink-0" />
-            )}
-            <span className="truncate">{task.project.name}</span>
+          ))
+        ) : (
+          <span className="text-xs text-muted-foreground/40">—</span>
+        )}
+        {task.labels.length > 2 ? (
+          <span className="shrink-0 text-xs text-muted-foreground">
+            +{task.labels.length - 2}
           </span>
-        </td>
-      ) : null}
-      {showSprint ? (
-        <td className="w-32 px-2 py-2">
-          {task.sprint ? (
-            <Badge
-              variant={
-                task.sprint.start < new Date() && task.sprint.end < new Date()
-                  ? "secondary"
-                  : "default"
-              }
-              className="text-xs"
-            >
-              <ClockFading className="mr-1 size-3" />
-              {task.sprint.name}
-            </Badge>
-          ) : (
-            "—"
-          )}
-        </td>
-      ) : null}
-    </tr>
+        ) : null}
+      </div>
+
+      <div
+        className="flex justify-end"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        {!isOverlay ? (
+          <div
+            className={cn(
+              "inline-flex max-w-full items-center justify-end gap-1.5",
+              "[&_[data-slot=select-trigger]]:h-8 [&_[data-slot=select-trigger]]:border-0",
+              "[&_[data-slot=select-trigger]]:bg-transparent [&_[data-slot=select-trigger]]:shadow-none",
+              "[&_[data-slot=select-trigger]]:px-0 [&_[data-slot=select-trigger]]:gap-1.5"
+            )}
+          >
+            <span
+              className={cn(
+                "size-2 shrink-0 rounded-full",
+                priorityDotClass[task.priority]
+              )}
+            />
+            <PrioritySwitch
+              priority={task.priority}
+              onValueChange={handlePriorityChange}
+            />
+          </div>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 capitalize text-muted-foreground">
+            <span
+              className={cn(
+                "size-2 rounded-full",
+                priorityDotClass[task.priority]
+              )}
+            />
+            {task.priority}
+          </span>
+        )}
+      </div>
+
+      <div
+        className={cn(
+          "text-right text-xs tabular-nums",
+          isOverdue ? "font-medium text-red-600" : "text-muted-foreground"
+        )}
+      >
+        {task.deadline ? (
+          <DateDisplay date={task.deadline} />
+        ) : (
+          <span className="text-muted-foreground/40">—</span>
+        )}
+      </div>
+
+      <div className="flex min-w-0 items-center justify-end gap-2">
+        {primaryAssignee ? (
+          <>
+            <Avatar className="size-7 shrink-0">
+              <AvatarImage
+                src={primaryAssignee.avatar || undefined}
+                alt={primaryAssignee.name}
+              />
+              <AvatarFallback className="text-[10px]">
+                {getInitials(primaryAssignee.name)}
+              </AvatarFallback>
+            </Avatar>
+            <span className="min-w-0 truncate text-sm text-foreground/90">
+              {primaryAssignee.name}
+              {extraAssignees > 0 ? (
+                <span className="text-muted-foreground">
+                  {" "}
+                  +{extraAssignees}
+                </span>
+              ) : null}
+            </span>
+          </>
+        ) : (
+          <span className="text-xs text-muted-foreground/40">—</span>
+        )}
+      </div>
+    </div>
   );
 }
