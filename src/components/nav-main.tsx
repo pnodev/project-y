@@ -61,7 +61,7 @@ export function NavMain({
           const hasChildren = Boolean(item.items?.length);
           if (!hasChildren) {
             return (
-              <SidebarMenuItem key={item.title}>
+              <SidebarMenuItem key={item.url}>
                 <SidebarMenuButton
                   asChild
                   isActive={isNavPathActive(pathname, item.url)}
@@ -78,7 +78,7 @@ export function NavMain({
 
           return (
             <Collapsible
-              key={item.title}
+              key={`${item.url}-${item.title}`}
               defaultOpen
               className="group/collapsible"
             >
@@ -101,7 +101,7 @@ export function NavMain({
                         typeof subItem.icon === "string" ? subItem.icon : undefined;
 
                       return (
-                        <SidebarMenuSubItem key={subItem.title}>
+                        <SidebarMenuSubItem key={subItem.url}>
                           <SidebarMenuSubButton
                             asChild
                             isActive={active}

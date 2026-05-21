@@ -43,6 +43,7 @@ export function SiteHeader() {
           className="h-8 w-8"
           variant="ghost"
           size="icon"
+          aria-label="Toggle sidebar"
           onClick={toggleSidebar}
         >
           <Menu />

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link } from "@tanstack/react-router";
 import {
   Building2,
   Clock,
@@ -109,10 +110,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="h-10 rounded-none px-0 hover:bg-transparent active:bg-transparent data-[active=true]:bg-transparent"
             >
-              <a href="/dashboard">
+              <Link to="/dashboard">
                 <img src="/logo.svg" alt="Project Y" className="size-7" />
                 <span className="truncate font-medium">Project Y</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

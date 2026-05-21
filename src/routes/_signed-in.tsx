@@ -26,9 +26,9 @@ function PathlessLayoutComponent() {
       <SidebarProvider className="flex min-h-svh overflow-x-hidden">
         <div className="flex min-w-0 flex-1">
           <AppSidebar />
-          <div className="flex min-h-svh min-w-0 flex-1 flex-col overflow-x-hidden">
+          <div className="flex min-w-0 flex-1 flex-col">
             <SiteHeader />
-            <SidebarInset className="min-w-0 flex-1 overflow-x-hidden">
+            <SidebarInset className="min-w-0 flex-1">
               <Outlet />
             </SidebarInset>
           </div>
