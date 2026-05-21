@@ -23,7 +23,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import z from "zod";
 import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
-import { sync } from "./sync";
+import { sync, syncDashboard } from "./sync";
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ALL_TASKS_SCOPE } from "~/db/queries/tasks";
@@ -172,6 +172,7 @@ const createTask = createServerFn({ method: "POST" })
     };
     await db.insert(tasks).values(newTask);
     await sync(`task-create`, { data });
+    await syncDashboard(newTask.owner, { data });
 
     return newTask;
   });
@@ -342,14 +343,16 @@ const updateTask = createServerFn({ method: "POST" })
         Object.entries(updates).filter(([, value]) => value !== undefined)
       );
 
+      const owner = getOwningIdentity(session);
       await db
         .update(tasks)
         .set({
           ...setValues,
           updatedAt: new Date(),
         })
-        .where(and(eq(tasks.id, id), eq(tasks.owner, getOwningIdentity(session))));
+        .where(and(eq(tasks.id, id), eq(tasks.owner, owner)));
       await sync(`task-update-${id}`, { data });
+      await syncDashboard(owner, { data });
     } catch (error) {
       console.error("[updateTask] failed:", error);
       throw error;
@@ -455,6 +458,7 @@ const deleteTask = createServerFn({ method: "POST" })
 
     await deleteAttachmentFilesFromStorage(providerFileIds);
     await sync(`task-delete`, { data });
+    await syncDashboard(owner, { data });
   });
 
 export function useDeleteTaskMutation() {
@@ -621,6 +625,7 @@ const batchDeleteTasks = createServerFn({ method: "POST" })
     for (const id of data.taskIds) {
       await sync(`task-delete`, { data: { id } });
     }
+    await syncDashboard(owner, { data });
   });
 
 const batchAssignTasks = createServerFn({ method: "POST" })

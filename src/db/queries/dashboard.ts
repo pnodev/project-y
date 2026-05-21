@@ -3,19 +3,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { and, count, eq, isNotNull, isNull, lt } from "drizzle-orm";
 import { db } from "~/db";
 import { Sprint, tasks } from "~/db/schema";
+import { ownerDashboardTopic } from "~/lib/owner-dashboard-topic";
 import { useEventSource } from "~/hooks/use-event-source";
 import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
 
 export type DashboardStats = {
+  owner: string;
   totalTasks: number;
   unassignedTasks: number;
   overdueTasks: number;
   activeSprint: Sprint | null;
   activeSprintTaskCount: number;
-  /** Used for live-update subscriptions only. */
-  taskIds: string[];
-  sprintIds: string[];
 };
 
 const countTasks = (owner: string, extra?: ReturnType<typeof and>) =>
@@ -39,7 +38,7 @@ export const fetchDashboardStats = createServerFn({ method: "GET" }).handler(
     const activeSprint =
       sprints.find((s) => s.start < now && s.end > now) ?? null;
 
-    const [totalRow, unassignedRow, overdueRow, activeSprintRow, taskRows] =
+    const [totalRow, unassignedRow, overdueRow, activeSprintRow] =
       await Promise.all([
         countTasks(owner),
         countTasks(owner, isNull(tasks.statusId)),
@@ -50,17 +49,15 @@ export const fetchDashboardStats = createServerFn({ method: "GET" }).handler(
         activeSprint
           ? countTasks(owner, eq(tasks.sprintId, activeSprint.id))
           : Promise.resolve([{ value: 0 }]),
-        db.select({ id: tasks.id }).from(tasks).where(eq(tasks.owner, owner)),
       ]);
 
     return {
+      owner,
       totalTasks: Number(totalRow[0]?.value ?? 0),
       unassignedTasks: Number(unassignedRow[0]?.value ?? 0),
       overdueTasks: Number(overdueRow[0]?.value ?? 0),
       activeSprint,
       activeSprintTaskCount: Number(activeSprintRow[0]?.value ?? 0),
-      taskIds: taskRows.map((row) => row.id),
-      sprintIds: sprints.map((s) => s.id),
     };
   }
 );
@@ -75,14 +72,7 @@ export const useDashboardStatsQuery = () => {
   const queryData = useSuspenseQuery(dashboardStatsQueryOptions());
 
   useEventSource({
-    topics: [
-      "task-create",
-      "task-delete",
-      ...queryData.data.taskIds.map((id) => `task-update-${id}`),
-      "sprint-create",
-      "sprint-delete",
-      ...queryData.data.sprintIds.map((id) => `sprint-update-${id}`),
-    ],
+    topics: [ownerDashboardTopic(queryData.data.owner)],
     callback: () => {
       queryData.refetch();
     },
