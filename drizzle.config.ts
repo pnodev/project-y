@@ -6,5 +6,15 @@ export default {
   dbCredentials: {
     url: process.env.NETLIFY_DATABASE_URL as string,
   },
-  tablesFilter: ["project-y_*", "user", "session", "account", "verification", "organization", "member", "invitation"],
+  tablesFilter: [
+    "project-y_*",
+    "user",
+    "session",
+    "account",
+    "two_factor",
+    "verification",
+    "organization",
+    "member",
+    "invitation",
+  ],
 } satisfies Config;

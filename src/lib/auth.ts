@@ -2,7 +2,7 @@ import "@tanstack/react-start/server-only";
 
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { organization } from "better-auth/plugins";
+import { organization, twoFactor } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { db } from "~/db";
 import * as authSchema from "~/db/auth-schema";
@@ -11,12 +11,34 @@ import { sendEmail } from "~/lib/email";
 import { formatUserName } from "~/lib/utils";
 
 export const auth = betterAuth({
+  appName: "Project Y",
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: authSchema,
   }),
   baseURL: env.BETTER_AUTH_URL,
   secret: env.BETTER_AUTH_SECRET,
+  emailVerification: {
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: "Confirm your Project Y account",
+          text: `Please confirm your email address to activate your account (double opt-in).\n\nOpen this link:\n${url}\n\nIf you did not create an account, you can ignore this email.`,
+        });
+      } catch (error) {
+        console.error("Failed to send verification email", {
+          email: user.email,
+          url,
+          error,
+        });
+        throw error;
+      }
+    },
+  },
   user: {
     additionalFields: {
       firstname: {
@@ -77,6 +99,7 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
       try {
@@ -105,6 +128,10 @@ export const auth = betterAuth({
         }
       : undefined,
   plugins: [
+    twoFactor({
+      issuer: "Project Y",
+      allowPasswordless: true,
+    }),
     organization({
       async sendInvitationEmail(data) {
         const inviteLink = `${env.BETTER_AUTH_URL}/accept-invitation/${data.id}`;
