@@ -8,6 +8,7 @@ import {
   Flag,
   Folder,
   FolderPlus,
+  LayoutDashboard,
   LucideIcon,
   Tag,
   User,
@@ -85,6 +86,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     ];
 
     return [
+      {
+        title: "Dashboard",
+        url: "/dashboard",
+        icon: LayoutDashboard,
+      },
       {
         title: "Projects",
         url: "#",
