@@ -7,6 +7,7 @@ import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { db } from "~/db";
 import * as authSchema from "~/db/auth-schema";
 import { env } from "~/env";
+import { sendAuthEmail } from "~/lib/email";
 import { formatUserName } from "~/lib/utils";
 
 export const auth = betterAuth({
@@ -76,6 +77,14 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, url }) => {
+      void sendAuthEmail({
+        to: user.email,
+        subject: "Reset your Project Y password",
+        text: `Reset your password by opening this link:\n\n${url}\n\nIf you did not request this, you can ignore this email.`,
+      });
+    },
   },
   socialProviders:
     env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
