@@ -14,6 +14,7 @@ import { NotFound } from "~/components/NotFound";
 import appCss from "~/styles/app.css?url";
 import { seo } from "~/utils/seo";
 import { Toaster } from "~/components/ui/sonner";
+import { AppProviders } from "~/components/AppProviders";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
@@ -85,7 +86,7 @@ function RootDocument({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children ?? <Outlet />}
+        <AppProviders>{children ?? <Outlet />}</AppProviders>
         <Toaster />
         {/* <TanStackRouterDevtools position="bottom-right" />
         <ReactQueryDevtools buttonPosition="bottom-left" /> */}

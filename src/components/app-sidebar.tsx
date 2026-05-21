@@ -29,10 +29,15 @@ import {
 import { version } from "../../package.json";
 import { useProjectsQuery } from "~/db/queries/projects";
 import { useSprintsQuery } from "~/db/queries/sprints";
+import {
+  FORM_SHEET_CREATE_LINKS,
+  type FormSheetSearch,
+} from "~/lib/form-sheet-search";
 
 type NavItem = {
   title: string;
   url: string;
+  search?: FormSheetSearch;
   icon?: LucideIcon | string;
   highlighted?: boolean;
 };
@@ -72,7 +77,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: `/projects/${project.id}/tasks`,
         icon: project.logo || Folder,
       })),
-      { title: "Add Project", url: "/projects/new", icon: FolderPlus },
+      {
+        title: "Add Project",
+        url: FORM_SHEET_CREATE_LINKS.project.to,
+        search: FORM_SHEET_CREATE_LINKS.project.search,
+        icon: FolderPlus,
+      },
     ];
 
     const sprintItems: NavItem[] = [
@@ -82,7 +92,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: Clock,
         highlighted: sprint.start < new Date() && sprint.end > new Date(),
       })),
-      { title: "Add Sprint", url: "/sprints/new", icon: ClockPlus },
+      {
+        title: "Add Sprint",
+        url: FORM_SHEET_CREATE_LINKS.sprint.to,
+        search: FORM_SHEET_CREATE_LINKS.sprint.search,
+        icon: ClockPlus,
+      },
     ];
 
     return [

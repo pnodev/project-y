@@ -8,6 +8,12 @@ export const popoverSurfaceClass =
 /** Above dialogs so portaled menus paint on top. */
 export const floatingContentZClass = "z-[100]";
 
+/** Compact hint tooltips (e.g. truncated task titles). */
+export const tooltipContentClass = cn(
+  floatingContentZClass,
+  "w-max max-w-sm rounded-md border-0 bg-foreground px-3 py-1.5 text-xs text-background text-wrap shadow-md"
+);
+
 export const popoverSurfacePaddingClass = "p-1";
 
 export const menuItemClass =
@@ -41,7 +47,7 @@ export const controlTriggerClass =
 export const fieldControlClass = cn(controlTriggerClass, "h-7 min-h-7 py-0");
 
 export const overlayClass =
-  "fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0";
+  "fixed inset-0 z-50 bg-black/20 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0";
 
 export const modalContentClass =
   "rounded-lg border border-border/50 bg-background shadow-[var(--shadow-overlay)]";
@@ -60,6 +66,54 @@ export const formCardDescriptionClass = "text-sm text-muted-foreground";
 
 export const formCardFooterClass =
   "flex border-t border-border/60 bg-muted/30 px-6 py-3";
+
+/** Collapsible form sheet sections (gray header, white body, no border). */
+export const formSheetSectionHeaderClass =
+  "flex w-full cursor-pointer items-center justify-between gap-3 rounded-md bg-muted px-4 py-3 text-left outline-none transition-colors hover:bg-muted/80 focus-visible:ring-[3px] focus-visible:ring-ring/50";
+
+export const formSheetSectionTitleClass =
+  "text-sm font-semibold leading-snug text-foreground";
+
+/** Pure white panel in light mode; elevated card surface in dark. */
+export const formSheetSectionContentClass =
+  "space-y-4 bg-white px-4 pb-5 pt-4 dark:bg-card";
+
+/** Danger zone collapsible — soft red wash, aligned with PageSection danger. */
+export const formSheetSectionDangerHeaderClass =
+  "flex w-full cursor-pointer items-center justify-between gap-3 rounded-md border border-destructive/15 bg-red-50/55 px-4 py-3 text-left outline-none transition-colors hover:bg-red-50/70 focus-visible:ring-[3px] focus-visible:ring-destructive/25 group-data-[state=open]/form-sheet-section:rounded-b-none group-data-[state=open]/form-sheet-section:border-b-0 dark:bg-red-950/25 dark:hover:bg-red-950/35";
+
+export const formSheetSectionDangerTitleClass =
+  "text-sm font-semibold leading-snug text-destructive/80";
+
+export const formSheetSectionDangerContentClass =
+  "space-y-4 rounded-b-md border border-t-0 border-destructive/15 bg-red-50/40 px-4 pb-5 pt-4 dark:bg-red-950/20";
+
+export const formSheetSectionDangerChevronClass =
+  "size-4 shrink-0 text-destructive/55 transition-transform duration-200 group-data-[state=open]/form-sheet-section:rotate-180";
+
+export const formSheetHeaderClass =
+  "shrink-0 bg-white px-6 pt-8 pb-6 dark:bg-background";
+
+export const formSheetTitleClass =
+  "text-2xl font-bold leading-8 tracking-normal text-foreground";
+
+export const formSheetDescriptionClass =
+  "mt-1.5 text-[0.8125rem] font-normal leading-5 text-muted-foreground";
+
+export const formSheetMetaClass =
+  "mt-5 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/60 pt-4 text-[0.8125rem]";
+
+export const formSheetFooterClass =
+  "mt-auto shrink-0 flex w-full flex-row gap-2 border-t border-border bg-background px-6 py-4";
+
+/** Scrollable form fields inside a sheet (horizontal padding lives here, not on the body). */
+export const formSheetScrollClass =
+  "min-h-0 flex-1 overflow-y-auto space-y-2 px-6 py-4";
+
+export const formSheetBodyClass =
+  "flex min-h-0 flex-1 flex-col bg-white dark:bg-background";
+
+export const formSheetFormClass = "flex min-h-0 flex-1 flex-col";
 
 /** Danger zone — soft red wash via opacity, destructive accents on chrome. */
 export const formCardDangerClass =

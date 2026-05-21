@@ -164,6 +164,16 @@ function ListSection({
   const isUnknown = section.key.startsWith("unknown-");
   const dropId = getStatusDropId(section);
   const { isOver, setNodeRef } = useDroppable({ id: dropId });
+  const quickCreateOpen = useStore(
+    TaskViewStore,
+    (state) => state.quickCreateOpenFor
+  );
+  const isQuickCreateOpen = status != null && quickCreateOpen === status.id;
+  const closeQuickCreate = () =>
+    TaskViewStore.setState((state) => ({
+      ...state,
+      quickCreateOpenFor: null,
+    }));
 
   return (
     <div
@@ -174,7 +184,7 @@ function ListSection({
         !isFirst && "border-t border-border/40"
       )}
     >
-      <div className="flex items-center justify-between gap-3 px-4 py-2">
+      <div className="flex items-center justify-between gap-3 border-b border-border/50 bg-muted/30 px-4 py-2.5">
         <div
           className={cn(
             "flex items-center gap-2 text-sm font-medium text-foreground",
@@ -193,36 +203,34 @@ function ListSection({
           </span>
         </div>
         {status ? (
-          <div className="flex items-center gap-1">
-            <TaskQuickCreate
-              status={status.id}
-              projectId={projectId}
-              sprintId={sprintId}
-              onClose={() =>
-                TaskViewStore.setState((state) => ({
-                  ...state,
-                  quickCreateOpenFor: null,
-                }))
-              }
-            />
-            <Button
-              size="sm"
-              variant="ghost"
-              type="button"
-              className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground"
-              onClick={() =>
-                TaskViewStore.setState((state) => ({
-                  ...state,
-                  quickCreateOpenFor: status.id,
-                }))
-              }
-            >
-              <PlusIcon className="size-3.5" />
-              Add task
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            type="button"
+            className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground"
+            onClick={() =>
+              TaskViewStore.setState((state) => ({
+                ...state,
+                quickCreateOpenFor:
+                  state.quickCreateOpenFor === status.id ? null : status.id,
+              }))
+            }
+          >
+            <PlusIcon className="size-3.5" />
+            Add task
+          </Button>
         ) : null}
       </div>
+
+      {status && isQuickCreateOpen ? (
+        <TaskQuickCreate
+          variant="list"
+          status={status.id}
+          projectId={projectId}
+          sprintId={sprintId}
+          onClose={closeQuickCreate}
+        />
+      ) : null}
 
       {sortedTasks.length > 0 ? (
         <div>

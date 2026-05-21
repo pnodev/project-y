@@ -17,6 +17,7 @@ import { hydrateDashboardCache } from "~/db/queries/hydrate-query-cache";
 import { useProjectsQuery } from "~/db/queries/projects";
 import { useSprintsQuery } from "~/db/queries/sprints";
 import { authClient } from "~/lib/auth-client";
+import { FORM_SHEET_CREATE_LINKS } from "~/lib/form-sheet-search";
 import { cn, formatUserName } from "~/lib/utils";
 
 export const Route = createFileRoute("/_signed-in/dashboard")({
@@ -91,13 +92,19 @@ function RouteComponent() {
           </Link>
         </Button>
         <Button variant="outline" size="sm" asChild>
-          <Link to="/projects/new">
+          <Link
+            to={FORM_SHEET_CREATE_LINKS.project.to}
+            search={FORM_SHEET_CREATE_LINKS.project.search}
+          >
             <FolderPlus />
             Add project
           </Link>
         </Button>
         <Button variant="outline" size="sm" asChild>
-          <Link to="/sprints/new">
+          <Link
+            to={FORM_SHEET_CREATE_LINKS.sprint.to}
+            search={FORM_SHEET_CREATE_LINKS.sprint.search}
+          >
             <Plus />
             Add sprint
           </Link>
@@ -112,7 +119,10 @@ function RouteComponent() {
                 No projects yet. Create one to start organizing tasks.
               </p>
               <Button variant="outline" size="sm" asChild>
-                <Link to="/projects/new">
+                <Link
+                  to={FORM_SHEET_CREATE_LINKS.project.to}
+                  search={FORM_SHEET_CREATE_LINKS.project.search}
+                >
                   <FolderPlus />
                   Add project
                 </Link>
@@ -153,7 +163,10 @@ function RouteComponent() {
                 No sprints yet. Plan your work in time-boxed iterations.
               </p>
               <Button variant="outline" size="sm" asChild>
-                <Link to="/sprints/new">
+                <Link
+                  to={FORM_SHEET_CREATE_LINKS.sprint.to}
+                  search={FORM_SHEET_CREATE_LINKS.sprint.search}
+                >
                   <Plus />
                   Add sprint
                 </Link>

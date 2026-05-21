@@ -152,7 +152,8 @@ export function NavOrganization() {
               ) : null}
               <DropdownMenuItem asChild>
                 <Link
-                  to="/settings/organization/new"
+                  to="/settings/organization"
+                  search={{ sheet: "create-organization" }}
                   className="flex items-center gap-2"
                 >
                   <Plus className="size-4" />

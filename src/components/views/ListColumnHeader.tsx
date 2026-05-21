@@ -10,7 +10,7 @@ export function ListColumnHeader({ flags }: { flags: ListColumnFlags }) {
   return (
     <div
       className={cn(
-        "grid items-center gap-x-4 bg-muted/40 text-xs font-medium text-muted-foreground",
+        "grid items-center gap-x-4 border-b border-border/50 bg-muted/40 text-xs font-medium text-muted-foreground",
         LIST_ROW_X,
         "py-2.5"
       )}

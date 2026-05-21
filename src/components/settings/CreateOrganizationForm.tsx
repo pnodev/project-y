@@ -1,15 +1,12 @@
-import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { AvatarUploadField } from "~/components/AvatarUploadField";
-import {
-  PageSection,
-  PageSectionContent,
-  PageSectionFooter,
-} from "~/components/PageSection";
+import { FormLayoutShell } from "~/components/FormLayoutShell";
+import { FormSheetSection } from "~/components/FormSheetSection";
 import { Button } from "~/components/ui/button";
 import {
   Form,
@@ -22,6 +19,12 @@ import {
 import { Input } from "~/components/ui/input";
 import { authClient } from "~/lib/auth-client";
 import { normalizeOrgSlug } from "~/hooks/use-organizations";
+import {
+  formSheetFooterClass,
+  formSheetFormClass,
+  formSheetScrollClass,
+} from "~/components/ui/surface-styles";
+import { cn } from "~/lib/utils";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -30,7 +33,21 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export function CreateOrganizationForm() {
+type FormLayout = "page" | "sheet";
+
+type CreateOrganizationFormProps = {
+  layout?: FormLayout;
+  formId?: string;
+  sheetFooter?: React.ReactNode;
+  onSuccess?: () => void;
+};
+
+export function CreateOrganizationForm({
+  layout = "page",
+  formId = "organization-create-form",
+  sheetFooter,
+  onSuccess,
+}: CreateOrganizationFormProps) {
   const navigate = useNavigate();
   const [logo, setLogo] = useState<string | null>(null);
 
@@ -64,53 +81,119 @@ export function CreateOrganizationForm() {
     }
 
     toast.success("Organization created");
-    navigate({ to: "/settings/organization" });
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      navigate({ to: "/settings/organization" });
+    }
   };
+
+  const submitButton = (
+    <Button type="submit" loading={form.formState.isSubmitting}>
+      Create organization
+    </Button>
+  );
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <PageSection title="New organization">
-          <PageSectionContent className="space-y-6">
-            <AvatarUploadField
-              imageUrl={logo}
-              fallback="O"
-              label="Organization logo (optional)"
-              onUploaded={async (url) => setLogo(url)}
-            />
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem className="max-w-md">
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="My organization" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="slug"
-              render={({ field }) => (
-                <FormItem className="max-w-md">
-                  <FormLabel>Slug</FormLabel>
-                  <FormControl>
-                    <Input placeholder="my-org" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </PageSectionContent>
-          <PageSectionFooter>
-            <Button type="submit" loading={form.formState.isSubmitting}>
-              Create organization
-            </Button>
-          </PageSectionFooter>
-        </PageSection>
+      <form
+        id={formId}
+        onSubmit={form.handleSubmit(onSubmit)}
+        className={cn(
+          layout === "page" ? "space-y-8" : formSheetFormClass
+        )}
+      >
+        <div
+          className={cn(
+            layout === "sheet" && formSheetScrollClass
+          )}
+        >
+          <FormLayoutShell
+          layout={layout}
+          title="New organization"
+          footer={submitButton}
+          contentClassName={layout === "sheet" ? "space-y-4" : "space-y-6"}
+        >
+          {layout === "sheet" ? (
+            <>
+              <FormSheetSection title="Branding">
+                <AvatarUploadField
+                  imageUrl={logo}
+                  fallback="O"
+                  label="Organization logo (optional)"
+                  onUploaded={async (url) => setLogo(url)}
+                />
+              </FormSheetSection>
+              <FormSheetSection title="General">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="My organization" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Slug</FormLabel>
+                      <FormControl>
+                        <Input placeholder="my-org" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </FormSheetSection>
+            </>
+          ) : (
+            <>
+              <AvatarUploadField
+                imageUrl={logo}
+                fallback="O"
+                label="Organization logo (optional)"
+                onUploaded={async (url) => setLogo(url)}
+              />
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="My organization" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Slug</FormLabel>
+                    <FormControl>
+                      <Input placeholder="my-org" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+        </FormLayoutShell>
+        </div>
+        {layout === "sheet" && sheetFooter ? (
+          <div className={cn(formSheetFooterClass, "shrink-0")}>{sheetFooter}</div>
+        ) : null}
       </form>
     </Form>
   );

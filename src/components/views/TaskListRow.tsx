@@ -1,5 +1,5 @@
 import { useDraggable } from "@dnd-kit/core";
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import { useStore } from "@tanstack/react-store";
 import { GripVertical, UserPlus } from "lucide-react";
 import { UserSelect } from "~/components/UserSelect";
@@ -17,8 +17,10 @@ import { cn } from "~/lib/utils";
 import {
   handleTaskSelectClick,
   setHoveredTaskId,
+  shouldIgnoreRowSelectClick,
 } from "./task-selection";
 import { TaskViewStore, toggleTaskId } from "./task-view-store";
+import { TruncatedTooltip } from "~/components/ui/truncated-tooltip";
 import { TaskViewLink } from "./task-view-link";
 import type { TaskViewLocation } from "./task-view-types";
 import {
@@ -85,6 +87,20 @@ export function TaskListRow({
     }).catch(() => undefined);
   };
 
+  const handleRowSelectCapture = (event: MouseEvent) => {
+    if (isOverlay) return;
+    if (!(event.shiftKey || event.metaKey || event.ctrlKey)) return;
+    if (shouldIgnoreRowSelectClick(event.target)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    handleTaskSelectClick(task.id, orderedTaskIds, {
+      shiftKey: event.shiftKey,
+      metaKey: event.metaKey,
+      ctrlKey: event.ctrlKey,
+    });
+  };
+
   const handleAssigneeChange = async (ids: string[]) => {
     setIsAssigningUser(true);
     try {
@@ -123,6 +139,7 @@ export function TaskListRow({
           setHoveredTaskId(null);
         }
       }}
+      onClickCapture={handleRowSelectCapture}
     >
       <div className="flex items-center gap-1">
         {!isOverlay ? (
@@ -136,6 +153,7 @@ export function TaskListRow({
         )}
         <button
           type="button"
+          data-row-select-ignore
           className={cn(
             "flex shrink-0 justify-center text-muted-foreground/40",
             "opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing",
@@ -149,24 +167,26 @@ export function TaskListRow({
         </button>
       </div>
 
-      <div className="min-w-0">
-        <TaskViewLink
-          location={location}
-          showSprint={showSprint}
-          projectId={task.projectId}
-          sprintId={task.sprintId}
-          taskId={task.id}
-          className="block truncate font-semibold leading-[1.3] tracking-[-0.01em] text-foreground hover:underline"
-          onSelectClick={(event) =>
-            handleTaskSelectClick(task.id, orderedTaskIds, {
-              shiftKey: event.shiftKey,
-              metaKey: event.metaKey,
-              ctrlKey: event.ctrlKey,
-            })
-          }
-        >
-          {task.name}
-        </TaskViewLink>
+      <div className="min-w-0 overflow-hidden">
+        <TruncatedTooltip content={task.name}>
+          <TaskViewLink
+            location={location}
+            showSprint={showSprint}
+            projectId={task.projectId}
+            sprintId={task.sprintId}
+            taskId={task.id}
+            className="font-semibold leading-[1.3] tracking-[-0.01em] text-foreground"
+            onSelectClick={(event) =>
+              handleTaskSelectClick(task.id, orderedTaskIds, {
+                shiftKey: event.shiftKey,
+                metaKey: event.metaKey,
+                ctrlKey: event.ctrlKey,
+              })
+            }
+          >
+            {task.name}
+          </TaskViewLink>
+        </TruncatedTooltip>
         {subtitle ? (
           <p className="mt-0.5 truncate text-xs text-muted-foreground">
             {subtitle}
@@ -197,6 +217,7 @@ export function TaskListRow({
 
       <div
         className="flex justify-end"
+        data-row-select-ignore
         onPointerDown={(e) => e.stopPropagation()}
       >
         {!isOverlay ? (
@@ -247,6 +268,7 @@ export function TaskListRow({
 
       <div
         className="flex min-w-0 justify-end"
+        data-row-select-ignore
         onPointerDown={(e) => e.stopPropagation()}
       >
         {!isOverlay ? (

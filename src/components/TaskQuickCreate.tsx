@@ -1,7 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { SimpleCard } from "./ui/simple-card";
 import { useCreateTaskMutation } from "~/db/mutations/tasks";
 import { useStore } from "@tanstack/react-store";
 import { TaskViewStore } from "./views/task-view-store";
@@ -16,17 +15,21 @@ import {
   SelectValue,
 } from "./ui/select";
 import { useProjectsQuery } from "~/db/queries/projects";
+import { cn } from "~/lib/utils";
 
 export default function TaskQuickCreate({
   status,
   projectId,
   sprintId,
   onClose,
+  variant = "column",
 }: {
   status: string;
   projectId?: string;
   sprintId?: string;
   onClose: () => void;
+  /** `list` aligns with list-view columns; `column` sits in board column footer. */
+  variant?: "list" | "column";
 }) {
   const createTask = useCreateTaskMutation();
   const projectsQuery = useProjectsQuery();
@@ -89,62 +92,68 @@ export default function TaskQuickCreate({
       onClose();
     }
 
-    setIsCtrlKeyPressed(false); // Reset after handling submit
+    setIsCtrlKeyPressed(false);
   };
 
   if (quickCreateOpen !== status) return null;
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit}>
-      <button onClick={onClose} type="button" className="fixed inset-0 z-50 ">
-        <span className="sr-only">Close</span>
-      </button>
-      <SimpleCard className="relative z-50">
-        {!projectId ? (
-          <Select
-            onValueChange={(projectId) => setSelectedProjectId(projectId)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a project" />
-            </SelectTrigger>
-            <SelectContent>
-              {projectsQuery.data.map((project) => (
-                <SelectItem key={project.id} value={project.id}>
-                  {project.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : null}
-        <div className="flex gap-1">
-          <Input
-            ref={ref}
-            name="name"
-            placeholder="Enter task name"
-            disablePasswordManagers={true}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                onClose();
-              } else if (e.ctrlKey && e.key === "Enter" && formRef.current) {
-                formRef.current.requestSubmit();
-              }
-              setIsCtrlKeyPressed(e.ctrlKey);
-            }}
-            onKeyUp={() => setIsCtrlKeyPressed(false)}
-          />
-          <Button
-            type="submit"
-            size={"icon"}
-            loading={isLoading}
-            hideContentWhenLoading={true}
-          >
-            <SendHorizontal />
-          </Button>
-        </div>
-        <p className="mt-1 text-[10px] text-muted-foreground">
-          Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to keep the dialog open.
-        </p>
-      </SimpleCard>
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      className={cn(
+        variant === "list" &&
+          "border-b border-border/40 bg-muted/25 px-4 py-2.5",
+        variant === "column" && "flex flex-col gap-2"
+      )}
+    >
+      {!projectId ? (
+        <Select onValueChange={(id) => setSelectedProjectId(id)}>
+          <SelectTrigger className={cn("w-full", variant === "list" && "mb-2")}>
+            <SelectValue placeholder="Select a project" />
+          </SelectTrigger>
+          <SelectContent>
+            {projectsQuery.data.map((project) => (
+              <SelectItem key={project.id} value={project.id}>
+                {project.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : null}
+      <div className="flex gap-2">
+        <Input
+          ref={ref}
+          name="name"
+          placeholder="Task name"
+          className="min-w-0 flex-1"
+          disablePasswordManagers={true}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              onClose();
+            } else if (e.ctrlKey && e.key === "Enter" && formRef.current) {
+              formRef.current.requestSubmit();
+            }
+            setIsCtrlKeyPressed(e.ctrlKey);
+          }}
+          onKeyUp={() => setIsCtrlKeyPressed(false)}
+        />
+        <Button
+          type="submit"
+          size="icon"
+          loading={isLoading}
+          hideContentWhenLoading={true}
+          aria-label="Create task"
+        >
+          <SendHorizontal />
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={onClose}>
+          Cancel
+        </Button>
+      </div>
+      <p className="mt-1.5 text-[10px] text-muted-foreground">
+        <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to create another without closing.
+      </p>
     </form>
   );
 }

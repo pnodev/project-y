@@ -1,17 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { SprintFormCreate } from "~/components/forms/SprintForm";
-import { PageLayout } from "~/components/PageLayout";
-import { useCreateSprintMutation } from "~/db/mutations/sprints";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { FORM_SHEET_CREATE_LINKS } from "~/lib/form-sheet-search";
 
 export const Route = createFileRoute("/_signed-in/sprints/new")({
-  component: RouteComponent,
+  beforeLoad: () => {
+    throw redirect({
+      to: FORM_SHEET_CREATE_LINKS.sprint.to,
+      search: FORM_SHEET_CREATE_LINKS.sprint.search,
+    });
+  },
 });
-
-function RouteComponent() {
-  const createSprint = useCreateSprintMutation();
-  return (
-    <PageLayout title="New Sprint">
-      <SprintFormCreate onSubmit={async (data) => await createSprint(data)} />
-    </PageLayout>
-  );
-}

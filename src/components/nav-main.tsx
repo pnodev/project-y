@@ -18,7 +18,14 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "~/components/ui/sidebar";
+import { getRouteApi } from "@tanstack/react-router";
 import { cn } from "~/lib/utils";
+import {
+  type FormSheetSearch,
+  isFormSheetNavItemActive,
+} from "~/lib/form-sheet-search";
+
+const signedInRoute = getRouteApi("/_signed-in");
 
 function isNavPathActive(pathname: string, url: string) {
   if (url === "#") return false;
@@ -41,6 +48,7 @@ export function NavMain({
     items?: {
       title: string;
       url: string;
+      search?: FormSheetSearch;
       icon?: LucideIcon | string;
       highlighted?: boolean;
     }[];
@@ -48,6 +56,7 @@ export function NavMain({
 }) {
   const { location } = useRouterState();
   const pathname = location.pathname;
+  const routeSearch = signedInRoute.useSearch();
 
   return (
     <SidebarGroup className="py-1">
@@ -64,7 +73,11 @@ export function NavMain({
               <SidebarMenuItem key={item.url}>
                 <SidebarMenuButton
                   asChild
-                  isActive={isNavPathActive(pathname, item.url)}
+                  isActive={
+                    item.url === "/dashboard"
+                      ? pathname === "/dashboard" && !routeSearch.sheet
+                      : isNavPathActive(pathname, item.url)
+                  }
                   className="font-medium"
                 >
                   <Link to={item.url}>
@@ -95,7 +108,12 @@ export function NavMain({
                 <CollapsibleContent>
                   <SidebarMenuSub>
                     {item.items?.map((subItem) => {
-                      const active = isNavPathActive(pathname, subItem.url);
+                      const active = isFormSheetNavItemActive(
+                        pathname,
+                        subItem.url,
+                        subItem.search,
+                        routeSearch
+                      );
                       const isAction = isAddItem(subItem.title);
                       const logoUrl =
                         typeof subItem.icon === "string" ? subItem.icon : undefined;
@@ -110,7 +128,7 @@ export function NavMain({
                                 "font-normal text-muted-foreground hover:text-sidebar-foreground data-[active=true]:font-medium data-[active=true]:text-sidebar-primary"
                             )}
                           >
-                            <Link to={subItem.url}>
+                            <Link to={subItem.url} search={subItem.search}>
                               {logoUrl ? (
                                 <img
                                   src={logoUrl}
