@@ -10,8 +10,7 @@ export type ListColumnFlags = {
 export function listGridStyle(_flags: ListColumnFlags): CSSProperties {
   return {
     gridTemplateColumns: [
-      "36px",
-      "20px",
+      "auto",
       "minmax(180px, 2fr)",
       "minmax(100px, 1.2fr)",
       "108px",
@@ -23,7 +22,6 @@ export function listGridStyle(_flags: ListColumnFlags): CSSProperties {
 
 export type ListColumnKey =
   | "select"
-  | "drag"
   | "title"
   | "labels"
   | "priority"
@@ -33,7 +31,6 @@ export type ListColumnKey =
 export function listColumnLabels(): { key: ListColumnKey; label: string }[] {
   return [
     { key: "select", label: "" },
-    { key: "drag", label: "" },
     { key: "title", label: "Task" },
     { key: "labels", label: "Labels" },
     { key: "priority", label: "Priority" },

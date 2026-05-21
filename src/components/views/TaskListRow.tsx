@@ -124,29 +124,30 @@ export function TaskListRow({
         }
       }}
     >
-      {!isOverlay ? (
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={() => toggleTaskId(task.id)}
-          aria-label={`Select ${task.name}`}
-        />
-      ) : (
-        <span />
-      )}
-
-      <button
-        type="button"
-        className={cn(
-          "flex justify-center text-muted-foreground/40",
-          "opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing",
-          isOverlay ? "cursor-grabbing opacity-100" : "cursor-grab touch-none"
+      <div className="flex items-center gap-1">
+        {!isOverlay ? (
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => toggleTaskId(task.id)}
+            aria-label={`Select ${task.name}`}
+          />
+        ) : (
+          <span className="size-4 shrink-0" />
         )}
-        aria-label={`Drag ${task.name}`}
-        {...listeners}
-        {...attributes}
-      >
-        <GripVertical className="size-4" />
-      </button>
+        <button
+          type="button"
+          className={cn(
+            "flex shrink-0 justify-center text-muted-foreground/40",
+            "opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing",
+            isOverlay ? "cursor-grabbing opacity-100" : "cursor-grab touch-none"
+          )}
+          aria-label={`Drag ${task.name}`}
+          {...listeners}
+          {...attributes}
+        >
+          <GripVertical className="size-4" />
+        </button>
+      </div>
 
       <div className="min-w-0">
         <TaskViewLink
