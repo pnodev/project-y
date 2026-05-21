@@ -1,5 +1,6 @@
 import { AccountProfileSection } from "./AccountProfileSection";
 import { AccountSecuritySection } from "./AccountSecuritySection";
+import { AccountTwoFactorSection } from "./AccountTwoFactorSection";
 
 type UserSettingsFormProps = {
   user: {
@@ -16,6 +17,7 @@ export function UserSettingsForm({ user }: UserSettingsFormProps) {
     <div className="grid gap-8">
       <AccountProfileSection user={user} />
       <AccountSecuritySection />
+      <AccountTwoFactorSection />
     </div>
   );
 }

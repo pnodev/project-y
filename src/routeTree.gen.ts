@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TwoFactorRouteImport } from './routes/two-factor'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as SignedInRouteImport } from './routes/_signed-in'
@@ -33,6 +34,11 @@ import { Route as SignedInProjectsProjectIdSettingsRouteImport } from './routes/
 import { Route as SignedInSprintsSprintIdTasksTaskIdRouteImport } from './routes/_signed-in/sprints.$sprintId.tasks.$taskId'
 import { Route as SignedInProjectsProjectIdTasksTaskIdRouteImport } from './routes/_signed-in/projects.$projectId.tasks.$taskId'
 
+const TwoFactorRoute = TwoFactorRouteImport.update({
+  id: '/two-factor',
+  path: '/two-factor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -160,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/two-factor': typeof TwoFactorRoute
   '/dashboard': typeof SignedInDashboardRoute
   '/labels': typeof SignedInLabelsRoute
   '/statuses': typeof SignedInStatusesRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/two-factor': typeof TwoFactorRoute
   '/dashboard': typeof SignedInDashboardRoute
   '/labels': typeof SignedInLabelsRoute
   '/statuses': typeof SignedInStatusesRoute
@@ -210,6 +218,7 @@ export interface FileRoutesById {
   '/_signed-in': typeof SignedInRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/two-factor': typeof TwoFactorRoute
   '/_signed-in/dashboard': typeof SignedInDashboardRoute
   '/_signed-in/labels': typeof SignedInLabelsRoute
   '/_signed-in/statuses': typeof SignedInStatusesRoute
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/'
     | '/forgot-password'
     | '/reset-password'
+    | '/two-factor'
     | '/dashboard'
     | '/labels'
     | '/statuses'
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
     | '/'
     | '/forgot-password'
     | '/reset-password'
+    | '/two-factor'
     | '/dashboard'
     | '/labels'
     | '/statuses'
@@ -285,6 +296,7 @@ export interface FileRouteTypes {
     | '/_signed-in'
     | '/forgot-password'
     | '/reset-password'
+    | '/two-factor'
     | '/_signed-in/dashboard'
     | '/_signed-in/labels'
     | '/_signed-in/statuses'
@@ -311,6 +323,7 @@ export interface RootRouteChildren {
   SignedInRoute: typeof SignedInRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  TwoFactorRoute: typeof TwoFactorRoute
   ApiUploadthingRoute: typeof ApiUploadthingRoute
   SignInSplatRoute: typeof SignInSplatRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -318,6 +331,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/two-factor': {
+      id: '/two-factor'
+      path: '/two-factor'
+      fullPath: '/two-factor'
+      preLoaderRoute: typeof TwoFactorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -581,6 +601,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignedInRoute: SignedInRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  TwoFactorRoute: TwoFactorRoute,
   ApiUploadthingRoute: ApiUploadthingRoute,
   SignInSplatRoute: SignInSplatRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
