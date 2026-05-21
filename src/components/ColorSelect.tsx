@@ -5,6 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { cn } from "~/lib/utils";
 import { Color, COLOR_VALUES } from "~/db/schema";
 
 /** Small dot swatch for status/label indicators (flat UI). */
@@ -44,36 +45,56 @@ export const selectableColorClasses = {
   neutral: "bg-neutral-600",
 };
 
+function ColorOption({ color }: { color: Color }) {
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      <span
+        className={cn(
+          "size-4 shrink-0 rounded-sm",
+          selectableColorClasses[color]
+        )}
+        aria-hidden
+      />
+      <span className="truncate capitalize">{color}</span>
+    </span>
+  );
+}
+
 export function ColorSelect({
   name,
   value,
   triggerClassNames,
+  triggerId,
+  variant = "control",
 }: {
   name: string;
   value?: Color;
   triggerClassNames?: string;
+  triggerId?: string;
+  /** `field` — full-width settings form; `control` — compact inline/task UI */
+  variant?: "control" | "field";
 }) {
   return (
-    <>
-      <Select name={name} defaultValue={value}>
-        <SelectTrigger
-          className={triggerClassNames ? triggerClassNames : "w-[300px]"}
-        >
-          <SelectValue placeholder="Select a color" />
-        </SelectTrigger>
-        <SelectContent>
-          {COLOR_VALUES.map((color) => {
-            return (
-              <SelectItem key={color} value={color}>
-                <span
-                  className={`${selectableColorClasses[color]} inline-block w-4 h-4`}
-                ></span>
-                {color}
-              </SelectItem>
-            );
-          })}
-        </SelectContent>
-      </Select>
-    </>
+    <Select name={name} defaultValue={value}>
+      <SelectTrigger
+        id={triggerId}
+        variant={variant}
+        className={cn(
+          variant === "field" && "w-full",
+          variant === "control" && !triggerClassNames && "w-[300px]",
+          "[&_[data-slot=select-value]]:flex [&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:items-center [&_[data-slot=select-value]]:gap-2",
+          triggerClassNames
+        )}
+      >
+        <SelectValue placeholder="Select a color" />
+      </SelectTrigger>
+      <SelectContent position="popper">
+        {COLOR_VALUES.map((color) => (
+          <SelectItem key={color} value={color}>
+            <ColorOption color={color} />
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

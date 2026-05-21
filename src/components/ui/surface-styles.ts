@@ -28,6 +28,12 @@ export const formLabelClass =
 export const formFieldClass =
   "rounded-md border border-border bg-background text-base shadow-[var(--shadow-control)] transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm";
 
+/** Full-width selects in settings/forms (e.g. color picker). */
+export const formSelectTriggerClass = cn(
+  formFieldClass,
+  "flex h-9 w-full cursor-pointer items-center justify-between gap-2 px-3 py-2 text-sm whitespace-nowrap [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground"
+);
+
 export const controlTriggerClass =
   "flex w-fit cursor-pointer items-center justify-between gap-1.5 rounded-sm border border-border bg-muted/30 px-2 py-1 text-sm whitespace-nowrap shadow-none transition-colors outline-none hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[placeholder]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground";
 

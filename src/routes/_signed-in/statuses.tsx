@@ -1,8 +1,15 @@
 import { Outlet, createFileRoute } from "@tanstack/react-router";
 import { FormEvent, useCallback } from "react";
 import { ColorSelect, selectableColorClasses } from "~/components/ColorSelect";
+import { EntityConfigCreateFields } from "~/components/EntityConfigCreateFields";
+import { EntityList, EntityListItem } from "~/components/EntityList";
+import { PageLayout } from "~/components/PageLayout";
+import {
+  PageSection,
+  PageSectionContent,
+  PageSectionFooter,
+} from "~/components/PageSection";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import {
   useCreateStatusMutation,
   useDeleteStatusMutation,
@@ -15,8 +22,6 @@ import {
 } from "~/db/queries/statuses";
 import { Color, COLOR_VALUES } from "~/db/schema";
 import { Flag } from "lucide-react";
-import { EntityList, EntityListItem } from "~/components/EntityList";
-import { PageLayout } from "~/components/PageLayout";
 
 export const Route = createFileRoute("/_signed-in/statuses")({
   loader: async ({ context }) => {
@@ -74,47 +79,56 @@ function StatusesComponent() {
     await updateStatus({ id, name: data.name, color: data.color });
   };
 
+  const sortedStatuses = [...statusesQuery.data].sort(
+    (a, b) => a.order - b.order
+  );
+
   return (
-    <PageLayout title="Statuses">
-      <form
-        onSubmit={handleSubmit}
-        className="border p-2 flex flex-col items-start gap-2 mb-3"
-      >
-        <Input type="text" placeholder="Name" name="name" />
-        <ColorSelect name="color" />
-        <Button type="submit">Create</Button>
+    <PageLayout title="Statuses" contentClassName="gap-6">
+      <form onSubmit={handleSubmit}>
+        <PageSection title="Create status">
+          <PageSectionContent>
+            <EntityConfigCreateFields
+              nameInputId="create-status-name"
+              colorSelectId="create-status-color"
+              namePlaceholder="e.g. In progress"
+            />
+          </PageSectionContent>
+          <PageSectionFooter>
+            <Button type="submit">Create status</Button>
+          </PageSectionFooter>
+        </PageSection>
       </form>
-      <EntityList
-        items={[...statusesQuery.data]}
-        onReorder={async (data) => {
-          data.forEach((item, index) => {
-            item.order = index;
-          });
-          await updateMultipleStatuses(data);
-        }}
-      >
-        {[...statusesQuery.data]
-          .sort((a, b) => {
-            return a.order - b.order;
-          })
-          .map((status) => {
-            return (
+
+      <PageSection title="All statuses">
+        <PageSectionContent>
+          <EntityList
+            items={[...statusesQuery.data]}
+            onReorder={async (data) => {
+              data.forEach((item, index) => {
+                item.order = index;
+              });
+              await updateMultipleStatuses(data);
+            }}
+          >
+            {sortedStatuses.map((status) => (
               <EntityListItem
                 id={status.id}
                 key={status.id}
                 name={status.name}
                 description={`${status.taskCount} ${
-                  status.taskCount === 1 ? "Task" : "Tasks"
+                  status.taskCount === 1 ? "task" : "tasks"
                 } associated with this status`}
                 color={status.color}
                 handleDelete={() => handleDelete(status.id)}
                 handleUpdate={(data) => handleUpdate(status.id, data)}
                 icon={Flag}
               />
-            );
-          })}
-      </EntityList>
-      <hr />
+            ))}
+          </EntityList>
+        </PageSectionContent>
+      </PageSection>
+
       <Outlet />
     </PageLayout>
   );

@@ -6,6 +6,7 @@ import { cn } from "~/lib/utils";
 import { selectableColorClasses } from "../ColorSelect";
 import {
   controlTriggerClass,
+  formSelectTriggerClass,
   menuItemClass,
   floatingContentZClass,
   popoverSurfaceClass,
@@ -35,19 +36,24 @@ function SelectTrigger({
   className,
   size = "default",
   color,
+  variant = "control",
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
   size?: "sm" | "default";
   color?: keyof typeof selectableColorClasses;
+  variant?: "control" | "field";
 }) {
+  const isField = variant === "field";
+
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        controlTriggerClass,
-        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive data-[size=default]:h-9 data-[size=sm]:h-7 *:data-[slot=select-value]:line-clamp-1",
+        isField ? formSelectTriggerClass : controlTriggerClass,
+        "aria-invalid:ring-destructive/20 aria-invalid:border-destructive *:data-[slot=select-value]:line-clamp-1",
+        !isField && "data-[size=default]:h-9 data-[size=sm]:h-7",
         className,
         color
           ? `${selectableColorClasses[color]} border-transparent text-white hover:bg-transparent [&_svg:not([class*='text-'])]:text-white`
@@ -79,9 +85,10 @@ function SelectContent({
           popoverSurfaceClass,
           popoverSurfacePaddingClass,
           floatingContentZClass,
-          "pointer-events-auto max-h-(--radix-select-content-available-height) min-w-[8rem] overflow-x-hidden overflow-y-auto",
+          "pointer-events-auto max-h-(--radix-select-content-available-height) overflow-x-hidden overflow-y-auto",
           position === "popper" &&
-            "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+            "w-(--radix-select-trigger-width) min-w-(--radix-select-trigger-width) max-w-(--radix-select-trigger-width) data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+          position !== "popper" && "min-w-[8rem]",
           className
         )}
         position={position}
@@ -90,9 +97,8 @@ function SelectContent({
         <SelectScrollUpButton />
         <SelectPrimitive.Viewport
           className={cn(
-            popoverSurfacePaddingClass,
-            position === "popper" &&
-              "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"
+            "p-0",
+            position === "popper" && "w-full scroll-my-1"
           )}
         >
           {children}

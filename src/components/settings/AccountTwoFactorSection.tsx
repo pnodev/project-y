@@ -219,7 +219,7 @@ export function AccountTwoFactorSection() {
           </form>
         )}
       </PageSectionContent>
-      <PageSectionFooter align={twoFactorEnabled ? "start" : "end"}>
+      <PageSectionFooter>
         {twoFactorEnabled ? (
           <Button
             type="submit"
