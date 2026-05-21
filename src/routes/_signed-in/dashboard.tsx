@@ -1,12 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  AlertCircle,
-  Clock,
-  Folder,
-  FolderPlus,
-  ListTodo,
-  Plus,
-} from "lucide-react";
+import { Clock, Folder, FolderPlus, ListTodo, Plus } from "lucide-react";
 
 import { PageLayout } from "~/components/PageLayout";
 import {
@@ -15,13 +8,7 @@ import {
 } from "~/components/PageSection";
 import { SprintStatus } from "~/components/SprintStatus";
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { MetricTile, MetricTileGroup } from "~/components/ui/metric-tile";
 import {
   fetchDashboardStats,
   useDashboardStatsQuery,
@@ -66,29 +53,27 @@ function RouteComponent() {
         Welcome back, {displayName}.
       </p>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total tasks"
+      <MetricTileGroup>
+        <MetricTile
+          label="Total tasks"
           value={stats.totalTasks}
           description="Across all projects"
         />
-        <StatCard
-          title="Unassigned"
+        <MetricTile
+          label="Unassigned"
           value={stats.unassignedTasks}
           description="Tasks without a status"
         />
-        <StatCard
-          title="Overdue"
+        <MetricTile
+          label="Overdue"
           value={stats.overdueTasks}
           description="Past due date"
           highlight={stats.overdueTasks > 0}
         />
-        <StatCard
-          title="Active sprint"
+        <MetricTile
+          label="Active sprint"
           value={
-            stats.activeSprint
-              ? stats.activeSprintTaskCount
-              : "—"
+            stats.activeSprint ? stats.activeSprintTaskCount : "—"
           }
           description={
             stats.activeSprint
@@ -96,7 +81,7 @@ function RouteComponent() {
               : "No sprint in progress"
           }
         />
-      </div>
+      </MetricTileGroup>
 
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" size="sm" asChild>
@@ -207,41 +192,5 @@ function RouteComponent() {
         </PageSectionContent>
       </PageSection>
     </PageLayout>
-  );
-}
-
-function StatCard({
-  title,
-  value,
-  description,
-  highlight,
-}: {
-  title: string;
-  value: number | string;
-  description: string;
-  highlight?: boolean;
-}) {
-  return (
-    <Card className={cn(highlight && "border-destructive/50")}>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2">
-          {highlight ? (
-            <AlertCircle className="text-destructive size-4" />
-          ) : null}
-          {title}
-        </CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p
-          className={cn(
-            "text-3xl font-bold tabular-nums",
-            highlight && "text-destructive"
-          )}
-        >
-          {value}
-        </p>
-      </CardContent>
-    </Card>
   );
 }

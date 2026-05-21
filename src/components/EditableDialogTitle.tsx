@@ -2,6 +2,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useCallback, useRef } from "react";
 import { DialogTitle } from "./ui/dialog";
+import { cn } from "~/lib/utils";
 
 interface EditableDialogTitleProps {
   initialContent?: string;
@@ -98,7 +99,11 @@ export function EditableDialogTitle({
       <div>
         <EditorContent
           editor={editor}
-          className={`font-bold text-2xl leading-none tracking-tight cursor-text ${className}`}
+          className={cn(
+            "cursor-text [&_.ProseMirror]:outline-none",
+            "[&_h2]:m-0 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:leading-snug [&_h2]:tracking-normal",
+            className
+          )}
         />
       </div>
     </DialogTitle>

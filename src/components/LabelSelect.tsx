@@ -47,15 +47,20 @@ export function LabelSelect({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
+          size="sm"
           role="combobox"
           aria-expanded={open}
-          className="justify-between"
+          className="size-8 shrink-0 border-border/60 p-0 shadow-none"
         >
-          <Plus />
+          <Plus className="size-3.5" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0">
-        <Command>
+      <PopoverContent
+        align="start"
+        className="w-[220px] p-0"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
+        <Command shouldFilter>
           <CommandInput placeholder="Search item..." className="h-9" />
           <CommandList>
             <CommandEmpty>No item found.</CommandEmpty>
@@ -63,14 +68,15 @@ export function LabelSelect({
               {labels.map((label) => (
                 <CommandItem
                   key={label.id}
-                  value={label.id}
-                  onSelect={(currentValue) => {
-                    if (selectedLabels?.includes(currentValue)) {
-                      onSelect(
-                        selectedLabels.filter((v) => v !== currentValue)
-                      );
+                  variant="badge"
+                  value={label.name}
+                  keywords={[label.name]}
+                  onSelect={() => {
+                    const labelId = label.id;
+                    if (selectedLabels?.includes(labelId)) {
+                      onSelect(selectedLabels.filter((v) => v !== labelId));
                     } else {
-                      onSelect([...selectedLabels, currentValue]);
+                      onSelect([...selectedLabels, labelId]);
                     }
                   }}
                 >

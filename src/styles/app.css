@@ -43,9 +43,15 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --shadow-surface: var(--shadow-surface);
+  --shadow-overlay: var(--shadow-overlay);
+  --shadow-card: var(--shadow-card);
 }
 :root {
   --radius: 0.65rem;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.05), 0 1px 4px rgb(0 0 0 / 0.04);
+  --shadow-surface: 0 8px 30px rgb(0 0 0 / 0.08);
+  --shadow-overlay: 0 16px 48px rgb(0 0 0 / 0.12);
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
@@ -80,6 +86,8 @@
 }
 
 .dark {
+  --shadow-surface: 0 8px 30px rgb(0 0 0 / 0.35);
+  --shadow-overlay: 0 16px 48px rgb(0 0 0 / 0.45);
   --background: oklch(0.141 0.005 285.823);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.21 0.006 285.885);
@@ -158,6 +166,15 @@
     transparent 0
   );
   background-size: 24px 24px;
+}
+
+/* Popper wraps popover in an extra node; select portals content directly. */
+[data-slot="dialog-floating-portal"] [data-radix-popper-content-wrapper],
+[data-slot="dialog-floating-portal"] [data-slot="popover-content"],
+[data-slot="dialog-floating-portal"] [data-slot="select-content"],
+[data-slot="dialog-floating-portal"] [data-slot="dropdown-menu-content"],
+[data-slot="dialog-floating-portal"] [data-slot="command"] {
+  pointer-events: auto;
 }
 
 @plugin 'tailwind-scrollbar';

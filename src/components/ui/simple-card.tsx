@@ -1,16 +1,14 @@
 import * as React from "react";
 import { cn } from "~/lib/utils";
+import { Card } from "./card";
 
 export const SimpleCard = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div
+  <Card
     ref={ref}
-    className={cn(
-      "rounded-sm border bg-card text-card-foreground p-2 flex flex-col gap-1 shadow",
-      className
-    )}
+    className={cn("flex flex-col gap-1 p-2", className)}
     {...props}
   />
 ));

@@ -9,7 +9,7 @@ export function PageSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className={cn("border rounded-md shadow-sm", className)}>
+    <section className={cn("rounded-lg border border-border/60", className)}>
       {title ? <h2 className="text-xl font-bold px-6 pt-5">{title}</h2> : null}
       {children}
     </section>

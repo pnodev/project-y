@@ -28,7 +28,7 @@ export function Comments({
     <div
       ref={containerRef}
       className={cn(
-        "overflow-y-auto h-px pb-2 gap-1.5 flex flex-col -mr-6 -ml-6 pl-6 pr-6 border-b",
+        "overflow-y-auto h-px pb-2 gap-1.5 flex flex-col -mr-6 -ml-6 pl-6 pr-6 border-b border-border/60",
         className
       )}
     >
@@ -53,7 +53,7 @@ export function Comments({
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
               <span className="font-medium text-xs">{comment.author}</span>
-              <span className="grow flex flex-col items-end text-xs text-gray-500">
+              <span className="text-muted-foreground flex grow flex-col items-end text-xs">
                 {new Intl.DateTimeFormat("de-DE", {
                   day: "2-digit",
                   month: "2-digit",
@@ -63,7 +63,7 @@ export function Comments({
                 }).format(comment.createdAt)}
               </span>
             </CardHeader>
-            <CardContent className="px-4 text-sm text-gray-800 pb-4 pt-2">
+            <CardContent className="text-foreground px-4 pb-4 pt-2 text-sm">
               <div dangerouslySetInnerHTML={{ __html: formattedContent }} />
             </CardContent>
           </Card>

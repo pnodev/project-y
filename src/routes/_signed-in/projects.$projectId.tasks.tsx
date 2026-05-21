@@ -57,6 +57,8 @@ function Home() {
       title={
         projectQuery.data?.name ? `${projectQuery.data.name} - Tasks` : "Tasks"
       }
+      headerClassName="px-4"
+      contentClassName="gap-2 px-4 pb-2"
       actions={
         <div className="flex gap-2">
           <TaskViewSortControls />

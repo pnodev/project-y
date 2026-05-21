@@ -42,6 +42,7 @@ import {
   ClockFading,
   Ellipsis,
   Flag,
+  Tags,
   Trash2,
   Users,
 } from "lucide-react";
@@ -234,7 +235,7 @@ export function OpenTask({
         ref={dialogContentRef}
         size="large"
         isLoading={isDeleting}
-        className="p-0 gap-0"
+        className="gap-0 rounded-md p-0"
         onDragEnter={handleTaskPanelDragEnter}
         onDragLeave={handleTaskPanelDragLeave}
         onDragOver={handleTaskPanelDragOver}
@@ -247,7 +248,7 @@ export function OpenTask({
         }}
       >
         <DialogDescription className="sr-only">{task?.name}</DialogDescription>
-        <DialogHeader className="border-b px-6 py-3">
+        <DialogHeader className="border-b border-border/60 px-6 py-3">
           <div className="flex justify-between items-center pr-6">
             <Breadcrumb>
               <BreadcrumbList>
@@ -265,7 +266,7 @@ export function OpenTask({
             </Breadcrumb>
             <DropdownMenu>
               <DropdownMenuTrigger className="cursor-pointer">
-                <Ellipsis className="h-6 w-6 text-gray-500" />
+                <Ellipsis className="text-muted-foreground size-6" />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuLabel>Task Options</DropdownMenuLabel>
@@ -315,8 +316,15 @@ export function OpenTask({
                 onBlur={handleUpdateTitle}
                 onDebouncedUpdate={handleUpdateTitle}
               />
-              <Labels task={task} labels={labels} />
               <DetailList>
+                <DetailListItem
+                  label="Labels"
+                  icon={Tags}
+                  align="start"
+                  className="col-span-2"
+                >
+                  <Labels task={task} labels={labels} />
+                </DetailListItem>
                 <DetailListItem label="Status" icon={CircleDashed}>
                   <StatusSwitch
                     status={currentStatus}
@@ -365,6 +373,8 @@ export function OpenTask({
                 </DetailListItem>
                 <DetailListItem label="Assigned to" icon={Users}>
                   <UserSelect
+                    variant="bare"
+                    size="sm"
                     isAssigning={isAssigningUser}
                     selectedUserIds={task.assignees.map(
                       (assignee) => assignee.userId
@@ -395,18 +405,18 @@ export function OpenTask({
                     isAssigning={isAssigningSprint}
                     selectedSprintId={task.sprintId || undefined}
                     onValueChange={async (sprintId) => {
-                      if (!task || !sprintId) return;
+                      if (!task) return;
                       setIsAssigningSprint(true);
                       await updateTask({
                         id: task.id,
-                        sprintId,
+                        sprintId: sprintId ?? null,
                       });
                       setIsAssigningSprint(false);
                     }}
                   />
                 </DetailListItem>
               </DetailList>
-              <hr />
+              <div className="border-t border-border/60" role="separator" />
               <RichtextEditor
                 content={task?.description || ""}
                 onUpdate={(data) => {
@@ -458,7 +468,7 @@ export function OpenTask({
                 </TabsContent>
               </Tabs>
             </div>
-            <div className="col-span-4 bg-gray-100 border-l py-4 px-6 flex flex-col gap-4 h-[calc(100vh-6rem-51px)]">
+            <div className="col-span-4 flex h-[calc(100vh-6rem-51px)] flex-col gap-4 border-l border-border/60 bg-muted/30 py-4 px-6">
               <TaskLabel>Conversation</TaskLabel>
               <Comments
                 className="grow"

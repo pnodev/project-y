@@ -30,14 +30,14 @@ const MenuBar = () => {
   }
 
   return (
-    <div className="h-12 flex flex-wrap gap-1 bg-gray-100 p-1">
+    <div className="flex h-12 flex-wrap gap-1 border-b border-border/60 bg-muted/40 p-1">
       <MenuBarButton
         onClick={() => editor.chain().focus().toggleBold().run()}
         disabled={!editor.can().chain().focus().toggleBold().run()}
         className={
           editor.isActive("bold")
-            ? "bg-gray-200 text-black hover:bg-gray-300"
-            : "bg-transparent text-gray-900 hover:bg-gray-300"
+            ? "bg-muted text-foreground hover:bg-muted/80"
+            : "bg-transparent text-foreground hover:bg-muted/60"
         }
       >
         <BoldIcon />
@@ -47,8 +47,8 @@ const MenuBar = () => {
         disabled={!editor.can().chain().focus().toggleItalic().run()}
         className={
           editor.isActive("italic")
-            ? "bg-gray-200 text-black hover:bg-gray-300"
-            : "bg-transparent text-gray-900 hover:bg-gray-300"
+            ? "bg-muted text-foreground hover:bg-muted/80"
+            : "bg-transparent text-foreground hover:bg-muted/60"
         }
       >
         <ItalicIcon />
@@ -58,8 +58,8 @@ const MenuBar = () => {
         disabled={!editor.can().chain().focus().toggleStrike().run()}
         className={
           editor.isActive("strike")
-            ? "bg-gray-200 text-black hover:bg-gray-300"
-            : "bg-transparent text-gray-900 hover:bg-gray-300"
+            ? "bg-muted text-foreground hover:bg-muted/80"
+            : "bg-transparent text-foreground hover:bg-muted/60"
         }
       >
         <StrikethroughIcon />
@@ -68,8 +68,8 @@ const MenuBar = () => {
         onClick={() => editor.chain().focus().setParagraph().run()}
         className={
           editor.isActive("paragraph")
-            ? "bg-gray-200 text-black hover:bg-gray-300"
-            : "bg-transparent text-gray-900 hover:bg-gray-300"
+            ? "bg-muted text-foreground hover:bg-muted/80"
+            : "bg-transparent text-foreground hover:bg-muted/60"
         }
       >
         p
@@ -78,8 +78,8 @@ const MenuBar = () => {
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
         className={
           editor.isActive("heading", { level: 1 })
-            ? "bg-gray-200 text-black hover:bg-gray-300"
-            : "bg-transparent text-gray-900 hover:bg-gray-300"
+            ? "bg-muted text-foreground hover:bg-muted/80"
+            : "bg-transparent text-foreground hover:bg-muted/60"
         }
       >
         H1
@@ -88,8 +88,8 @@ const MenuBar = () => {
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         className={
           editor.isActive("heading", { level: 2 })
-            ? "bg-gray-200 text-black hover:bg-gray-300"
-            : "bg-transparent text-gray-900 hover:bg-gray-300"
+            ? "bg-muted text-foreground hover:bg-muted/80"
+            : "bg-transparent text-foreground hover:bg-muted/60"
         }
       >
         H2
@@ -98,8 +98,8 @@ const MenuBar = () => {
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
         className={
           editor.isActive("heading", { level: 3 })
-            ? "bg-gray-200 text-black hover:bg-gray-300"
-            : "bg-transparent text-gray-900 hover:bg-gray-300"
+            ? "bg-muted text-foreground hover:bg-muted/80"
+            : "bg-transparent text-foreground hover:bg-muted/60"
         }
       >
         H3
@@ -108,8 +108,8 @@ const MenuBar = () => {
         onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
         className={
           editor.isActive("heading", { level: 4 })
-            ? "bg-gray-200 text-black hover:bg-gray-300"
-            : "bg-transparent text-gray-900 hover:bg-gray-300"
+            ? "bg-muted text-foreground hover:bg-muted/80"
+            : "bg-transparent text-foreground hover:bg-muted/60"
         }
       >
         H4
@@ -118,8 +118,8 @@ const MenuBar = () => {
         onClick={() => editor.chain().focus().toggleHeading({ level: 5 }).run()}
         className={
           editor.isActive("heading", { level: 5 })
-            ? "bg-gray-200 text-black hover:bg-gray-300"
-            : "bg-transparent text-gray-900 hover:bg-gray-300"
+            ? "bg-muted text-foreground hover:bg-muted/80"
+            : "bg-transparent text-foreground hover:bg-muted/60"
         }
       >
         H5
@@ -128,8 +128,8 @@ const MenuBar = () => {
         onClick={() => editor.chain().focus().toggleHeading({ level: 6 }).run()}
         className={
           editor.isActive("heading", { level: 6 })
-            ? "bg-gray-200 text-black hover:bg-gray-300"
-            : "bg-transparent text-gray-900 hover:bg-gray-300"
+            ? "bg-muted text-foreground hover:bg-muted/80"
+            : "bg-transparent text-foreground hover:bg-muted/60"
         }
       >
         H6
@@ -138,8 +138,8 @@ const MenuBar = () => {
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         className={
           editor.isActive("bulletList")
-            ? "bg-gray-200 text-black hover:bg-gray-300"
-            : "bg-transparent text-gray-900 hover:bg-gray-300"
+            ? "bg-muted text-foreground hover:bg-muted/80"
+            : "bg-transparent text-foreground hover:bg-muted/60"
         }
       >
         <List />
@@ -148,8 +148,8 @@ const MenuBar = () => {
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         className={
           editor.isActive("orderedList")
-            ? "bg-gray-200 text-black hover:bg-gray-300"
-            : "bg-transparent text-gray-900 hover:bg-gray-300"
+            ? "bg-muted text-foreground hover:bg-muted/80"
+            : "bg-transparent text-foreground hover:bg-muted/60"
         }
       >
         <ListOrderedIcon />
@@ -158,8 +158,8 @@ const MenuBar = () => {
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
         className={
           editor.isActive("codeBlock")
-            ? "bg-gray-200 text-black hover:bg-gray-300"
-            : "bg-transparent text-gray-900 hover:bg-gray-300"
+            ? "bg-muted text-foreground hover:bg-muted/80"
+            : "bg-transparent text-foreground hover:bg-muted/60"
         }
       >
         <CodeIcon />
@@ -168,8 +168,8 @@ const MenuBar = () => {
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
         className={
           editor.isActive("blockquote")
-            ? "bg-gray-200 text-black hover:bg-gray-300"
-            : "bg-transparent text-gray-900 hover:bg-gray-300"
+            ? "bg-muted text-foreground hover:bg-muted/80"
+            : "bg-transparent text-foreground hover:bg-muted/60"
         }
       >
         <QuoteIcon />
@@ -177,14 +177,14 @@ const MenuBar = () => {
       <MenuBarButton
         onClick={() => editor.chain().focus().undo().run()}
         disabled={!editor.can().chain().focus().undo().run()}
-        className="bg-transparent text-gray-900 hover:bg-gray-300"
+        className="bg-transparent text-foreground hover:bg-muted/60"
       >
         <Undo />
       </MenuBarButton>
       <MenuBarButton
         onClick={() => editor.chain().focus().redo().run()}
         disabled={!editor.can().chain().focus().redo().run()}
-        className="bg-transparent text-gray-900 hover:bg-gray-300"
+        className="bg-transparent text-foreground hover:bg-muted/60"
       >
         <Redo />
       </MenuBarButton>
@@ -200,7 +200,7 @@ const MenuBarButton = ({ children, className, ...props }: ButtonProps) => {
     <button
       className={cn(
         className,
-        "h-10 w-10 rounded px-2 py-1.5 [&_svg]:size-4 flex justify-center items-center cursor-pointer"
+        "flex h-10 w-10 cursor-pointer items-center justify-center rounded-sm px-2 py-1.5 [&_svg]:size-4"
       )}
       {...props}
     >
@@ -231,7 +231,7 @@ export const RichtextEditor = ({
   onUpdate: ({ text, plainText }: { text: string; plainText: string }) => void;
 }) => {
   return (
-    <div className="richtext-editor min-h-[220px] w-full rounded-md border border-input bg-transparent text-base">
+    <div className="richtext-editor relative z-0 min-h-[220px] w-full rounded-md border border-border/60 bg-background text-base shadow-none">
       <EditorProvider
         key={content}
         slotBefore={<MenuBar />}

@@ -155,7 +155,7 @@ export function TaskListRow({
           projectId={task.projectId}
           sprintId={task.sprintId}
           taskId={task.id}
-          className="block truncate font-medium text-foreground hover:underline"
+          className="block truncate font-semibold leading-[1.3] tracking-[-0.01em] text-foreground hover:underline"
           onSelectClick={(event) =>
             handleTaskSelectClick(task.id, orderedTaskIds, {
               shiftKey: event.shiftKey,

@@ -52,6 +52,8 @@ function RouteComponent() {
 
   return (
     <PageLayout
+      headerClassName="px-4"
+      contentClassName="gap-2 px-4 pb-2"
       title={
         sprintQuery.data?.name ? `${sprintQuery.data.name} - Tasks` : "Tasks"
       }

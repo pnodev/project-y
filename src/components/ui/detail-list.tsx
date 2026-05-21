@@ -1,16 +1,17 @@
 import { LucideIcon } from "lucide-react";
-import { TaskLabel } from "./TaskLabel";
 import { cn } from "~/lib/utils";
 import { createContext, useContext } from "react";
 
-const SizeContext = createContext("large");
+const SizeContext = createContext<"small" | "large">("large");
 
 export const DetailList = ({
   children,
   size = "large",
+  className,
 }: {
   children: React.ReactNode;
   size?: "small" | "large";
+  className?: string;
 }) => {
   return (
     <SizeContext.Provider value={size}>
@@ -18,8 +19,9 @@ export const DetailList = ({
         className={cn(
           "grid",
           size === "large"
-            ? "grid-cols-2 gap-x-2 gap-y-3"
-            : "grid-cols-1 gap-x-1 gap-y-1.5"
+            ? "grid-cols-2 gap-x-3 gap-y-1.5"
+            : "grid-cols-1 gap-x-1 gap-y-1",
+          className
         )}
       >
         {children}
@@ -32,42 +34,61 @@ export const DetailListItem = ({
   children,
   label,
   icon: Icon,
-  statusColor = "text-gray-400",
+  statusColor = "text-muted-foreground",
   className,
+  align = "center",
 }: {
   children?: React.ReactNode;
   label: string;
   icon?: LucideIcon | string;
   statusColor?: string;
   className?: string;
+  /** Align icon/label to top when value wraps (e.g. label chips). */
+  align?: "center" | "start";
 }) => {
   const size = useContext(SizeContext);
+  const labelWidth = size === "large" ? "w-[5.25rem]" : "w-[4rem]";
+
   return (
-    <div className={cn("grid grid-cols-12 gap-1 items-center", className)}>
-      <dt className={cn(size === "large" ? "col-span-4" : "col-span-4")}>
+    <div
+      className={cn(
+        "flex min-w-0 gap-2",
+        align === "start" ? "items-start" : "items-center",
+        className
+      )}
+    >
+      <dt
+        className={cn(
+          "flex shrink-0 gap-1",
+          align === "start" ? "items-start pt-2" : "items-center",
+          labelWidth,
+          statusColor
+        )}
+      >
         {Icon && typeof Icon !== "string" ? (
-          <Icon className={cn("inline mr-2 size-3.5", statusColor)} />
+          <Icon className="size-3.5 shrink-0 opacity-70" />
         ) : null}
         {typeof Icon === "string" && Icon ? (
-          <img src={Icon} className={cn("inline mr-2 size-3.5", statusColor)} alt="" />
+          <img src={Icon} className="size-3.5 shrink-0 opacity-70" alt="" />
         ) : null}
-        <TaskLabel
+        <span
           className={cn(
-            statusColor !== "text-gray-400" ? statusColor : "",
-            size === "large" ? "text-sm" : "text-xs"
+            "text-muted-foreground truncate",
+            size === "large" ? "text-xs" : "text-[11px]"
           )}
         >
           {label}
-        </TaskLabel>
+        </span>
       </dt>
       <dd
         className={cn(
-          "text-gray-700",
-          size === "large" ? "text-sm col-span-8" : "text-xs col-span-8",
-          statusColor !== "text-gray-400" ? statusColor : ""
+          "min-w-0 flex-1 text-sm text-foreground",
+          statusColor !== "text-muted-foreground" && statusColor
         )}
       >
-        {children ? children : <span className="text-gray-500">Empty</span>}
+        {children ?? (
+          <span className="text-muted-foreground text-xs">Empty</span>
+        )}
       </dd>
     </div>
   );
