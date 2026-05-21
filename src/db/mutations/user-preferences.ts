@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createServerFn, useServerFn } from "@tanstack/react-start";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { useCallback } from "react";
 import { db } from "~/db";
 import {
@@ -20,29 +20,28 @@ const updateUserPreferences = createServerFn({ method: "POST" })
     const session = await requireSessionFromRequest();
     const userId = session.user.id;
 
-    const existing = await db.query.userPreferences.findFirst({
+    const now = new Date();
+
+    await db
+      .insert(userPreferences)
+      .values({
+        userId,
+        preferences: userPreferencesSchema.parse(data),
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: userPreferences.userId,
+        set: {
+          preferences: sql`coalesce(${userPreferences.preferences}, '{}'::jsonb) || ${JSON.stringify(data)}::jsonb`,
+          updatedAt: now,
+        },
+      });
+
+    const row = await db.query.userPreferences.findFirst({
       where: eq(userPreferences.userId, userId),
     });
 
-    const merged = userPreferencesSchema.parse({
-      ...(existing?.preferences ?? {}),
-      ...data,
-    });
-
-    if (existing) {
-      await db
-        .update(userPreferences)
-        .set({ preferences: merged, updatedAt: new Date() })
-        .where(eq(userPreferences.userId, userId));
-    } else {
-      await db.insert(userPreferences).values({
-        userId,
-        preferences: merged,
-        updatedAt: new Date(),
-      });
-    }
-
-    return merged;
+    return userPreferencesSchema.parse(row?.preferences ?? data);
   });
 
 export function useUpdateUserPreferencesMutation() {

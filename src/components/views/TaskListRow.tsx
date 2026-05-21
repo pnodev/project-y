@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useStore } from "@tanstack/react-store";
 import { ClockFading, Folder } from "lucide-react";
 import { PrioritySwitch } from "~/components/PrioritySwitch";
@@ -48,6 +49,13 @@ export function TaskListRow({
   updateTask: (task: UpdateTask) => Promise<void>;
 }) {
   const usersQuery = useUsersQuery();
+  const usersById = useMemo(() => {
+    const map = new Map<string, NonNullable<typeof usersQuery.data>[number]>();
+    for (const user of usersQuery.data ?? []) {
+      map.set(user.id, user);
+    }
+    return map;
+  }, [usersQuery.data]);
   const isSelected = useStore(TaskViewStore, (state) =>
     state.selectedTaskIds.includes(task.id)
   );
@@ -155,9 +163,7 @@ export function TaskListRow({
       <td className="w-28 px-2 py-2">
         <AvatarList>
           {task.assignees.map((taskAssignee) => {
-            const assignee = usersQuery.data?.find(
-              (u) => u.id === taskAssignee.userId
-            );
+            const assignee = usersById.get(taskAssignee.userId);
             if (!assignee) return null;
             return (
               <Avatar key={assignee.id} className="size-6">

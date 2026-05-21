@@ -17,15 +17,17 @@ export function groupTasksByStatus(
     byStatusId.set(status.id, []);
   }
 
+  const knownStatusIds = new Set(statuses.map((s) => s.id));
+
   for (const task of tasks) {
     if (!task.statusId) {
       unassigned.push(task);
       continue;
     }
-    const bucket = byStatusId.get(task.statusId);
-    if (bucket) {
-      bucket.push(task);
+    if (!byStatusId.has(task.statusId)) {
+      byStatusId.set(task.statusId, []);
     }
+    byStatusId.get(task.statusId)!.push(task);
   }
 
   const sections: TaskStatusSection[] = [];
@@ -40,6 +42,16 @@ export function groupTasksByStatus(
       status,
       tasks: byStatusId.get(status.id) ?? [],
     });
+  }
+
+  for (const [statusId, bucketTasks] of byStatusId) {
+    if (!knownStatusIds.has(statusId) && bucketTasks.length > 0) {
+      sections.push({
+        key: `unknown-${statusId}`,
+        status: null,
+        tasks: bucketTasks,
+      });
+    }
   }
 
   return sections;

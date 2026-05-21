@@ -13,6 +13,8 @@ export function TaskViewSwitcher() {
   const updatePreferences = useUpdateUserPreferencesMutation();
 
   const setViewMode = (mode: TaskViewMode) => {
+    if (mode === viewMode) return;
+
     const previous = viewMode;
     TaskViewStore.setState((state) => ({ ...state, viewMode: mode }));
     void updatePreferences({ taskViewMode: mode }).catch(() => {
@@ -29,6 +31,7 @@ export function TaskViewSwitcher() {
         size="sm"
         variant={viewMode === "board" ? "default" : "outline"}
         title="Board view"
+        aria-label="Board view"
         onClick={() => setViewMode("board")}
       >
         <LayoutGrid />
@@ -37,6 +40,7 @@ export function TaskViewSwitcher() {
         size="sm"
         variant={viewMode === "list" ? "default" : "outline"}
         title="List view"
+        aria-label="List view"
         onClick={() => setViewMode("list")}
       >
         <List />

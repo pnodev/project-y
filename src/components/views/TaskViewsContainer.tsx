@@ -27,9 +27,14 @@ export function TaskViewsContainer(props: TaskViewProps) {
     (state) => state.selectedTaskIds
   );
 
+  const selectedIdSet = useMemo(
+    () => new Set(selectedTaskIds),
+    [selectedTaskIds]
+  );
+
   const selectedTasks = useMemo(
-    () => props.tasks.filter((t) => selectedTaskIds.includes(t.id)),
-    [props.tasks, selectedTaskIds]
+    () => props.tasks.filter((t) => selectedIdSet.has(t.id)),
+    [props.tasks, selectedIdSet]
   );
 
   const flatTaskIds = useMemo(() => {

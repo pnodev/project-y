@@ -35,6 +35,9 @@ export function TaskViewSortControls() {
           title={
             sortDirection === "asc" ? "Sort Ascending" : "Sort Descending"
           }
+          aria-label={
+            sortDirection === "asc" ? "Sort ascending" : "Sort descending"
+          }
           onClick={() =>
             TaskViewStore.setState((state) => ({
               ...state,

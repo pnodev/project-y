@@ -7,10 +7,7 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { cn } from "~/lib/utils";
 import type { Status } from "~/db/schema";
 import { TaskListRow } from "./TaskListRow";
-import {
-  flattenSectionTaskIds,
-  groupTasksByStatus,
-} from "./task-view-grouping";
+import { groupTasksByStatus } from "./task-view-grouping";
 import { sortTasks } from "./task-sort";
 import { TaskViewStore } from "./task-view-store";
 import type { TaskViewProps } from "./task-view-types";
@@ -50,29 +47,26 @@ export function ListView({
   const showProject = location === "sprint" || location === "all";
   const showSprint = location === "project" || location === "all";
 
-  const sections = useMemo(
-    () => groupTasksByStatus(tasks, statuses),
-    [tasks, statuses]
-  );
+  const sectionsWithSortedTasks = useMemo(() => {
+    return groupTasksByStatus(tasks, statuses).map((section) => ({
+      ...section,
+      sortedTasks: sortTasks(section.tasks, sortBy, sortDirection),
+    }));
+  }, [tasks, statuses, sortBy, sortDirection]);
 
   const orderedTaskIds = useMemo(
-    () =>
-      flattenSectionTaskIds(sections, (columnTasks) =>
-        sortTasks(columnTasks, sortBy, sortDirection)
-      ),
-    [sections, sortBy, sortDirection]
+    () => sectionsWithSortedTasks.flatMap((s) => s.sortedTasks.map((t) => t.id)),
+    [sectionsWithSortedTasks]
   );
-
-  const sortColumn = (columnTasks: typeof tasks) =>
-    sortTasks(columnTasks, sortBy, sortDirection);
 
   return (
     <ScrollArea className="h-full min-h-0">
       <div className="flex flex-col gap-6 pb-3 pr-3">
-        {sections.map((section) => (
+        {sectionsWithSortedTasks.map((section) => (
           <ListSection
             key={section.key}
             section={section}
+            sortedTasks={section.sortedTasks}
             statuses={statuses}
             orderedTaskIds={orderedTaskIds}
             location={location}
@@ -80,7 +74,6 @@ export function ListView({
             showSprint={showSprint}
             projectId={projectId}
             sprintId={sprintId}
-            sortColumn={sortColumn}
             updateTask={updateTask}
           />
         ))}
@@ -89,8 +82,15 @@ export function ListView({
   );
 }
 
+function sectionTitle(section: ReturnType<typeof groupTasksByStatus>[number]) {
+  if (section.status) return section.status.name;
+  if (section.key.startsWith("unknown-")) return "Unknown status";
+  return "Unassigned";
+}
+
 function ListSection({
   section,
+  sortedTasks,
   statuses,
   orderedTaskIds,
   location,
@@ -98,10 +98,10 @@ function ListSection({
   showSprint,
   projectId,
   sprintId,
-  sortColumn,
   updateTask,
 }: {
   section: ReturnType<typeof groupTasksByStatus>[number];
+  sortedTasks: TaskViewProps["tasks"];
   statuses: Status[];
   orderedTaskIds: string[];
   location: TaskViewProps["location"];
@@ -109,13 +109,12 @@ function ListSection({
   showSprint: boolean;
   projectId?: string;
   sprintId?: string;
-  sortColumn: (tasks: TaskViewProps["tasks"]) => TaskViewProps["tasks"];
   updateTask: TaskViewProps["updateTask"];
 }) {
   const status = section.status;
-  const sortedTasks = sortColumn(section.tasks);
+  const isUnknown = section.key.startsWith("unknown-");
 
-  if (sortedTasks.length === 0 && !status) {
+  if (sortedTasks.length === 0 && !status && !isUnknown) {
     return null;
   }
 
@@ -136,7 +135,7 @@ function ListSection({
               ]
             )}
           />
-          {status ? status.name : "Unassigned"}
+          {sectionTitle(section)}
           <span className="text-xs font-normal text-muted-foreground">
             ({sortedTasks.length})
           </span>
