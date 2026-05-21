@@ -11,7 +11,7 @@ import { requireSessionFromRequest } from "~/lib/session";
 import { db } from "..";
 import { getOwningIdentity } from "~/lib/utils";
 import { v7 as uuid } from "uuid";
-import { sync } from "./sync";
+import { sync, syncDashboard } from "./sync";
 import { useCallback } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -22,15 +22,17 @@ const createSprint = createServerFn({ method: "POST" })
   .inputValidator(insertSprintValidator)
   .handler(async ({ data }) => {
     const session = await requireSessionFromRequest();
+    const owner = getOwningIdentity(session);
 
     await db.insert(sprints).values({
       ...data,
       id: uuid(),
-      owner: getOwningIdentity(session),
+      owner,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
     await sync("sprint-create", { data });
+    await syncDashboard(owner, { data });
   });
 
 export function useCreateSprintMutation() {
@@ -57,6 +59,7 @@ const updateSprint = createServerFn({ method: "POST" })
   .inputValidator(updateSprintValidator)
   .handler(async ({ data }) => {
     const session = await requireSessionFromRequest();
+    const owner = getOwningIdentity(session);
 
     await db
       .update(sprints)
@@ -64,10 +67,9 @@ const updateSprint = createServerFn({ method: "POST" })
         ...data,
         updatedAt: new Date(),
       })
-      .where(
-        and(eq(sprints.id, data.id), eq(sprints.owner, getOwningIdentity(session)))
-      );
+      .where(and(eq(sprints.id, data.id), eq(sprints.owner, owner)));
     await sync("sprint-update-" + data.id, { data });
+    await syncDashboard(owner, { data });
   });
 
 export function useUpdateSprintMutation() {
@@ -97,27 +99,19 @@ export const deleteSprint = createServerFn({ method: "POST" })
   .inputValidator(z.object({ sprintId: z.string() }))
   .handler(async ({ data: { sprintId } }) => {
     const session = await requireSessionFromRequest();
+    const owner = getOwningIdentity(session);
 
     // remove all tasks from the sprint
     await db
       .update(tasks)
       .set({ sprintId: null })
-      .where(
-        and(
-          eq(tasks.sprintId, sprintId),
-          eq(tasks.owner, getOwningIdentity(session))
-        )
-      );
+      .where(and(eq(tasks.sprintId, sprintId), eq(tasks.owner, owner)));
 
     await db
       .delete(sprints)
-      .where(
-        and(
-          eq(sprints.id, sprintId),
-          eq(sprints.owner, getOwningIdentity(session))
-        )
-      );
+      .where(and(eq(sprints.id, sprintId), eq(sprints.owner, owner)));
     await sync("sprint-delete", { data: { id: sprintId } });
+    await syncDashboard(owner, { data: { id: sprintId } });
   });
 
 export function useDeleteSprintMutation() {

@@ -14,6 +14,8 @@ import { sprintQueryOptions } from "~/db/queries/sprints";
 import { sprintsQueryOptions } from "~/db/queries/sprints";
 import { statusesQueryOptions } from "~/db/queries/statuses";
 import { taskQueryOptions } from "~/db/queries/tasks";
+import { dashboardStatsQueryOptions } from "~/db/queries/dashboard";
+import type { DashboardStats } from "~/db/queries/dashboard";
 import {
   allTasksQueryOptions,
   tasksForSprintQueryOptions,
@@ -108,4 +110,11 @@ export function hydrateSidebarCache(
 ) {
   queryClient.setQueryData(projectsQueryOptions().queryKey, data.projects);
   queryClient.setQueryData(sprintsQueryOptions().queryKey, data.sprints);
+}
+
+export function hydrateDashboardCache(
+  queryClient: QueryClient,
+  data: DashboardStats
+) {
+  queryClient.setQueryData(dashboardStatsQueryOptions().queryKey, data);
 }

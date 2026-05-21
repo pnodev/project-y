@@ -1,6 +1,7 @@
 import "@tanstack/react-start/server-only";
 
 import { env } from "~/env";
+import { ownerDashboardTopic } from "~/lib/owner-dashboard-topic";
 
 const DEFAULT_SYNC_ENGINE_URL = "https://sync-connect.pno.dev";
 
@@ -18,6 +19,10 @@ function resolveSyncEngineUrl(): string {
   }
 
   return configured;
+}
+
+export async function syncDashboard(owner: string, payload: unknown = {}) {
+  await sync(ownerDashboardTopic(owner), payload);
 }
 
 export async function sync(topic: string, payload: unknown) {
