@@ -6,50 +6,30 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import TaskCard, { TaskCardComponent } from "~/components/TaskCard";
 import TaskColumn from "~/components/TaskColumn";
-import { Label, Priority, Status, TaskWithRelations, UpdateTask } from "~/db/schema";
 import { useStore } from "@tanstack/react-store";
-import { BoardViewStore } from "./board-view-store";
-import { registerBoardSelectionKeyboard } from "./board-selection";
-import { BatchTaskToolbar } from "~/components/BatchTaskToolbar";
-import { cn } from "~/lib/utils";
-
-type TaskViewProps = {
-  tasks: TaskWithRelations[];
-  projectId?: string;
-  sprintId?: string;
-  statuses: Status[];
-  labels: Label[];
-  location: "project" | "sprint" | "all";
-  updateTask: (task: UpdateTask) => Promise<void>;
-};
+import { sortTasks } from "./task-sort";
+import { TaskViewStore } from "./task-view-store";
+import type { TaskViewProps } from "./task-view-types";
 
 export const BoardView = ({
   tasks,
   projectId,
   sprintId,
   statuses,
-  labels,
   location,
   updateTask,
 }: TaskViewProps) => {
-  const priorityOrder: Priority[] = ["low", "medium", "high", "critical"];
-  const [activeTask, setActiveTask] = useState<TaskWithRelations | null>(null);
-  const selectedTaskIds = useStore(
-    BoardViewStore,
-    (state) => state.selectedTaskIds
+  const [activeTask, setActiveTask] = useState(
+    () => null as TaskViewProps["tasks"][number] | null
   );
 
-  const selectedTasks = useMemo(
-    () => tasks.filter((t) => selectedTaskIds.includes(t.id)),
-    [tasks, selectedTaskIds]
-  );
-
-  useEffect(
-    () => registerBoardSelectionKeyboard(() => tasks.map((t) => t.id)),
-    [tasks]
+  const sortBy = useStore(TaskViewStore, (state) => state.sortBy);
+  const sortDirection = useStore(
+    TaskViewStore,
+    (state) => state.sortDirection
   );
 
   const handleDrop = (e: DragEndEvent) => {
@@ -65,6 +45,7 @@ export const BoardView = ({
       sprintId: task.sprintId ?? undefined,
     }).catch(() => undefined);
   };
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -73,67 +54,36 @@ export const BoardView = ({
     })
   );
 
-  const tasksByStatus = tasks.reduce((acc, task) => {
-    if (!task.statusId) {
-      return {
-        ...acc,
-        unassigned: [...(acc.unassigned || []), task],
-      };
-    }
+  const tasksByStatus = useMemo(() => {
+    return tasks.reduce(
+      (acc, task) => {
+        if (!task.statusId) {
+          return {
+            ...acc,
+            unassigned: [...(acc.unassigned || []), task],
+          };
+        }
 
-    const status = statuses.find((status) => status.id === task.statusId);
-    if (!status) return acc;
+        const status = statuses.find((s) => s.id === task.statusId);
+        if (!status) return acc;
 
-    return {
-      ...acc,
-      [status.id]: [...(acc[status.id] || []), task].sort(
-        (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
-      ),
-    };
-  }, {} as Record<string, TaskWithRelations[]>);
+        return {
+          ...acc,
+          [status.id]: [...(acc[status.id] || []), task],
+        };
+      },
+      {} as Record<string, TaskViewProps["tasks"]>
+    );
+  }, [tasks, statuses]);
 
-  const sortBy = useStore(BoardViewStore, (state) => state.sortBy);
-  const sortDirection = useStore(
-    BoardViewStore,
-    (state) => state.sortDirection
-  );
-  const taskComparator = (): ((
-    a: TaskWithRelations,
-    b: TaskWithRelations
-  ) => number) => {
-    const directionMultiplier = sortDirection === "asc" ? 1 : -1;
-
-    switch (sortBy) {
-      case "due":
-        return (a, b) =>
-          directionMultiplier *
-          ((a.deadline?.getTime() || 0) - (b.deadline?.getTime() || 0));
-      case "created":
-        return (a, b) =>
-          directionMultiplier * (a.createdAt.getTime() - b.createdAt.getTime());
-      case "updated":
-        return (a, b) =>
-          directionMultiplier * (a.updatedAt.getTime() - b.updatedAt.getTime());
-      default:
-        return () => 0; // No sorting
-    }
-  };
-
-  const sortColumnTasks = (columnTasks: TaskWithRelations[]) => {
-    return [...columnTasks]
-      .sort(
-        (a, b) =>
-          priorityOrder.indexOf(b.priority) - priorityOrder.indexOf(a.priority)
-      )
-      .sort(taskComparator());
-  };
+  const sortColumnTasks = (columnTasks: TaskViewProps["tasks"]) =>
+    sortTasks(columnTasks, sortBy, sortDirection);
 
   const showProject = location === "sprint" || location === "all";
   const showSprint = location === "project" || location === "all";
-  const taskLinkTo =
-    location === "all" ? ("all" as const) : undefined;
+  const taskLinkTo = location === "all" ? ("all" as const) : undefined;
 
-  const renderColumnCards = (columnTasks: TaskWithRelations[]) => {
+  const renderColumnCards = (columnTasks: TaskViewProps["tasks"]) => {
     const sorted = sortColumnTasks(columnTasks);
     const columnTaskIds = sorted.map((t) => t.id);
     return sorted.map((task) => (
@@ -158,61 +108,41 @@ export const BoardView = ({
         if (task) setActiveTask(task);
       }}
     >
-      <div className="flex flex-col gap-2 h-full min-h-0">
-        {selectedTasks.length > 0 ? (
-          <BatchTaskToolbar
-            selectedTasks={selectedTasks}
-            statuses={statuses}
-            labels={labels}
-            location={location}
-          />
+      <div className="flex gap-3 h-full overflow-x-auto pb-1">
+        {tasksByStatus["unassigned"]?.length ? (
+          <TaskColumn
+            projectId={projectId}
+            sprintId={sprintId}
+            key="unassigned"
+            numberOfTasks={tasksByStatus["unassigned"]?.length || 0}
+          >
+            {renderColumnCards(tasksByStatus["unassigned"])}
+          </TaskColumn>
         ) : null}
-        {/* Setting the height to 1px is a hack to make flex-grow work */}
-        <div
-          className={cn(
-            "h-px grow min-h-0",
-            selectedTasks.length > 0 ? "pb-16" : "pb-3"
-          )}
-        >
-          <div className="flex gap-3 h-full">
-            {tasksByStatus["unassigned"] ? (
-              <TaskColumn
-                projectId={projectId}
-                sprintId={sprintId}
-                key="unassigned"
-                numberOfTasks={tasksByStatus["unassigned"]?.length || 0}
-              >
-                {renderColumnCards(tasksByStatus["unassigned"])}
-              </TaskColumn>
-            ) : null}
-            {[...statuses].map((status) => {
-              return (
-                <TaskColumn
-                  projectId={projectId}
-                  sprintId={sprintId}
-                  key={status.id}
-                  status={status}
-                  numberOfTasks={tasksByStatus[status.id]?.length || 0}
-                >
-                  {tasksByStatus[status.id]
-                    ? renderColumnCards(tasksByStatus[status.id])
-                    : null}
-                </TaskColumn>
-              );
-            })}
-            <div className="min-w-3 h-px"></div>
-          </div>
-        </div>
+        {[...statuses].map((status) => (
+          <TaskColumn
+            projectId={projectId}
+            sprintId={sprintId}
+            key={status.id}
+            status={status}
+            numberOfTasks={tasksByStatus[status.id]?.length || 0}
+          >
+            {tasksByStatus[status.id]
+              ? renderColumnCards(tasksByStatus[status.id])
+              : null}
+          </TaskColumn>
+        ))}
+        <div className="min-w-3 h-px shrink-0" />
       </div>
       <DragOverlay dropAnimation={null}>
-        {activeTask && (
+        {activeTask ? (
           <TaskCardComponent
             task={activeTask}
             showSprint={showSprint}
             showProject={showProject}
             taskLinkTo={taskLinkTo}
           />
-        )}
+        ) : null}
       </DragOverlay>
     </DndContext>
   );

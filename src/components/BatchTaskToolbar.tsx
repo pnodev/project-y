@@ -30,7 +30,7 @@ import {
   useBatchSetLabelsForTasksMutation,
   useBatchUpdateTasksMutation,
 } from "~/db/mutations/tasks";
-import { clearTaskSelectionState } from "./views/board-selection";
+import { clearTaskSelectionState } from "./views/task-selection";
 import { useSprintsQuery } from "~/db/queries/sprints";
 import { useUsersQuery } from "~/db/queries/users";
 

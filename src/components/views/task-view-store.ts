@@ -1,7 +1,10 @@
 import { Store } from "@tanstack/react-store";
+import type { TaskViewMode } from "~/db/schema";
 
 export type SortByType = "due" | "created" | "updated";
-type BoardViewState = {
+
+type TaskViewState = {
+  viewMode: TaskViewMode;
   quickCreateOpenFor: null | string;
   sortBy: SortByType;
   sortDirection: "asc" | "desc";
@@ -10,7 +13,8 @@ type BoardViewState = {
   hoveredTaskId: string | null;
 };
 
-export const BoardViewStore = new Store<BoardViewState>({
+export const TaskViewStore = new Store<TaskViewState>({
+  viewMode: "board",
   quickCreateOpenFor: null,
   sortBy: "due",
   sortDirection: "desc",
@@ -20,7 +24,7 @@ export const BoardViewStore = new Store<BoardViewState>({
 });
 
 export function toggleTaskId(id: string) {
-  BoardViewStore.setState((state) => {
+  TaskViewStore.setState((state) => {
     const isSelected = state.selectedTaskIds.includes(id);
     const selectedTaskIds = isSelected
       ? state.selectedTaskIds.filter((taskId) => taskId !== id)
@@ -38,7 +42,7 @@ export function toggleTaskId(id: string) {
 }
 
 export function clearTaskSelection() {
-  BoardViewStore.setState((state) => ({
+  TaskViewStore.setState((state) => ({
     ...state,
     selectedTaskIds: [],
     selectionAnchorId: null,
@@ -46,7 +50,7 @@ export function clearTaskSelection() {
 }
 
 export function setSelectedTaskIds(ids: string[]) {
-  BoardViewStore.setState((state) => ({
+  TaskViewStore.setState((state) => ({
     ...state,
     selectedTaskIds: ids,
     selectionAnchorId: ids[0] ?? null,

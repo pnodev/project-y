@@ -13,6 +13,7 @@ import {
   primaryKey,
   index,
   boolean,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -253,6 +254,31 @@ export const commentRelations = relations(comments, ({ one }) => ({
     references: [tasks.id],
   }),
 }));
+
+export const TASK_VIEW_MODES = ["board", "list"] as const;
+export type TaskViewMode = (typeof TASK_VIEW_MODES)[number];
+
+export const userPreferencesSchema = z.object({
+  taskViewMode: z.enum(TASK_VIEW_MODES).default("board"),
+});
+export type UserPreferences = z.infer<typeof userPreferencesSchema>;
+
+export const updateUserPreferencesValidator = userPreferencesSchema
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one preference must be provided",
+  });
+
+export const userPreferences = createTable("user_preferences", {
+  userId: text("user_id").primaryKey(),
+  preferences: jsonb("preferences")
+    .$type<UserPreferences>()
+    .notNull()
+    .default({ taskViewMode: "board" }),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
 
 export const labelsToTasks = createTable(
   "labels_to_tasks",
