@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import {
   PageSection,
   PageSectionContent,
+  PageSectionDescription,
+  PageSectionFooter,
 } from "~/components/PageSection";
 import { TotpCodeForm } from "~/components/auth/totp-code-form";
 import { Button } from "~/components/ui/button";
@@ -120,12 +122,12 @@ export function AccountTwoFactorSection() {
   if (setup) {
     return (
       <PageSection title="Two-factor authentication">
-        <PageSectionContent className="space-y-4 max-w-md">
-          <p className="text-sm text-gray-600">
+        <PageSectionContent className="max-w-md space-y-4">
+          <PageSectionDescription>
             Scan this setup key in your authenticator app (Google Authenticator,
             Authy, 1Password, etc.), then enter the 6-digit code to finish.
-          </p>
-          <div className="rounded-md border bg-muted/40 p-3">
+          </PageSectionDescription>
+          <div className="rounded-md border border-border/60 bg-muted/40 p-3">
             <p className="break-all font-mono text-xs">{setup.totpURI}</p>
           </div>
           <TotpCodeForm
@@ -133,6 +135,8 @@ export function AccountTwoFactorSection() {
             onSubmit={handleVerifySetup}
             submitLabel="Confirm authenticator"
           />
+        </PageSectionContent>
+        <PageSectionFooter align="start">
           <Button
             type="button"
             variant="ghost"
@@ -140,7 +144,7 @@ export function AccountTwoFactorSection() {
           >
             Cancel setup
           </Button>
-        </PageSectionContent>
+        </PageSectionFooter>
       </PageSection>
     );
   }
@@ -148,36 +152,38 @@ export function AccountTwoFactorSection() {
   if (savedBackupCodes && savedBackupCodes.length > 0) {
     return (
       <PageSection title="Two-factor authentication">
-        <PageSectionContent className="space-y-4 max-w-md">
-          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-3">
+        <PageSectionContent className="max-w-md space-y-4">
+          <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
             Save these backup codes in a secure place. Each code can be used once
             if you lose access to your authenticator.
           </p>
-          <ul className="rounded-md border font-mono text-sm divide-y">
+          <ul className="divide-y rounded-md border border-border/60 font-mono text-sm">
             {savedBackupCodes.map((code) => (
               <li key={code} className="px-3 py-2">
                 {code}
               </li>
             ))}
           </ul>
+        </PageSectionContent>
+        <PageSectionFooter>
           <Button type="button" onClick={() => setSavedBackupCodes(null)}>
             I saved my backup codes
           </Button>
-        </PageSectionContent>
+        </PageSectionFooter>
       </PageSection>
     );
   }
 
   return (
     <PageSection title="Two-factor authentication">
-      <PageSectionContent className="space-y-4 max-w-md">
-        <p className="text-sm text-gray-500">
+      <PageSectionContent className="max-w-md space-y-4">
+        <PageSectionDescription>
           Add an extra layer of security with an authenticator app. Optional but
           recommended for your account.
-        </p>
+        </PageSectionDescription>
 
         {twoFactorEnabled ? (
-          <form onSubmit={handleDisable} className="space-y-4">
+          <form id="disable-2fa-form" onSubmit={handleDisable} className="space-y-4">
             <p className="text-sm font-medium text-green-700">
               Two-factor authentication is enabled.
             </p>
@@ -194,16 +200,9 @@ export function AccountTwoFactorSection() {
                 placeholder="Leave empty if you only use Google"
               />
             </div>
-            <Button
-              type="submit"
-              variant="destructive"
-              loading={isDisabling}
-            >
-              Disable two-factor authentication
-            </Button>
           </form>
         ) : (
-          <form onSubmit={handleStartEnable} className="space-y-4">
+          <form id="enable-2fa-form" onSubmit={handleStartEnable} className="space-y-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="enable-2fa-password">
                 Password (if you use email sign-in)
@@ -217,12 +216,25 @@ export function AccountTwoFactorSection() {
                 placeholder="Leave empty if you only use Google"
               />
             </div>
-            <Button type="submit" loading={isEnabling}>
-              Set up authenticator app
-            </Button>
           </form>
         )}
       </PageSectionContent>
+      <PageSectionFooter align={twoFactorEnabled ? "start" : "end"}>
+        {twoFactorEnabled ? (
+          <Button
+            type="submit"
+            form="disable-2fa-form"
+            variant="destructive"
+            loading={isDisabling}
+          >
+            Disable two-factor authentication
+          </Button>
+        ) : (
+          <Button type="submit" form="enable-2fa-form" loading={isEnabling}>
+            Set up authenticator app
+          </Button>
+        )}
+      </PageSectionFooter>
     </PageSection>
   );
 }

@@ -5,8 +5,8 @@ import { useState } from "react";
 import { ConfirmDialog } from "~/components/ConfirmDialog";
 import { EndlessLoadingSpinner } from "~/components/EndlessLoadingSpinner";
 import { ProjectFormEdit } from "~/components/forms/ProjectForm";
+import { DangerZoneSection } from "~/components/DangerZoneSection";
 import { PageLayout } from "~/components/PageLayout";
-import { PageSection, PageSectionContent } from "~/components/PageSection";
 import { Button } from "~/components/ui/button";
 import {
   useDeleteProjectMutation,
@@ -45,7 +45,7 @@ function RouteComponent() {
         hasBackdrop
         className="fixed z-50"
       />
-      <div className="grid gap-8">
+      <div className="grid gap-6">
         <ProjectFormEdit
           project={projectQuery.data}
           onSubmit={async (data) => {
@@ -53,9 +53,9 @@ function RouteComponent() {
           }}
         />
 
-        <PageSection title="Danger Zone">
-          <PageSectionContent>
-            <p className="mb-6">The following actions are not reversible.</p>
+        <DangerZoneSection
+          description="The following actions are not reversible."
+          action={
             <ConfirmDialog
               title="Confirm Deletion"
               description={`Are you sure you want to delete this project? This action cannot be undone.`}
@@ -71,10 +71,10 @@ function RouteComponent() {
               confirmText="Delete"
               cancelText="Cancel"
             >
-              <Button variant={"destructive"}>Delete Project</Button>
+              <Button variant="destructive">Delete Project</Button>
             </ConfirmDialog>
-          </PageSectionContent>
-        </PageSection>
+          }
+        />
       </div>
     </PageLayout>
   );

@@ -8,6 +8,11 @@ import { Tag } from "lucide-react";
 import { EntityList, EntityListItem } from "~/components/EntityList";
 import { PageLayout } from "~/components/PageLayout";
 import {
+  PageSection,
+  PageSectionContent,
+  PageSectionFooter,
+} from "~/components/PageSection";
+import {
   labelsWithCountsQueryOptions,
   useLabelsWithCountsQuery,
 } from "~/db/queries/labels";
@@ -76,13 +81,16 @@ function LabelsComponent() {
 
   return (
     <PageLayout title="Labels">
-      <form
-        onSubmit={handleSubmit}
-        className="border p-2 flex flex-col items-start gap-2 mb-3"
-      >
-        <Input type="text" placeholder="Name" name="name" />
-        <ColorSelect name="color" />
-        <Button type="submit">Create</Button>
+      <form onSubmit={handleSubmit} className="mb-6">
+        <PageSection title="Create label">
+          <PageSectionContent className="max-w-md space-y-4">
+            <Input type="text" placeholder="Name" name="name" />
+            <ColorSelect name="color" />
+          </PageSectionContent>
+          <PageSectionFooter>
+            <Button type="submit">Create label</Button>
+          </PageSectionFooter>
+        </PageSection>
       </form>
       <EntityList
         items={[...labelsQuery.data]}

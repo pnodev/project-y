@@ -122,7 +122,7 @@ function RouteComponent() {
         </Button>
       }
     >
-      <div className="grid gap-8">
+      <div className="grid gap-6">
         <OrganizationSettingsForm
           organization={{
             id: fullOrg.id,

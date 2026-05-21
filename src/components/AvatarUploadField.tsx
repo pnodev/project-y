@@ -1,5 +1,6 @@
 import { UploadButton } from "~/utils/uploadthing";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { formLabelClass } from "~/components/ui/surface-styles";
 
 type AvatarUploadFieldProps = {
   imageUrl?: string | null;
@@ -21,7 +22,7 @@ export function AvatarUploadField({
         <AvatarFallback className="text-lg">{fallback}</AvatarFallback>
       </Avatar>
       <div className="flex min-w-0 flex-col gap-1">
-        <p className="text-sm font-medium">{label}</p>
+        <p className={formLabelClass}>{label}</p>
         <UploadButton
           endpoint="avatarUploader"
           config={{ mode: "auto" }}

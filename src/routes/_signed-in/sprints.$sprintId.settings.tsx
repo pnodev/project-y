@@ -7,8 +7,8 @@ import { useState } from "react";
 import { ConfirmDialog } from "~/components/ConfirmDialog";
 import { EndlessLoadingSpinner } from "~/components/EndlessLoadingSpinner";
 import { SprintFormEdit } from "~/components/forms/SprintForm";
+import { DangerZoneSection } from "~/components/DangerZoneSection";
 import { PageLayout } from "~/components/PageLayout";
-import { PageSection, PageSectionContent } from "~/components/PageSection";
 import { Button } from "~/components/ui/button";
 import {
   useDeleteSprintMutation,
@@ -41,9 +41,9 @@ function RouteComponent() {
         }}
       />
 
-      <PageSection title="Danger Zone">
-        <PageSectionContent>
-          <p className="mb-6">The following actions are not reversible.</p>
+      <DangerZoneSection
+        description="The following actions are not reversible."
+        action={
           <ConfirmDialog
             title="Confirm Deletion"
             description={`Are you sure you want to delete this sprint? This action cannot be undone.`}
@@ -59,12 +59,12 @@ function RouteComponent() {
             confirmText="Delete"
             cancelText="Cancel"
           >
-            <Button variant={"destructive"} disabled={isDeleting}>
+            <Button variant="destructive" disabled={isDeleting}>
               Delete Sprint
             </Button>
           </ConfirmDialog>
-        </PageSectionContent>
-      </PageSection>
+        }
+      />
     </PageLayout>
   );
 }

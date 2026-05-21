@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import {
   PageSection,
   PageSectionContent,
+  PageSectionDescription,
+  PageSectionFooter,
 } from "~/components/PageSection";
 import { Button } from "~/components/ui/button";
 import {
@@ -101,66 +103,79 @@ export function AccountSecuritySection() {
   return (
     <>
       {hasCredential ? (
-        <PageSection title="Password">
-          <PageSectionContent>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onPasswordSubmit)}
-                className="space-y-4 max-w-md"
-              >
-                <FormField
-                  control={form.control}
-                  name="currentPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Current password</FormLabel>
-                      <FormControl>
-                        <Input type="password" autoComplete="current-password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="newPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>New password</FormLabel>
-                      <FormControl>
-                        <Input type="password" autoComplete="new-password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm new password</FormLabel>
-                      <FormControl>
-                        <Input type="password" autoComplete="new-password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onPasswordSubmit)}>
+            <PageSection title="Password">
+              <PageSectionContent>
+                <div className="max-w-md space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Current password</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            autoComplete="current-password"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>New password</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            autoComplete="new-password"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm new password</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            autoComplete="new-password"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </PageSectionContent>
+              <PageSectionFooter>
                 <Button type="submit" loading={form.formState.isSubmitting}>
                   Change password
                 </Button>
-              </form>
-            </Form>
-          </PageSectionContent>
-        </PageSection>
+              </PageSectionFooter>
+            </PageSection>
+          </form>
+        </Form>
       ) : (
         <PageSection title="Password">
           <PageSectionContent>
-            <p className="text-sm text-gray-500">
-              You sign in with a connected account only. Link email/password sign-in
-              is not available from this screen.
-            </p>
+            <PageSectionDescription>
+              You sign in with a connected account only. Link email/password
+              sign-in is not available from this screen.
+            </PageSectionDescription>
           </PageSectionContent>
         </PageSection>
       )}
@@ -168,22 +183,26 @@ export function AccountSecuritySection() {
       <PageSection title="Connected accounts">
         <PageSectionContent className="space-y-4">
           {isLoadingAccounts ? (
-            <p className="text-sm text-gray-500">Loading accounts…</p>
+            <PageSectionDescription>Loading accounts…</PageSectionDescription>
           ) : (
             <ul className="space-y-3">
               {accounts.map((account) => (
                 <li
                   key={account.id}
-                  className="flex items-center justify-between gap-4 rounded-md border px-4 py-3"
+                  className="flex items-center justify-between gap-4 rounded-md border border-border/60 px-4 py-3"
                 >
                   <div>
                     <p className="text-sm font-medium capitalize">
                       {account.providerId}
                     </p>
                     {account.providerId !== "credential" ? (
-                      <p className="text-xs text-gray-500">{account.accountId}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {account.accountId}
+                      </p>
                     ) : (
-                      <p className="text-xs text-gray-500">Email and password</p>
+                      <p className="text-xs text-muted-foreground">
+                        Email and password
+                      </p>
                     )}
                   </div>
                   {account.providerId !== "credential" && canUnlink ? (
@@ -200,12 +219,18 @@ export function AccountSecuritySection() {
               ))}
             </ul>
           )}
-          {!hasGoogle ? (
-            <Button type="button" variant="outline" onClick={() => void handleLinkGoogle()}>
+        </PageSectionContent>
+        {!hasGoogle && !isLoadingAccounts ? (
+          <PageSectionFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void handleLinkGoogle()}
+            >
               Link Google account
             </Button>
-          ) : null}
-        </PageSectionContent>
+          </PageSectionFooter>
+        ) : null}
       </PageSection>
     </>
   );

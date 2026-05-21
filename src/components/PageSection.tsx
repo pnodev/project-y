@@ -1,18 +1,64 @@
+import { createContext, useContext } from "react";
 import { cn } from "~/lib/utils";
+import {
+  formCardClass,
+  formCardContentClass,
+  formCardDangerClass,
+  formCardDangerFooterClass,
+  formCardDangerTitleClass,
+  formCardDescriptionClass,
+  formCardFooterClass,
+  formCardHeaderClass,
+  formCardTitleClass,
+} from "./ui/surface-styles";
+
+const PageSectionVariantContext = createContext<"default" | "danger">(
+  "default"
+);
 
 export function PageSection({
   title,
   children,
   className,
+  variant = "default",
 }: React.ComponentProps<"section"> & {
   title?: string;
   children: React.ReactNode;
+  variant?: "default" | "danger";
 }) {
   return (
-    <section className={cn("rounded-lg border border-border/60", className)}>
-      {title ? <h2 className="text-xl font-bold px-6 pt-5">{title}</h2> : null}
-      {children}
-    </section>
+    <PageSectionVariantContext.Provider value={variant}>
+      <section
+        className={cn(
+          variant === "danger" ? formCardDangerClass : formCardClass,
+          className
+        )}
+      >
+        {title ? (
+          <div className={formCardHeaderClass}>
+            <h2
+              className={cn(
+                variant === "danger"
+                  ? formCardDangerTitleClass
+                  : formCardTitleClass
+              )}
+            >
+              {title}
+            </h2>
+          </div>
+        ) : null}
+        {children}
+      </section>
+    </PageSectionVariantContext.Provider>
+  );
+}
+
+export function PageSectionDescription({
+  children,
+  className,
+}: React.ComponentProps<"p">) {
+  return (
+    <p className={cn(formCardDescriptionClass, className)}>{children}</p>
   );
 }
 
@@ -23,22 +69,25 @@ export function PageSectionContent({
   children: React.ReactNode;
 }) {
   return (
-    <div className={cn("p-6 [&_p]:text-sm [&_p]:text-gray-500", className)}>
-      {children}
-    </div>
+    <div className={cn(formCardContentClass, className)}>{children}</div>
   );
 }
 
 export function PageSectionFooter({
   children,
   className,
+  align = "end",
 }: React.ComponentProps<"footer"> & {
   children: React.ReactNode;
+  align?: "start" | "end";
 }) {
+  const isDanger = useContext(PageSectionVariantContext) === "danger";
+
   return (
     <footer
       className={cn(
-        "bg-gray-100 border-t px-6 py-3 flex justify-end",
+        isDanger ? formCardDangerFooterClass : formCardFooterClass,
+        align === "start" ? "justify-start" : "justify-end",
         className
       )}
     >
