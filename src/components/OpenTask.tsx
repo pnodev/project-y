@@ -355,7 +355,7 @@ export function OpenTask({
                       if (!task) return;
                       handleUpdateTask({
                         id: task.id,
-                        deadline: date,
+                        deadline: date ?? null,
                         projectId: task.projectId,
                       });
                     }}
