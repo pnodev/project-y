@@ -21,5 +21,5 @@
 
 hr {
   outline: none;
-  border-color: var(--color-gray-200);
+  border-color: var(--border);
 }

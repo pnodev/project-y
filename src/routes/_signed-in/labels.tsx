@@ -1,12 +1,17 @@
 import { Outlet, createFileRoute } from "@tanstack/react-router";
 import { FormEvent, useCallback } from "react";
 import { ColorSelect, selectableColorClasses } from "~/components/ColorSelect";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Color, COLOR_VALUES } from "~/db/schema";
-import { Tag } from "lucide-react";
+import { EntityConfigCreateFields } from "~/components/EntityConfigCreateFields";
 import { EntityList, EntityListItem } from "~/components/EntityList";
 import { PageLayout } from "~/components/PageLayout";
+import {
+  PageSection,
+  PageSectionContent,
+  PageSectionFooter,
+} from "~/components/PageSection";
+import { Button } from "~/components/ui/button";
+import { Color, COLOR_VALUES } from "~/db/schema";
+import { Tag } from "lucide-react";
 import {
   labelsWithCountsQueryOptions,
   useLabelsWithCountsQuery,
@@ -74,47 +79,54 @@ function LabelsComponent() {
     await updateLabel({ id, name: data.name, color: data.color });
   };
 
+  const sortedLabels = [...labelsQuery.data].sort((a, b) => a.order - b.order);
+
   return (
-    <PageLayout title="Labels">
-      <form
-        onSubmit={handleSubmit}
-        className="border p-2 flex flex-col items-start gap-2 mb-3"
-      >
-        <Input type="text" placeholder="Name" name="name" />
-        <ColorSelect name="color" />
-        <Button type="submit">Create</Button>
+    <PageLayout title="Labels" contentClassName="gap-6">
+      <form onSubmit={handleSubmit}>
+        <PageSection title="Create label">
+          <PageSectionContent>
+            <EntityConfigCreateFields
+              nameInputId="create-label-name"
+              colorSelectId="create-label-color"
+              namePlaceholder="e.g. Bug"
+            />
+          </PageSectionContent>
+          <PageSectionFooter>
+            <Button type="submit">Create label</Button>
+          </PageSectionFooter>
+        </PageSection>
       </form>
-      <EntityList
-        items={[...labelsQuery.data]}
-        onReorder={async (data) => {
-          data.forEach((item, index) => {
-            item.order = index;
-          });
-          await updateMultipleLabels(data);
-        }}
-      >
-        {[...labelsQuery.data]
-          .sort((a, b) => {
-            return a.order - b.order;
-          })
-          .map((label) => {
-            return (
+
+      <PageSection title="All labels">
+        <PageSectionContent>
+          <EntityList
+            items={[...labelsQuery.data]}
+            onReorder={async (data) => {
+              data.forEach((item, index) => {
+                item.order = index;
+              });
+              await updateMultipleLabels(data);
+            }}
+          >
+            {sortedLabels.map((label) => (
               <EntityListItem
                 id={label.id}
                 key={label.id}
                 name={label.name}
                 description={`${label.taskCount} ${
-                  label.taskCount === 1 ? "Task" : "Tasks"
+                  label.taskCount === 1 ? "task" : "tasks"
                 } associated with this label`}
                 color={label.color}
                 handleDelete={() => handleDelete(label.id)}
                 handleUpdate={(data) => handleUpdate(label.id, data)}
                 icon={Tag}
               />
-            );
-          })}
-      </EntityList>
-      <hr />
+            ))}
+          </EntityList>
+        </PageSectionContent>
+      </PageSection>
+
       <Outlet />
     </PageLayout>
   );

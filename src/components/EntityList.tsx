@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
+import { Label } from "./ui/label";
 import {
   EllipsisVertical,
   LucideIcon,
@@ -63,7 +64,7 @@ export function EntityList({ children, items, onReorder }: EntityListProps) {
   }
 
   return (
-    <ClientOnly fallback={<ul className="grid gap-2">{children}</ul>}>
+    <ClientOnly fallback={<ul className="grid gap-3">{children}</ul>}>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -73,7 +74,7 @@ export function EntityList({ children, items, onReorder }: EntityListProps) {
           items={sortedItems}
           strategy={verticalListSortingStrategy}
         >
-          <ul className="grid gap-2">{children}</ul>
+          <ul className="grid gap-3">{children}</ul>
         </SortableContext>
       </DndContext>
     </ClientOnly>
@@ -103,6 +104,8 @@ export function EntityListItem({
   const [isClient, setIsClient] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const nameInputId = `entity-${id}-name`;
+  const colorSelectId = `entity-${id}-color`;
 
   useEffect(() => {
     setIsClient(true);
@@ -140,105 +143,116 @@ export function EntityListItem({
     [handleUpdate]
   );
 
+  const colorClass =
+    selectableColorClasses[color as keyof typeof selectableColorClasses];
+
   return (
     <li
       ref={isClient ? setNodeRef : undefined}
       style={style}
       className={cn(
-        "col-span-1 flex rounded-md shadow-xs",
-        isClient && isDragging && "opacity-50 z-50"
+        "overflow-hidden rounded-lg border border-border/60 bg-card shadow-card",
+        isClient && isDragging && "z-50 opacity-50"
       )}
     >
-      <div
-        className={cn(
-          "flex w-16 shrink-0 rounded-l-md text-white justify-center items-center",
-          selectableColorClasses[color as keyof typeof selectableColorClasses]
-        )}
-      >
-        {props.icon ? <props.icon /> : null}
-      </div>
-      <div className="flex flex-1 items-center justify-between truncate rounded-r-md border-t border-r border-b border-gray-200 bg-white">
-        <div className="flex-1 truncate px-4 py-2 text-sm">
-          {isEditing ? (
-            <form
-              onSubmit={handleUpdateCallback}
-              className="grid grid-cols-12 gap-2"
-            >
-              <Input
-                name="name"
-                placeholder="Name"
-                defaultValue={name}
-                className="col-span-6"
-              />
-              <ColorSelect
-                name="color"
-                triggerClassNames="w-full col-span-4"
-                value={color as keyof typeof selectableColorClasses}
-              />
-              <Button
-                size={"sm"}
-                variant="secondary"
-                type="reset"
-                onClick={() => setIsEditing(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                loading={isSaving}
-                hideContentWhenLoading={true}
-                size={"sm"}
-                type="submit"
-              >
-                Save
-              </Button>
-            </form>
-          ) : (
-            <>
-              <p className="font-medium text-gray-900">{name}</p>
-              <p className="text-gray-500">{description}</p>
-            </>
+      <div className="flex min-w-0">
+        <div
+          className={cn(
+            "flex w-14 shrink-0 items-center justify-center text-white",
+            colorClass
           )}
+        >
+          {props.icon ? <props.icon className="size-5" /> : null}
         </div>
-        <div className="shrink-0 pr-2 flex items-center gap-1">
+        <div className="flex min-w-0 flex-1 items-center justify-between gap-2 py-2 pr-2 pl-4">
+          <div className="min-w-0 flex-1">
+            {isEditing ? (
+              <form onSubmit={handleUpdateCallback} className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-1.5">
+                    <Label htmlFor={nameInputId}>Name</Label>
+                    <Input
+                      id={nameInputId}
+                      name="name"
+                      defaultValue={name}
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor={colorSelectId}>Color</Label>
+                    <ColorSelect
+                      name="color"
+                      variant="field"
+                      triggerId={colorSelectId}
+                      value={color as keyof typeof selectableColorClasses}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    loading={isSaving}
+                    hideContentWhenLoading
+                    size="sm"
+                    type="submit"
+                  >
+                    Save
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <p className="truncate text-sm font-medium text-foreground">
+                  {name}
+                </p>
+                <p className="truncate text-sm text-muted-foreground">
+                  {description}
+                </p>
+              </>
+            )}
+          </div>
           {!isEditing && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(isClient && "cursor-grab active:cursor-grabbing")}
-              {...(isClient ? { ...attributes, ...listeners } : {})}
-            >
-              <GripVertical className="h-4 w-4" />
-            </Button>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <EllipsisVertical />
+            <div className="flex shrink-0 items-center gap-0.5">
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "text-muted-foreground",
+                  isClient && "cursor-grab active:cursor-grabbing"
+                )}
+                {...(isClient ? { ...attributes, ...listeners } : {})}
+              >
+                <GripVertical className="size-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem asChild>
-                <button
-                  type="button"
-                  className="w-full cursor-pointer"
-                  onClick={() => setIsEditing(true)}
-                >
-                  <Pencil />
-                  Edit
-                </button>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <button
-                  type="button"
-                  className="w-full cursor-pointer"
-                  onClick={() => handleDelete()}
-                >
-                  <Trash2 />
-                  Delete
-                </button>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-muted-foreground">
+                    <EllipsisVertical className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => setIsEditing(true)}>
+                    <Pencil />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onSelect={() => handleDelete()}
+                  >
+                    <Trash2 />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
         </div>
       </div>
     </li>

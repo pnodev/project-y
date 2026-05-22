@@ -1,17 +1,12 @@
 import * as React from "react";
 import { cn } from "~/lib/utils";
+import { Card } from "./card";
 
+/** Compact card for inline overlays (e.g. quick-create). Uses default Card surface tokens. */
 export const SimpleCard = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "rounded-sm border bg-card text-card-foreground p-2 flex flex-col gap-1 shadow",
-      className
-    )}
-    {...props}
-  />
+  <Card ref={ref} className={cn("flex flex-col gap-1 p-2", className)} {...props} />
 ));
 SimpleCard.displayName = "SimpleCard";

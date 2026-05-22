@@ -1,17 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ProjectFormCreate } from "~/components/forms/ProjectForm";
-import { PageLayout } from "~/components/PageLayout";
-import { useCreateProjectMutation } from "~/db/mutations/projects";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { FORM_SHEET_CREATE_LINKS } from "~/lib/form-sheet-search";
 
 export const Route = createFileRoute("/_signed-in/projects/new")({
-  component: RouteComponent,
+  beforeLoad: () => {
+    throw redirect({
+      to: FORM_SHEET_CREATE_LINKS.project.to,
+      search: FORM_SHEET_CREATE_LINKS.project.search,
+    });
+  },
 });
-
-function RouteComponent() {
-  const createProject = useCreateProjectMutation();
-  return (
-    <PageLayout title="New Project">
-      <ProjectFormCreate onSubmit={async (data) => await createProject(data)} />
-    </PageLayout>
-  );
-}

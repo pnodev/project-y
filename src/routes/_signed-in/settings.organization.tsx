@@ -1,12 +1,13 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EndlessLoadingSpinner } from "~/components/EndlessLoadingSpinner";
+import { OrganizationEditSheet } from "~/components/EntityFormSheets";
 import { PageLayout } from "~/components/PageLayout";
 import { Button } from "~/components/ui/button";
 import { OrganizationDangerZone } from "~/components/settings/OrganizationDangerZone";
 import { OrganizationMembersSection } from "~/components/settings/OrganizationMembersSection";
-import { OrganizationSettingsForm } from "~/components/settings/OrganizationSettingsForm";
 import { authClient } from "~/lib/auth-client";
+import { FORM_SHEET_CREATE_LINKS } from "~/lib/form-sheet-search";
 import { useOrganizations, type Organization } from "~/hooks/use-organizations";
 
 type FullOrganization = Organization & {
@@ -37,6 +38,7 @@ function RouteComponent() {
   const { activeOrganizationId, loadOrganizations } = useOrganizations();
   const [fullOrg, setFullOrg] = useState<FullOrganization | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [editSheetOpen, setEditSheetOpen] = useState(true);
   const loadRequestIdRef = useRef(0);
 
   const loadFullOrg = useCallback(async () => {
@@ -80,12 +82,17 @@ function RouteComponent() {
   if (!activeOrganizationId) {
     return (
       <PageLayout title="Organization settings">
-        <div className="rounded-md border bg-muted/30 p-8 text-center max-w-lg">
-          <p className="text-sm text-gray-600 mb-4">
+        <div className="max-w-lg rounded-md border bg-muted/30 p-8 text-center">
+          <p className="mb-4 text-sm text-muted-foreground">
             Switch to an organization using the header menu, or create a new one.
           </p>
           <Button asChild>
-            <Link to="/settings/organization/new">Create organization</Link>
+            <Link
+              to={FORM_SHEET_CREATE_LINKS.organization.to}
+              search={FORM_SHEET_CREATE_LINKS.organization.search}
+            >
+              Create organization
+            </Link>
           </Button>
         </div>
       </PageLayout>
@@ -103,7 +110,9 @@ function RouteComponent() {
   if (!fullOrg) {
     return (
       <PageLayout title="Organization settings">
-        <p className="text-sm text-gray-500">Could not load organization.</p>
+        <p className="text-sm text-muted-foreground">
+          Could not load organization.
+        </p>
       </PageLayout>
     );
   }
@@ -118,20 +127,27 @@ function RouteComponent() {
       title="Organization settings"
       actions={
         <Button variant="outline" size="sm" asChild>
-          <Link to="/settings/organization/new">Create another</Link>
+          <Link
+            to={FORM_SHEET_CREATE_LINKS.organization.to}
+            search={FORM_SHEET_CREATE_LINKS.organization.search}
+          >
+            Create another
+          </Link>
         </Button>
       }
     >
-      <div className="grid gap-8">
-        <OrganizationSettingsForm
-          organization={{
-            id: fullOrg.id,
-            name: fullOrg.name,
-            slug: fullOrg.slug,
-            logo: fullOrg.logo,
-          }}
-          onUpdated={handleChanged}
-        />
+      <OrganizationEditSheet
+        open={editSheetOpen}
+        onOpenChange={setEditSheetOpen}
+        organization={{
+          id: fullOrg.id,
+          name: fullOrg.name,
+          slug: fullOrg.slug,
+          logo: fullOrg.logo,
+        }}
+        onUpdated={handleChanged}
+      />
+      <div className="grid gap-6">
         <OrganizationMembersSection
           organizationId={fullOrg.id}
           members={fullOrg.members}

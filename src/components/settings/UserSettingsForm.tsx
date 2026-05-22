@@ -14,7 +14,7 @@ type UserSettingsFormProps = {
 
 export function UserSettingsForm({ user }: UserSettingsFormProps) {
   return (
-    <div className="grid gap-8">
+    <div className="grid gap-6">
       <AccountProfileSection user={user} />
       <AccountSecuritySection />
       <AccountTwoFactorSection />

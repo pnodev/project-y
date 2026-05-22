@@ -55,6 +55,11 @@ export function toggleHoveredTaskSelection() {
   }
 }
 
+export function shouldIgnoreRowSelectClick(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return true;
+  return Boolean(target.closest("[data-row-select-ignore]"));
+}
+
 export function handleTaskSelectClick(
   taskId: string,
   orderedTaskIds: string[],

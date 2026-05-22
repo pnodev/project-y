@@ -19,6 +19,7 @@ import { useTasksForSprintQuery } from "~/db/queries/tasks";
 import { fetchSprintBoardBundle } from "~/db/queries/bundles";
 import { hydrateSprintBoardCache } from "~/db/queries/hydrate-query-cache";
 import { UpdateTask } from "~/db/schema";
+import { sprintEditSheetSearch } from "~/lib/form-sheet-search";
 
 export const Route = createFileRoute("/_signed-in/sprints/$sprintId/tasks")({
   loader: async ({ context, params }) => {
@@ -52,6 +53,8 @@ function RouteComponent() {
 
   return (
     <PageLayout
+      headerClassName="px-4"
+      contentClassName="gap-2 px-4 pb-2"
       title={
         sprintQuery.data?.name ? `${sprintQuery.data.name} - Tasks` : "Tasks"
       }
@@ -62,9 +65,8 @@ function RouteComponent() {
           <TaskViewSwitcher />
           <Button size="sm" variant="outline" asChild>
             <Link
-              to="/sprints/$sprintId/settings"
-              params={{ sprintId: params.sprintId }}
-              title="Sprint Settings"
+              {...sprintEditSheetSearch(params.sprintId)}
+              title="Sprint settings"
             >
               <Settings />
             </Link>

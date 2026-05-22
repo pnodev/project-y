@@ -105,12 +105,12 @@ export function AttachmentItem({
               cancelText="Cancel"
             >
               <DropdownMenuItem
+                variant="destructive"
                 onSelect={(e) => {
                   e.preventDefault();
                 }}
-                className="text-red-600 focus:text-red-600 focus:bg-red-50"
               >
-                <Trash2 className="text-red-600" />
+                <Trash2 />
                 Delete
               </DropdownMenuItem>
             </ConfirmDialog>

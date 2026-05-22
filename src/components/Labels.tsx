@@ -2,7 +2,6 @@ import { Label, TaskWithRelations } from "~/db/schema";
 import { LabelSelect } from "./LabelSelect";
 import { useSetLabelsForTaskMutation } from "~/db/mutations/tasks";
 import { LabelBadge } from "./ui/label-badge";
-import { TaskLabel } from "./ui/TaskLabel";
 import { useState } from "react";
 import { EndlessLoadingSpinner } from "./EndlessLoadingSpinner";
 
@@ -23,31 +22,26 @@ export const Labels = ({
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      <TaskLabel>Labels</TaskLabel>
-      <div className="flex gap-2">
-        <div className="flex flex-wrap gap-2">
-          {task?.labels.map((label) => (
-            <LabelBadge
-              size="large"
-              key={label.id}
-              color={label.color || "neutral"}
-            >
-              {label.name}
-            </LabelBadge>
-          ))}
-          <EndlessLoadingSpinner
-            isActive={isAssigning}
-            className="flex items-center"
-            spinnerClassName="size-6"
-          />
-        </div>
-        <LabelSelect
-          labels={labels}
-          selectedLabels={task?.labels.map((l) => l.id) || []}
-          onSelect={handleSetLabels}
-        />
-      </div>
+    <div className="flex min-w-0 flex-wrap items-center gap-2">
+      {task?.labels.map((label) => (
+        <LabelBadge
+          size="medium"
+          key={label.id}
+          color={label.color || "neutral"}
+        >
+          {label.name}
+        </LabelBadge>
+      ))}
+      <EndlessLoadingSpinner
+        isActive={isAssigning}
+        className="flex items-center"
+        spinnerClassName="size-4"
+      />
+      <LabelSelect
+        labels={labels}
+        selectedLabels={task?.labels.map((l) => l.id) || []}
+        onSelect={handleSetLabels}
+      />
     </div>
   );
 };

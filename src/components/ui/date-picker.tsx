@@ -35,8 +35,18 @@ export function DatePicker({
   const [date, setDate] = React.useState<Date>(value);
 
   React.useEffect(() => {
-    onChange(date);
-  }, [date, onChange]);
+    if (value.getTime() !== date.getTime()) {
+      setDate(value);
+    }
+  }, [value, date]);
+
+  const commitDate = React.useCallback(
+    (next: Date) => {
+      setDate(next);
+      onChange(next);
+    },
+    [onChange]
+  );
 
   return (
     <div className="flex flex-col gap-3">
@@ -47,9 +57,9 @@ export function DatePicker({
           value={getFormattedDateString(date)}
           className="bg-background pr-10"
           onChange={(e) => {
-            const date = new Date(e.target.value);
-            if (isValidDate(date)) {
-              setDate(date);
+            const parsed = new Date(e.target.value);
+            if (isValidDate(parsed)) {
+              commitDate(parsed);
             }
           }}
           onKeyDown={(e) => {
@@ -81,10 +91,9 @@ export function DatePicker({
               captionLayout="dropdown"
               showWeekNumber={true}
               weekStartsOn={1}
-              onSelect={(date) => {
-                if (date && isValidDate(date)) {
-                  console.log("calendar onSelect", date);
-                  setDate(date);
+              onSelect={(selected) => {
+                if (selected && isValidDate(selected)) {
+                  commitDate(selected);
                 }
                 setOpen(false);
               }}

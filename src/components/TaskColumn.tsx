@@ -76,25 +76,29 @@ export default function TaskColumn({
         {children}
       </div>
       {status ? (
-        <div className="p-2 gap-1 flex flex-col">
+        <div className="flex flex-col gap-1 border-t border-border/40 p-2">
           <TaskQuickCreate
+            variant="column"
             status={status.id}
             projectId={projectId}
             sprintId={sprintId}
             onClose={() =>
-              TaskViewStore.setState((state) => {
-                return { ...state, quickCreateOpenFor: null };
-              })
+              TaskViewStore.setState((state) => ({
+                ...state,
+                quickCreateOpenFor: null,
+              }))
             }
           />
           <Button
-            size={"sm"}
-            variant={"background"}
+            size="sm"
+            variant="background"
             type="button"
             onClick={() =>
-              TaskViewStore.setState((state) => {
-                return { ...state, quickCreateOpenFor: status.id };
-              })
+              TaskViewStore.setState((state) => ({
+                ...state,
+                quickCreateOpenFor:
+                  state.quickCreateOpenFor === status.id ? null : status.id,
+              }))
             }
           >
             <PlusIcon />

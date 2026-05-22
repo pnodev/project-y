@@ -8,7 +8,7 @@ export function TaskLabel({
   className?: string;
 }) {
   return (
-    <span className={cn("text-sm font-semibold text-gray-700", className)}>
+    <span className={cn("text-sm font-medium text-foreground", className)}>
       {children}
     </span>
   );

@@ -1,10 +1,10 @@
 import * as React from "react";
 import { ChevronDownIcon, X } from "lucide-react";
 
-import { Button } from "~/components/ui/button";
+import { fieldControlClass } from "~/components/ui/surface-styles";
+import { cn } from "~/lib/utils";
 import { Calendar } from "~/components/ui/calendar";
 import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -63,65 +63,63 @@ export function DateTimePicker({
     setOpen(false);
   };
 
+  const formattedDate = date
+    ? new Intl.DateTimeFormat("de-DE", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        weekday: "short",
+      }).format(date)
+    : null;
+
   return (
-    <div className="flex gap-1">
-      <div className="flex flex-col gap-3">
-        <Label htmlFor="date-picker" className="sr-only">
-          Date
-        </Label>
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              id="date-picker"
-              className="w-36 justify-between font-normal"
-            >
-              {date
-                ? new Intl.DateTimeFormat("de-DE", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    weekday: "short",
-                  }).format(date)
-                : "Select date"}
-              <ChevronDownIcon />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto overflow-hidden p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={date}
-              captionLayout="dropdown"
-              onSelect={handleDateSelect}
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-      {date ? (
-        <div className="flex flex-col gap-3">
-          <Label htmlFor="time-picker" className="sr-only">
-            Time
-          </Label>
-          <Input
-            type="time"
-            id="time-picker"
-            step="60"
-            value={time}
-            onChange={handleTimeChange}
-            className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-          />
-        </div>
-      ) : null}
-      {date ? (
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          onClick={handleClear}
-          aria-label="Clear due date"
+    <div className="flex flex-wrap items-center gap-1.5">
+      <Popover open={open} onOpenChange={setOpen}>
+        <div
+          className={cn(fieldControlClass, "inline-flex min-w-0 gap-0 p-0")}
+          id="date-picker"
         >
-          <X />
-        </Button>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 border-0 bg-transparent px-2 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              <span className="w-28 truncate text-left">
+                {formattedDate ?? "Select date"}
+              </span>
+            </button>
+          </PopoverTrigger>
+          {date ? (
+            <button
+              type="button"
+              onClick={handleClear}
+              aria-label="Clear due date"
+              className="text-muted-foreground hover:text-foreground mr-0.5 flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-sm hover:bg-muted/60"
+            >
+              <X className="size-3.5" />
+            </button>
+          ) : null}
+          <ChevronDownIcon className="text-muted-foreground mr-1.5 size-4 shrink-0 opacity-50" />
+        </div>
+        <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={date}
+            captionLayout="dropdown"
+            onSelect={handleDateSelect}
+          />
+        </PopoverContent>
+      </Popover>
+      {date ? (
+        <Input
+          type="time"
+          id="time-picker"
+          step="60"
+          value={time}
+          onChange={handleTimeChange}
+          className={cn(fieldControlClass, "h-7 w-[5.5rem] py-0")}
+          aria-label="Due time"
+        />
       ) : null}
     </div>
   );

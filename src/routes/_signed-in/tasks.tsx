@@ -44,6 +44,8 @@ function RouteComponent() {
   return (
     <PageLayout
       title="All Projects - Tasks"
+      headerClassName="px-4"
+      contentClassName="gap-2 px-4 pb-2"
       actions={
         <div className="flex gap-2">
           <TaskViewSortControls />

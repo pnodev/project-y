@@ -1,4 +1,5 @@
 import { Priority, PRIORITY_VALUES } from "~/db/schema";
+import { cn } from "~/lib/utils";
 import {
   Select,
   SelectContent,
@@ -30,8 +31,12 @@ export function PrioritySwitch({
       onValueChange={onValueChange}
     >
       <SelectTrigger
-        color={priority === "critical" ? "red" : undefined}
-        className={`${triggerColor} font-semibold capitalize`}
+        size="sm"
+        className={cn(
+          triggerColor,
+          "font-medium capitalize",
+          priority === "critical" && "text-destructive"
+        )}
       >
         <SelectValue placeholder="Select a priority" />
       </SelectTrigger>

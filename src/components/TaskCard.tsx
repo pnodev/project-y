@@ -287,7 +287,7 @@ export const TaskCardComponent = ({
               ))}
             </div>
           ) : null}
-          <CardTitle>{task.name}</CardTitle>
+          <CardTitle className="line-clamp-4">{task.name}</CardTitle>
         </CardHeader>
         <CardContent className="p-3">
           {task.subTasks.length ? (

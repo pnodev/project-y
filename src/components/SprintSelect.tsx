@@ -13,6 +13,7 @@ import {
 import { cn } from "~/lib/utils";
 import { EndlessLoadingSpinner } from "./EndlessLoadingSpinner";
 import { useSprintsQuery } from "~/db/queries/sprints";
+import { fieldControlClass } from "./ui/surface-styles";
 
 export function SprintSelect({
   selectedSprintId,
@@ -28,28 +29,51 @@ export function SprintSelect({
   const currentSprint = sprintsQuery.data.find(
     (s) => s.start < new Date() && s.end > new Date()
   );
+  const selectedName = sprintsQuery.data.find(
+    (s) => s.id === selectedSprintId
+  )?.name;
 
   return (
-    <div className="flex gap-2">
+    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            type="button"
-            role="combobox"
-            aria-expanded={open}
-            className="cursor-pointer group"
-          >
-            {sprintsQuery.data.find((s) => s.id === selectedSprintId)?.name ||
-              "Select Sprint"}
-            <EndlessLoadingSpinner
-              isActive={isAssigning}
-              spinnerClassName="size-4"
-            />
-            <ChevronsUpDown className="opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0" align="start">
+        <div className={cn(fieldControlClass, "inline-flex min-w-0 gap-0 p-0")}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              role="combobox"
+              aria-expanded={open}
+              className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 border-0 bg-transparent px-2 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              <span className="truncate text-left">
+                {selectedName ?? "Select Sprint"}
+              </span>
+              <EndlessLoadingSpinner
+                isActive={isAssigning}
+                spinnerClassName="size-4 shrink-0"
+              />
+            </button>
+          </PopoverTrigger>
+          {selectedSprintId ? (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onValueChange(null);
+              }}
+              aria-label="Clear sprint"
+              className="text-muted-foreground hover:text-foreground mr-0.5 flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-sm hover:bg-muted/60"
+            >
+              <X className="size-3.5" />
+            </button>
+          ) : null}
+          <ChevronsUpDown className="text-muted-foreground mr-1.5 size-4 shrink-0 opacity-50" />
+        </div>
+        <PopoverContent
+          className="w-[200px] p-0"
+          align="start"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
           <Command>
             <CommandInput placeholder="Search sprints..." className="h-9" />
             <CommandList>
@@ -61,6 +85,7 @@ export function SprintSelect({
                     value={s.id}
                     onSelect={(currentValue) => {
                       onValueChange(currentValue);
+                      setOpen(false);
                     }}
                   >
                     {s.name}
@@ -77,17 +102,12 @@ export function SprintSelect({
           </Command>
         </PopoverContent>
       </Popover>
-      <Button
-        variant={"outline"}
-        size={"icon"}
-        onClick={() => onValueChange(null)}
-      >
-        <X />
-      </Button>
-      {currentSprint && currentSprint?.id !== selectedSprintId ? (
+      {currentSprint && currentSprint.id !== selectedSprintId ? (
         <Button
           onClick={() => onValueChange(currentSprint.id)}
-          variant={"secondary"}
+          variant="secondary"
+          size="sm"
+          className="h-7 shrink-0 px-2 text-xs"
         >
           Add to current sprint
         </Button>

@@ -22,7 +22,7 @@ export function LabelBadge({
     | "rose"
     | "neutral";
   children: React.ReactNode;
-  size?: "small" | "large" | "very-small";
+  size?: "very-small" | "small" | "medium" | "large";
 }) {
   const colorClasses = {
     red: "bg-red-100 border border-red-200 text-red-700 [&_svg]:fill-red-500",
@@ -60,6 +60,9 @@ export function LabelBadge({
           : "",
         size === "small"
           ? "gap-x-1.5 px-1.5 py-0.5 text-xs [&_svg]:size-1.5!"
+          : "",
+        size === "medium"
+          ? "gap-x-2 px-2 py-1 text-xs [&_svg]:size-1.5!"
           : "",
         size === "large"
           ? "gap-x-2.5 px-2.5 py-1.5 text-sm [&_svg]:size-2!"

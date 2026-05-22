@@ -21,6 +21,7 @@ import { Button } from "~/components/ui/button";
 import { TaskViewSortControls } from "~/components/views/TaskViewSortControls";
 import { TaskViewSwitcher } from "~/components/views/TaskViewSwitcher";
 import { TaskViewsContainer } from "~/components/views/TaskViewsContainer";
+import { projectEditSheetSearch } from "~/lib/form-sheet-search";
 
 export const Route = createFileRoute("/_signed-in/projects/$projectId/tasks")({
   loader: async ({ context, params }) => {
@@ -57,15 +58,16 @@ function Home() {
       title={
         projectQuery.data?.name ? `${projectQuery.data.name} - Tasks` : "Tasks"
       }
+      headerClassName="px-4"
+      contentClassName="gap-2 px-4 pb-2"
       actions={
         <div className="flex gap-2">
           <TaskViewSortControls />
           <TaskViewSwitcher />
           <Button size="sm" variant="outline" asChild>
             <Link
-              to="/projects/$projectId/settings"
-              params={{ projectId: params.projectId }}
-              title="Project Settings"
+              {...projectEditSheetSearch(params.projectId)}
+              title="Project settings"
             >
               <Settings />
             </Link>

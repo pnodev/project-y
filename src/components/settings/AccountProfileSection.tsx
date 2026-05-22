@@ -7,6 +7,8 @@ import { AvatarUploadField } from "~/components/AvatarUploadField";
 import {
   PageSection,
   PageSectionContent,
+  PageSectionDescription,
+  PageSectionFooter,
 } from "~/components/PageSection";
 import { Button } from "~/components/ui/button";
 import {
@@ -69,59 +71,60 @@ export function AccountProfileSection({ user }: AccountProfileSectionProps) {
 
   return (
     <>
-      <PageSection title="Profile">
-        <PageSectionContent className="space-y-6">
-          <AvatarUploadField
-            imageUrl={user.image}
-            fallback={getInitials(firstname, lastname)}
-            label="Profile photo"
-            onUploaded={handleImageUpload}
-          />
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-4 max-w-md"
-            >
-              <FormField
-                control={form.control}
-                name="firstname"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <PageSection title="Profile">
+            <PageSectionContent>
+              <AvatarUploadField
+                imageUrl={user.image}
+                fallback={getInitials(firstname, lastname)}
+                label="Profile photo"
+                onUploaded={handleImageUpload}
               />
-              <FormField
-                control={form.control}
-                name="lastname"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="max-w-md space-y-4">
+                <FormField
+                  control={form.control}
+                  name="firstname"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastname"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </PageSectionContent>
+            <PageSectionFooter>
               <Button type="submit" loading={form.formState.isSubmitting}>
                 Save name
               </Button>
-            </form>
-          </Form>
-        </PageSectionContent>
-      </PageSection>
+            </PageSectionFooter>
+          </PageSection>
+        </form>
+      </Form>
 
       <PageSection title="Email">
-        <PageSectionContent>
-          <p className="text-sm text-gray-700">{user.email}</p>
-          <p className="text-sm text-gray-500 mt-1">
+        <PageSectionContent className="space-y-2">
+          <p className="text-sm text-foreground">{user.email}</p>
+          <PageSectionDescription>
             Email cannot be changed here yet.
-          </p>
+          </PageSectionDescription>
         </PageSectionContent>
       </PageSection>
     </>

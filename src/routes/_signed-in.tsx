@@ -1,7 +1,9 @@
 import { Outlet, createFileRoute } from "@tanstack/react-router";
 import { AppSidebar } from "~/components/app-sidebar";
+import { FormSheetsHost } from "~/components/EntityFormSheets";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { SiteHeader } from "~/components/site-header";
+import { formSheetSearchSchema } from "~/lib/form-sheet-search";
 import { useOrganizationCacheClear } from "~/hooks/organization-cache-clear";
 import { fetchSidebarBundle } from "~/db/queries/bundles";
 import { fetchUserPreferences } from "~/db/queries/user-preferences";
@@ -13,6 +15,7 @@ import { useRouterState } from "@tanstack/react-router";
 import { TopLoadingState } from "~/components/TopLoadingState";
 
 export const Route = createFileRoute("/_signed-in")({
+  validateSearch: formSheetSearchSchema,
   loader: async ({ context }) => {
     const [bundle, preferences] = await Promise.all([
       fetchSidebarBundle(),
@@ -38,6 +41,7 @@ function PathlessLayoutComponent() {
             <SiteHeader />
             <SidebarInset className="min-w-0 flex-1">
               <Outlet />
+              <FormSheetsHost />
             </SidebarInset>
           </div>
         </div>
