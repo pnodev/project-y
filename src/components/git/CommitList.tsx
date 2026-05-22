@@ -5,6 +5,12 @@ import { cn } from "~/lib/utils";
 /** Visible strip rows before the list scrolls (`h-10` per row → 12.5rem total). */
 const STRIP_VISIBLE_ROWS = 5;
 
+export function sortCommitsNewestFirst(commits: GitCommit[]): GitCommit[] {
+  return [...commits].sort(
+    (a, b) => b.committedAt.getTime() - a.committedAt.getTime()
+  );
+}
+
 export function CommitList({
   commits,
   selectedSha,

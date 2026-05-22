@@ -1,6 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PhaseBanner } from "~/components/git/PhaseBanner";
-import { CommitList } from "~/components/git/CommitList";
+import {
+  CommitList,
+  sortCommitsNewestFirst,
+} from "~/components/git/CommitList";
 import { DiffViewer } from "~/components/git/DiffViewer";
 import { DiffReviewPanel } from "~/components/git/DiffReviewPanel";
 import { DiffLoadingSkeleton } from "~/components/git/review/DiffLoadingSkeleton";
@@ -92,9 +95,16 @@ export function TaskDevelopmentWorkspace({
     usePrCommitsList
   );
 
-  const commits = usePrCommitsList
-    ? (prCommitsQuery.data?.commits ?? [])
-    : (branchCommitsQuery.data?.commits ?? []);
+  const commits = useMemo(() => {
+    const raw = usePrCommitsList
+      ? (prCommitsQuery.data?.commits ?? [])
+      : (branchCommitsQuery.data?.commits ?? []);
+    return sortCommitsNewestFirst(raw);
+  }, [
+    usePrCommitsList,
+    prCommitsQuery.data?.commits,
+    branchCommitsQuery.data?.commits,
+  ]);
 
   const prDiffQuery = useQuery({
     queryKey: ["git", "diff", taskId, "pr", reviewPr?.id],

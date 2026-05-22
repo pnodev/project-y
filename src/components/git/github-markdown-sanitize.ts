@@ -9,7 +9,7 @@ export const githubMarkdownSanitizeSchema = {
   ],
   attributes: {
     ...defaultSchema.attributes,
-    details: [...(defaultSchema.attributes?.details ?? []), "open"],
-    summary: defaultSchema.attributes?.summary ?? [],
+    details: [...(defaultSchema.attributes?.details ?? []), "open", "class"],
+    summary: [...(defaultSchema.attributes?.summary ?? []), "class"],
   },
 } as const;

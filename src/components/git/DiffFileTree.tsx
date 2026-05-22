@@ -34,7 +34,7 @@ export function DiffFileTree({
     paths,
     gitStatus,
     flattenEmptyDirectories: true,
-    initialExpansion: 1,
+    initialExpansion: "open",
     icons: "standard",
     density: "compact",
     initialSelectedPaths: activePath ? [activePath] : [],

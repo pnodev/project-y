@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   PrReviewFeedItemCommentThread,
@@ -16,7 +16,12 @@ import {
 } from "~/db/queries/git";
 import { useGitTaskLiveSync } from "~/hooks/use-git-task-live-sync";
 import { formatClientError } from "~/lib/git/errors";
+import {
+  aggregateBotReviewDigests,
+  feedEntryNeedsAction,
+} from "~/lib/git/bot-review-comment-summary";
 import { buildPrReviewFeedEntries } from "~/lib/git/pr-review-feed-entries";
+import { Button } from "~/components/ui/button";
 import { getLatestPr, getOpenPr } from "~/lib/git/task-dev-phase";
 import { cn } from "~/lib/utils";
 
@@ -51,6 +56,7 @@ export function TaskPullRequestReviewFeed({
   const [resolvingThreadNodeId, setResolvingThreadNodeId] = useState<
     string | null
   >(null);
+  const [needsActionOnly, setNeedsActionOnly] = useState(false);
 
   const canResolve = Boolean(connectionData?.userLink) && Boolean(reviewPr);
 
@@ -81,22 +87,44 @@ export function TaskPullRequestReviewFeed({
       setResolvingThreadNodeId(null);
     }
   };
-  const entries = reviewData
-    ? buildPrReviewFeedEntries(
-        reviewData.reviews,
-        reviewData.comments,
-        reviewData.pendingComments,
-        reviewData.issueComments
-      )
-    : [];
+  const entries = useMemo(
+    () =>
+      reviewData
+        ? buildPrReviewFeedEntries(
+            reviewData.reviews,
+            reviewData.comments,
+            reviewData.pendingComments,
+            reviewData.issueComments
+          )
+        : [],
+    [reviewData]
+  );
+
+  const botDigestRollup = useMemo(
+    () =>
+      reviewData
+        ? aggregateBotReviewDigests(reviewData.issueComments)
+        : null,
+    [reviewData]
+  );
+
+  const visibleEntries = useMemo(
+    () =>
+      needsActionOnly
+        ? entries.filter((entry) => feedEntryNeedsAction(entry))
+        : entries,
+    [entries, needsActionOnly]
+  );
+
+  const hiddenByFilterCount = entries.length - visibleEntries.length;
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const el = scrollRef.current;
-    if (!el || isLoading || entries.length === 0) return;
+    if (!el || isLoading || visibleEntries.length === 0) return;
     el.scrollTop = el.scrollHeight;
-  }, [entries, isLoading]);
+  }, [visibleEntries, isLoading]);
 
   return (
     <div
@@ -105,11 +133,25 @@ export function TaskPullRequestReviewFeed({
         className
       )}
     >
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <TaskLabel>Pull request</TaskLabel>
-        {isFetching && !isLoading ? (
-          <LoadingSpinner isActive className="size-3.5" />
-        ) : null}
+        <div className="flex items-center gap-2">
+          {botDigestRollup &&
+          (botDigestRollup.digestCount > 0 || needsActionOnly) ? (
+            <Button
+              type="button"
+              variant={needsActionOnly ? "default" : "outline"}
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => setNeedsActionOnly((v) => !v)}
+            >
+              Needs action only
+            </Button>
+          ) : null}
+          {isFetching && !isLoading ? (
+            <LoadingSpinner isActive className="size-3.5" />
+          ) : null}
+        </div>
       </div>
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
@@ -130,6 +172,14 @@ export function TaskPullRequestReviewFeed({
               ? "No reviews or comments yet."
               : "No reviews or comments yet. Connect your GitHub account in settings to see pending reviews and post comments."}
           </p>
+        ) : visibleEntries.length === 0 ? (
+          <p className="text-muted-foreground text-sm">
+            Nothing needs action right now
+            {hiddenByFilterCount > 0
+              ? ` (${hiddenByFilterCount} addressed item${hiddenByFilterCount === 1 ? "" : "s"} hidden)`
+              : ""}
+            .
+          </p>
         ) : (
           <>
             {!connectionData.userLink ? (
@@ -138,8 +188,28 @@ export function TaskPullRequestReviewFeed({
                 comments.
               </p>
             ) : null}
+            {botDigestRollup && botDigestRollup.digestCount > 0 ? (
+              <div
+                className={cn(
+                  "mb-3 rounded-md border-2 px-3 py-2 text-xs font-medium",
+                  botDigestRollup.openTotal > 0
+                    ? "border-amber-400 bg-amber-100 text-amber-950"
+                    : "border-emerald-500 bg-emerald-100 text-emerald-950"
+                )}
+              >
+                {botDigestRollup.openTotal > 0
+                  ? `${botDigestRollup.openTotal} CodeRabbit finding${botDigestRollup.openTotal === 1 ? "" : "s"} still need action across ${botDigestRollup.digestCount} review comment${botDigestRollup.digestCount === 1 ? "" : "s"}`
+                  : `All CodeRabbit findings addressed (${botDigestRollup.digestCount} review comment${botDigestRollup.digestCount === 1 ? "" : "s"})`}
+              </div>
+            ) : null}
+            {needsActionOnly && hiddenByFilterCount > 0 ? (
+              <p className="text-muted-foreground mb-2 text-xs">
+                Hiding {hiddenByFilterCount} addressed or resolved item
+                {hiddenByFilterCount === 1 ? "" : "s"}.
+              </p>
+            ) : null}
             <ul className="space-y-2.5">
-            {entries.map((entry) => {
+            {visibleEntries.map((entry) => {
               if (entry.kind === "issue_comment") {
                 return (
                   <li key={`issue-comment-${entry.comment.id}`}>

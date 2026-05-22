@@ -1,11 +1,14 @@
 import type { ReactNode } from "react";
 import {
+  AlertCircle,
   Check,
   GitPullRequest,
   MessageSquare,
   MessageSquarePlus,
   X,
 } from "lucide-react";
+import { summarizeBotReviewIssueComment } from "~/lib/git/bot-review-comment-summary";
+import { Badge } from "~/components/ui/badge";
 import { DiffLineLocationLink } from "~/components/git/DiffLineLocationLink";
 import { GitHubMarkdownBody } from "~/components/git/GitHubMarkdownBody";
 import { PrReviewFeedAttachedComments } from "~/components/git/PrReviewFeedAttachedComments";
@@ -198,8 +201,18 @@ export function PrReviewFeedItemIssueComment({
   const body = comment.body?.trim() ?? "";
   if (!body) return null;
 
+  const botSummary = summarizeBotReviewIssueComment(comment);
+
   return (
-    <FeedCard>
+    <FeedCard
+      className={cn(
+        botSummary?.needsAction &&
+          "border-amber-400/70 ring-1 ring-amber-400/30",
+        botSummary &&
+          !botSummary.needsAction &&
+          "border-emerald-500/50 ring-1 ring-emerald-500/20"
+      )}
+    >
       <FeedHeader
         login={comment.authorLogin}
         avatarUrl={comment.authorAvatarUrl}
@@ -209,15 +222,58 @@ export function PrReviewFeedItemIssueComment({
         githubUrl={comment.url}
         occurredAt={occurredAt}
         trailing={
-          comment.isBot ? (
-            <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">
-              Bot
-            </span>
-          ) : null
+          <span className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+            {botSummary ? (
+              <Badge
+                className={cn(
+                  "h-5 border-0 text-[10px] font-semibold",
+                  botSummary.needsAction
+                    ? "bg-amber-500 text-white"
+                    : "bg-emerald-600 text-white"
+                )}
+              >
+                {botSummary.needsAction ? "Needs action" : "Addressed"}
+              </Badge>
+            ) : null}
+            {comment.isBot ? (
+              <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">
+                Bot
+              </span>
+            ) : null}
+          </span>
         }
       />
+      {botSummary ? (
+        <div
+          className={cn(
+            "mt-2 flex items-start gap-2 rounded-md border-2 px-2.5 py-2 text-xs font-medium",
+            botSummary.needsAction
+              ? "border-amber-400 bg-amber-100 text-amber-950 dark:border-amber-600 dark:bg-amber-950/50 dark:text-amber-50"
+              : "border-emerald-500 bg-emerald-100 text-emerald-950 dark:border-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-50"
+          )}
+        >
+          {botSummary.needsAction ? (
+            <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
+          ) : (
+            <Check className="mt-0.5 size-4 shrink-0" aria-hidden />
+          )}
+          <span>
+            <span className="block">{botSummary.label}</span>
+            {botSummary.actionableCount != null ? (
+              <span className="mt-0.5 block text-[10px] font-normal opacity-90">
+                {botSummary.addressedCount} of {botSummary.actionableCount}{" "}
+                marked addressed on GitHub
+              </span>
+            ) : null}
+          </span>
+        </div>
+      ) : null}
       <div className="mt-2 pl-8">
-        <GitHubMarkdownBody body={body} collapsible={false} />
+        <GitHubMarkdownBody
+          body={body}
+          collapsible={false}
+          collapseAddressedFindings={Boolean(botSummary)}
+        />
       </div>
     </FeedCard>
   );
