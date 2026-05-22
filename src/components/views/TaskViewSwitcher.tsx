@@ -1,5 +1,5 @@
 import { useStore } from "@tanstack/react-store";
-import { LayoutGrid, List } from "lucide-react";
+import { Columns3, List } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { ButtonGroup } from "~/components/ui/button-group";
 import { useUpdateUserPreferencesMutation } from "~/db/mutations/user-preferences";
@@ -34,7 +34,7 @@ export function TaskViewSwitcher() {
         aria-label="Board view"
         onClick={() => setViewMode("board")}
       >
-        <LayoutGrid />
+        <Columns3 />
       </Button>
       <Button
         size="sm"

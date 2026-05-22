@@ -30,6 +30,13 @@ export const menuItemDestructiveClass =
 export const formLabelClass =
   "text-sm font-medium leading-snug text-muted-foreground";
 
+/** Helper text under form controls (e.g. upload constraints). */
+export const formHintClass = "text-xs leading-snug text-muted-foreground";
+
+/** Wrapper for compact avatar/logo upload rows (drag highlight). */
+export const imageUploadRowClass =
+  "flex items-center gap-4 rounded-lg border border-transparent p-1 transition-[border-color,background-color] data-[drag-active=true]:border-primary/40 data-[drag-active=true]:bg-primary/5";
+
 /** Text inputs and textareas in settings/forms. */
 export const formFieldClass =
   "rounded-md border border-border bg-background text-base shadow-[var(--shadow-control)] transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm";

@@ -1,17 +1,11 @@
-import { Outlet, createFileRoute } from "@tanstack/react-router";
-import { FormEvent, useCallback } from "react";
-import { ColorSelect, selectableColorClasses } from "~/components/ColorSelect";
-import { EntityConfigCreateFields } from "~/components/EntityConfigCreateFields";
+import { createFileRoute } from "@tanstack/react-router";
+import { useCallback } from "react";
+import { selectableColorClasses } from "~/components/ColorSelect";
 import { EntityList, EntityListItem } from "~/components/EntityList";
+import { PageCreateButton } from "~/components/PageCreateButton";
 import { PageLayout } from "~/components/PageLayout";
+import { PageSection, PageSectionContent } from "~/components/PageSection";
 import {
-  PageSection,
-  PageSectionContent,
-  PageSectionFooter,
-} from "~/components/PageSection";
-import { Button } from "~/components/ui/button";
-import {
-  useCreateStatusMutation,
   useDeleteStatusMutation,
   useUpdateMultipleStatusesMutation,
   useUpdateStatusMutation,
@@ -20,7 +14,7 @@ import {
   statusesWithCountsQueryOptions,
   useStatusesWithCountsQuery,
 } from "~/db/queries/statuses";
-import { Color, COLOR_VALUES } from "~/db/schema";
+import { FORM_SHEET_CREATE_LINKS } from "~/lib/form-sheet-search";
 import { Flag } from "lucide-react";
 
 export const Route = createFileRoute("/_signed-in/statuses")({
@@ -35,33 +29,9 @@ export const Route = createFileRoute("/_signed-in/statuses")({
 
 function StatusesComponent() {
   const statusesQuery = useStatusesWithCountsQuery();
-  const createStatus = useCreateStatusMutation();
   const deleteStatus = useDeleteStatusMutation();
   const updateStatus = useUpdateStatusMutation();
   const updateMultipleStatuses = useUpdateMultipleStatusesMutation();
-
-  const handleSubmit = useCallback(
-    async (e: FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      const formData = new FormData(e.currentTarget);
-      const name = formData.get("name");
-      const color = formData.get("color");
-      e.currentTarget.reset();
-
-      function isColor(x: unknown): x is Color {
-        return typeof x === "string" && COLOR_VALUES.includes(x as Color);
-      }
-
-      if (typeof name !== "string" || !name) return;
-      if (!isColor(color)) {
-        console.error("invalid color:", color);
-        return;
-      }
-
-      await createStatus({ name, color });
-    },
-    [createStatus]
-  );
 
   const handleDelete = useCallback(
     async (id: string) => {
@@ -84,52 +54,51 @@ function StatusesComponent() {
   );
 
   return (
-    <PageLayout title="Statuses" contentClassName="gap-6">
-      <form onSubmit={handleSubmit}>
-        <PageSection title="Create status">
-          <PageSectionContent>
-            <EntityConfigCreateFields
-              nameInputId="create-status-name"
-              colorSelectId="create-status-color"
-              namePlaceholder="e.g. In progress"
-            />
-          </PageSectionContent>
-          <PageSectionFooter>
-            <Button type="submit">Create status</Button>
-          </PageSectionFooter>
-        </PageSection>
-      </form>
-
+    <PageLayout
+      title="Statuses"
+      contentClassName="gap-6"
+      actions={
+        <PageCreateButton
+          label="Create status"
+          to={FORM_SHEET_CREATE_LINKS.status.to}
+          search={FORM_SHEET_CREATE_LINKS.status.search}
+        />
+      }
+    >
       <PageSection title="All statuses">
         <PageSectionContent>
-          <EntityList
-            items={[...statusesQuery.data]}
-            onReorder={async (data) => {
-              data.forEach((item, index) => {
-                item.order = index;
-              });
-              await updateMultipleStatuses(data);
-            }}
-          >
-            {sortedStatuses.map((status) => (
-              <EntityListItem
-                id={status.id}
-                key={status.id}
-                name={status.name}
-                description={`${status.taskCount} ${
-                  status.taskCount === 1 ? "task" : "tasks"
-                } associated with this status`}
-                color={status.color}
-                handleDelete={() => handleDelete(status.id)}
-                handleUpdate={(data) => handleUpdate(status.id, data)}
-                icon={Flag}
-              />
-            ))}
-          </EntityList>
+          {sortedStatuses.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No statuses yet. Use the + button above to create one.
+            </p>
+          ) : (
+            <EntityList
+              items={sortedStatuses}
+              onReorder={async (data) => {
+                data.forEach((item, index) => {
+                  item.order = index;
+                });
+                await updateMultipleStatuses(data);
+              }}
+            >
+              {sortedStatuses.map((status) => (
+                <EntityListItem
+                  id={status.id}
+                  key={status.id}
+                  name={status.name}
+                  description={`${status.taskCount} ${
+                    status.taskCount === 1 ? "task" : "tasks"
+                  } associated with this status`}
+                  color={status.color}
+                  handleDelete={() => handleDelete(status.id)}
+                  handleUpdate={(data) => handleUpdate(status.id, data)}
+                  icon={Flag}
+                />
+              ))}
+            </EntityList>
+          )}
         </PageSectionContent>
       </PageSection>
-
-      <Outlet />
     </PageLayout>
   );
 }

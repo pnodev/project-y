@@ -1,6 +1,4 @@
-import { UploadButton } from "~/utils/uploadthing";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { formLabelClass } from "~/components/ui/surface-styles";
+import { ImageUploadField } from "~/components/ImageUploadField";
 
 type AvatarUploadFieldProps = {
   imageUrl?: string | null;
@@ -16,24 +14,13 @@ export function AvatarUploadField({
   onUploaded,
 }: AvatarUploadFieldProps) {
   return (
-    <div className="flex items-center gap-4">
-      <Avatar className="size-14 shrink-0">
-        <AvatarImage src={imageUrl ?? undefined} alt="" />
-        <AvatarFallback className="text-lg">{fallback}</AvatarFallback>
-      </Avatar>
-      <div className="flex min-w-0 flex-col gap-1">
-        <p className={formLabelClass}>{label}</p>
-        <UploadButton
-          endpoint="avatarUploader"
-          config={{ mode: "auto" }}
-          onClientUploadComplete={(files) => {
-            const file = files[0];
-            if (file?.ufsUrl) {
-              void onUploaded(file.ufsUrl);
-            }
-          }}
-        />
-      </div>
-    </div>
+    <ImageUploadField
+      endpoint="avatarUploader"
+      imageUrl={imageUrl}
+      fallback={fallback}
+      label={label}
+      onUploaded={onUploaded}
+      previewShape="circle"
+    />
   );
 }

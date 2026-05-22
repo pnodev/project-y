@@ -63,19 +63,30 @@ function ColorOption({ color }: { color: Color }) {
 export function ColorSelect({
   name,
   value,
+  defaultValue,
+  onValueChange,
   triggerClassNames,
   triggerId,
   variant = "control",
 }: {
-  name: string;
+  name?: string;
   value?: Color;
+  defaultValue?: Color;
+  onValueChange?: (color: Color) => void;
   triggerClassNames?: string;
   triggerId?: string;
   /** `field` — full-width settings form; `control` — compact inline/task UI */
   variant?: "control" | "field";
 }) {
+  const isControlled = onValueChange != null;
+
   return (
-    <Select name={name} defaultValue={value}>
+    <Select
+      name={name}
+      value={isControlled ? value : undefined}
+      defaultValue={isControlled ? undefined : (defaultValue ?? value)}
+      onValueChange={onValueChange}
+    >
       <SelectTrigger
         id={triggerId}
         variant={variant}

@@ -26,7 +26,7 @@ export function PageLayout({
             {title}
           </h2>
         </div>
-        <div className="mt-4 flex md:mt-0 md:ml-4">
+        <div className="mt-4 flex shrink-0 items-center gap-2 md:mt-0 md:ml-4">
           {actions ? actions : null}
         </div>
       </div>

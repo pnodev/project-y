@@ -87,7 +87,7 @@ function SelectContent({
           floatingContentZClass,
           "pointer-events-auto max-h-(--radix-select-content-available-height) overflow-x-hidden overflow-y-auto",
           position === "popper" &&
-            "w-(--radix-select-trigger-width) min-w-(--radix-select-trigger-width) max-w-(--radix-select-trigger-width) data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+            "min-w-(--radix-select-trigger-width) w-max max-w-[min(18rem,var(--radix-select-content-available-width))] data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
           position !== "popper" && "min-w-[8rem]",
           className
         )}
@@ -125,16 +125,16 @@ function SelectLabel({
 function SelectItem({
   className,
   children,
+  leading,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Item>) {
+}: React.ComponentProps<typeof SelectPrimitive.Item> & {
+  /** Icon or swatch rendered beside the label (outside Radix ItemText for correct alignment). */
+  leading?: React.ReactNode;
+}) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
-      className={cn(
-        menuItemClass,
-        "w-full pr-8 pl-2.5",
-        className
-      )}
+      className={cn(menuItemClass, "w-full pl-2.5 pr-9", className)}
       {...props}
     >
       <span className="absolute right-2 flex size-3.5 items-center justify-center">
@@ -142,7 +142,10 @@ function SelectItem({
           <CheckIcon className="size-4" />
         </SelectPrimitive.ItemIndicator>
       </span>
-      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+      {leading}
+      <SelectPrimitive.ItemText className="min-w-0 flex-1 truncate leading-none">
+        {children}
+      </SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
   );
 }
