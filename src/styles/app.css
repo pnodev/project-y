@@ -180,3 +180,38 @@
 }
 
 @plugin 'tailwind-scrollbar';
+
+/* GitHub PR comment markdown (sidebar + review UI) */
+.gh-markdown details > :not(summary) {
+  padding: 0 0.625rem 0.625rem;
+}
+
+.gh-markdown details pre {
+  margin-top: 0.5rem;
+}
+
+/* Inline PR comments sit inside Pierre’s monospace diff — reset to UI sans */
+.diff-inline-comment-wrap,
+.diff-inline-comment {
+  font-family: var(--font-sans);
+  letter-spacing: normal;
+}
+
+.diff-inline-comment .gh-markdown,
+.diff-inline-comment .gh-markdown p,
+.diff-inline-comment .gh-markdown li,
+.diff-inline-comment .gh-markdown summary,
+.diff-inline-comment .gh-markdown h1,
+.diff-inline-comment .gh-markdown h2,
+.diff-inline-comment .gh-markdown h3,
+.diff-inline-comment .gh-markdown h4 {
+  font-family: inherit;
+  color: inherit;
+}
+
+.diff-inline-comment .gh-markdown pre,
+.diff-inline-comment .gh-markdown pre code,
+.diff-inline-comment .gh-markdown :not(pre) > code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    monospace;
+}

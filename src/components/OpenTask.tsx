@@ -69,7 +69,8 @@ import { SubTasks } from "./SubTasks";
 import { Badge } from "./ui/badge";
 import { SprintSelect } from "./SprintSelect";
 import { TaskDevelopmentSection } from "~/components/git/TaskDevelopmentSection";
-import { TaskGitActivityFeed } from "~/components/git/TaskGitActivityFeed";
+import { TaskPullRequestReviewFeed } from "~/components/git/TaskPullRequestReviewFeed";
+import { TaskGitReviewNavProvider } from "~/lib/git/task-git-review-nav";
 
 export function OpenTask({
   task,
@@ -316,6 +317,9 @@ export function OpenTask({
           </div>
         </DialogHeader>
         {task && currentStatus ? (
+          <TaskGitReviewNavProvider
+            onOpenDevelopment={() => setDialogView("development")}
+          >
           <div className="grid min-h-0 flex-1 grid-cols-12">
             <div className="col-span-8 flex min-h-0 flex-col">
               <Tabs
@@ -328,7 +332,7 @@ export function OpenTask({
                 <div className="shrink-0">
                   <TabsList
                     variant="dialog"
-                    className="border-b border-border/60 px-4"
+                    className="border-b border-border/60"
                   >
                     <TabsTrigger variant="dialog" value="overview">
                       <LayoutList className="size-3.5" />
@@ -339,14 +343,20 @@ export function OpenTask({
                       Development
                     </TabsTrigger>
                   </TabsList>
-                  <div className="px-4 pt-3 pb-2">
+                </div>
+
+                <TabsContent
+                  value="overview"
+                  className="mt-0 flex min-h-0 flex-1 flex-col gap-5.5 overflow-auto px-4 pb-6 pt-4 data-[state=inactive]:hidden"
+                >
+                  <div className="pb-2">
                     <EditableDialogTitle
                       initialContent={task.name}
                       onBlur={handleUpdateTitle}
                       onDebouncedUpdate={handleUpdateTitle}
                     />
                   </div>
-                  <div className="border-b border-border/60 px-4 pb-4 pt-3">
+                  <div className="border-b border-border/60 pb-4">
                     <DetailList>
                       <DetailListItem
                         label="Labels"
@@ -448,12 +458,6 @@ export function OpenTask({
                       </DetailListItem>
                     </DetailList>
                   </div>
-                </div>
-
-                <TabsContent
-                  value="overview"
-                  className="mt-0 flex min-h-0 flex-1 flex-col gap-5.5 overflow-auto px-4 pb-6 pt-4 data-[state=inactive]:hidden"
-                >
                   <RichtextEditor
                     content={task.description || ""}
                     onUpdate={(data) => {
@@ -507,7 +511,7 @@ export function OpenTask({
 
                 <TabsContent
                   value="development"
-                  className="mt-0 min-h-0 flex-1 overflow-auto data-[state=inactive]:hidden"
+                  className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden"
                 >
                   <TaskDevelopmentSection
                     layout="panel"
@@ -534,10 +538,11 @@ export function OpenTask({
                   <CommentInput onSubmit={handleComment} />
                 </div>
               ) : (
-                <TaskGitActivityFeed taskId={task.id} />
+                <TaskPullRequestReviewFeed taskId={task.id} />
               )}
             </aside>
           </div>
+          </TaskGitReviewNavProvider>
         ) : null}
       </DialogContent>
     </Dialog>

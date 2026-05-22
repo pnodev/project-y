@@ -31,7 +31,7 @@ export function formatGitActivityLabel(
           ? "opened"
           : action === "reopened"
             ? "reopened"
-            : action === "closed" && state === "merged"
+            : action === "merged" || (action === "closed" && state === "merged")
               ? "merged"
               : action === "closed"
                 ? "closed"

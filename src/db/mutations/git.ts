@@ -732,6 +732,63 @@ const submitTaskPullRequestReview = createServerFn({ method: "POST" })
     );
   });
 
+const setTaskPullRequestReviewThreadResolved = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      taskId: z.string().uuid(),
+      pullRequestId: z.string().uuid(),
+      threadNodeId: z.string().min(1),
+      resolved: z.boolean(),
+    })
+  )
+  .handler(async ({ data }) => {
+    const session = await requireSessionFromRequest();
+    const { setTaskPullRequestReviewThreadResolved } = await import(
+      "~/db/queries/git.server"
+    );
+    await setTaskPullRequestReviewThreadResolved(
+      session,
+      data.taskId,
+      data.pullRequestId,
+      {
+        threadNodeId: data.threadNodeId,
+        resolved: data.resolved,
+      }
+    );
+  });
+
+const mergeTaskPullRequest = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      taskId: z.string().uuid(),
+      pullRequestId: z.string().uuid(),
+      mergeMethod: z.enum(["merge", "squash", "rebase"]).optional(),
+    })
+  )
+  .handler(async ({ data }) => {
+    const session = await requireSessionFromRequest();
+    const { mergeTaskPullRequest } = await import("~/db/queries/git.server");
+    return mergeTaskPullRequest(
+      session,
+      data.taskId,
+      data.pullRequestId,
+      { mergeMethod: data.mergeMethod }
+    );
+  });
+
+const closeTaskPullRequest = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      taskId: z.string().uuid(),
+      pullRequestId: z.string().uuid(),
+    })
+  )
+  .handler(async ({ data }) => {
+    const session = await requireSessionFromRequest();
+    const { closeTaskPullRequest } = await import("~/db/queries/git.server");
+    return closeTaskPullRequest(session, data.taskId, data.pullRequestId);
+  });
+
 const discardTaskPullRequestReview = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
@@ -906,6 +963,9 @@ function invalidatePrReviewQueries(
     queryClient.invalidateQueries({
       queryKey: ["git", "pr-comments", taskId, pullRequestId],
     }),
+    queryClient.invalidateQueries({
+      queryKey: ["git", "pr-status", taskId, pullRequestId],
+    }),
     queryClient.invalidateQueries({ queryKey: ["git", "task", taskId] }),
   ]);
 }
@@ -990,6 +1050,65 @@ export function useSubmitTaskPullRequestReviewMutation() {
         input.taskId,
         input.pullRequestId
       );
+    },
+    [fn, queryClient]
+  );
+}
+
+export function useSetTaskPullRequestReviewThreadResolvedMutation() {
+  const queryClient = useQueryClient();
+  const fn = useServerFn(setTaskPullRequestReviewThreadResolved);
+  return useCallback(
+    async (input: {
+      taskId: string;
+      pullRequestId: string;
+      threadNodeId: string;
+      resolved: boolean;
+    }) => {
+      await fn({ data: input });
+      await invalidatePrReviewQueries(
+        queryClient,
+        input.taskId,
+        input.pullRequestId
+      );
+    },
+    [fn, queryClient]
+  );
+}
+
+export function useMergeTaskPullRequestMutation() {
+  const queryClient = useQueryClient();
+  const fn = useServerFn(mergeTaskPullRequest);
+  return useCallback(
+    async (input: {
+      taskId: string;
+      pullRequestId: string;
+      mergeMethod?: "merge" | "squash" | "rebase";
+    }) => {
+      const result = await fn({ data: input });
+      await invalidatePrReviewQueries(
+        queryClient,
+        input.taskId,
+        input.pullRequestId
+      );
+      return result;
+    },
+    [fn, queryClient]
+  );
+}
+
+export function useCloseTaskPullRequestMutation() {
+  const queryClient = useQueryClient();
+  const fn = useServerFn(closeTaskPullRequest);
+  return useCallback(
+    async (input: { taskId: string; pullRequestId: string }) => {
+      const result = await fn({ data: input });
+      await invalidatePrReviewQueries(
+        queryClient,
+        input.taskId,
+        input.pullRequestId
+      );
+      return result;
     },
     [fn, queryClient]
   );

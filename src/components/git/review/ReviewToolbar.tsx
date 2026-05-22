@@ -8,6 +8,7 @@ import { cn } from "~/lib/utils";
 
 export function ReviewToolbar({
   scopeLabel,
+  compact = false,
   canInteract,
   readOnly,
   hasUserLink,
@@ -26,6 +27,8 @@ export function ReviewToolbar({
   className,
 }: {
   scopeLabel: string;
+  /** Hides the scope title row (e.g. when PR context is shown in tabs). */
+  compact?: boolean;
   canInteract: boolean;
   readOnly: boolean;
   hasUserLink: boolean;
@@ -56,14 +59,24 @@ export function ReviewToolbar({
         className
       )}
     >
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{scopeLabel}</p>
-        {canInteract && !reviewInProgress ? (
-          <p className="text-muted-foreground mt-0.5 text-xs">
+      {compact ? (
+        canInteract && !reviewInProgress ? (
+          <p className="text-muted-foreground text-xs">
             Start review, then click a line to comment
           </p>
-        ) : null}
-      </div>
+        ) : (
+          <span />
+        )
+      ) : (
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{scopeLabel}</p>
+          {canInteract && !reviewInProgress ? (
+            <p className="text-muted-foreground mt-0.5 text-xs">
+              Start review, then click a line to comment
+            </p>
+          ) : null}
+        </div>
+      )}
 
       {!canInteract ? (
         <p className="text-muted-foreground text-xs">

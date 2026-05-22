@@ -119,6 +119,27 @@ export const fetchTaskBranchDiff = createServerFn({ method: "GET" })
     return getTaskBranchDiff(session, data.taskId);
   });
 
+export const fetchTaskPullRequestMergeStatus = createServerFn({
+  method: "GET",
+})
+  .inputValidator(
+    z.object({
+      taskId: z.string().uuid(),
+      pullRequestId: z.string().uuid(),
+    })
+  )
+  .handler(async ({ data }) => {
+    const session = await requireSessionFromRequest();
+    const { getTaskPullRequestMergeStatus } = await import(
+      "~/db/queries/git.server"
+    );
+    return getTaskPullRequestMergeStatus(
+      session,
+      data.taskId,
+      data.pullRequestId
+    );
+  });
+
 export const fetchTaskPullRequestReviewComments = createServerFn({
   method: "GET",
 })
@@ -254,6 +275,22 @@ export function useTaskPullRequestReviewCommentsQuery(
       }),
     enabled: enabled && Boolean(pullRequestId),
     placeholderData: (prev) => prev,
+  });
+}
+
+export function useTaskPullRequestMergeStatusQuery(
+  taskId: string,
+  pullRequestId: string | undefined,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: ["git", "pr-status", taskId, pullRequestId],
+    queryFn: () =>
+      fetchTaskPullRequestMergeStatus({
+        data: { taskId, pullRequestId: pullRequestId! },
+      }),
+    enabled: enabled && Boolean(pullRequestId),
+    refetchInterval: 60_000,
   });
 }
 

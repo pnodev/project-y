@@ -95,6 +95,7 @@ export function TaskDevelopmentSection({
   const [selectedRepositoryId, setSelectedRepositoryId] = useState("");
   const [busy, setBusy] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [gitCommandsOpen, setGitCommandsOpen] = useState(false);
 
   const projectRepos = data?.projectRepos ?? [];
   const branches = data?.branches ?? [];
@@ -181,72 +182,111 @@ export function TaskDevelopmentSection({
         isPanel ? "h-full" : "rounded-lg border border-border/60 bg-muted/30"
       )}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-4 py-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {!isPanel ? (
-            <h3 className="text-sm font-medium">Development</h3>
-          ) : null}
-          <Badge variant="secondary" className="font-mono text-xs">
-            {taskKey}
-          </Badge>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            onClick={() => copy(taskKey, "Task key")}
-          >
-            <Copy className="size-3.5" />
-          </Button>
-        </div>
-        {linkedRepo ? (
-          <Button type="button" variant="ghost" size="sm" className="h-7" asChild>
-            <a href={linkedRepo.htmlUrl} target="_blank" rel="noreferrer">
-              {linkedRepo.fullName}
-              <ExternalLink className="size-3.5" />
-            </a>
-          </Button>
-        ) : null}
-      </div>
+      {!isPanel ? (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-medium">Development</h3>
+              <Badge variant="secondary" className="font-mono text-xs">
+                {taskKey}
+              </Badge>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                onClick={() => copy(taskKey, "Task key")}
+              >
+                <Copy className="size-3.5" />
+              </Button>
+            </div>
+            {linkedRepo ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7"
+                asChild
+              >
+                <a href={linkedRepo.htmlUrl} target="_blank" rel="noreferrer">
+                  {linkedRepo.fullName}
+                  <ExternalLink className="size-3.5" />
+                </a>
+              </Button>
+            ) : null}
+          </div>
 
-      <div className="flex gap-2 border-b border-border/60 px-4 py-3">
-        <PipelineStep
-          label="Branch"
-          detail={
-            branch
+          <div className="flex gap-2 border-b border-border/60 px-4 py-3">
+            <PipelineStep
+              label="Branch"
+              detail={
+                branch
+                  ? multipleRepos
+                    ? `${branch.repository.fullName} · ${branch.ref}`
+                    : branch.ref
+                  : "Not started"
+              }
+              state={branchStep}
+            />
+            <PipelineStep
+              label="Commits"
+              detail={
+                commitCount > 0
+                  ? `${commitCount} on branch`
+                  : branch
+                    ? "Push to branch"
+                    : "—"
+              }
+              state={commitStep}
+            />
+            <PipelineStep
+              label="Pull request"
+              detail={
+                pr ? `#${pr.number} ${pr.state}` : branch ? "Not opened" : "—"
+              }
+              state={prStep}
+            />
+            <PipelineStep
+              label="Review"
+              detail={openPr ? "Ready" : pr ? "Closed" : "—"}
+              state={reviewStep}
+            />
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
+          <p className="text-muted-foreground min-w-0 truncate text-xs">
+            {branch
               ? multipleRepos
                 ? `${branch.repository.fullName} · ${branch.ref}`
                 : branch.ref
-              : "Not started"
-          }
-          state={branchStep}
-        />
-        <PipelineStep
-          label="Commits"
-          detail={
-            commitCount > 0
-              ? `${commitCount} on branch`
-              : branch
-                ? "Push to branch"
-                : "—"
-          }
-          state={commitStep}
-        />
-        <PipelineStep
-          label="Pull request"
-          detail={
-            pr ? `#${pr.number} ${pr.state}` : branch ? "Not opened" : "—"
-          }
-          state={prStep}
-        />
-        <PipelineStep
-          label="Review"
-          detail={openPr ? "Ready" : pr ? "Closed" : "—"}
-          state={reviewStep}
-        />
-      </div>
+              : "No branch"}
+            {commitCount > 0 ? ` · ${commitCount} commit${commitCount === 1 ? "" : "s"}` : ""}
+            {pr ? ` · PR #${pr.number} ${pr.state}` : ""}
+          </p>
+          {linkedRepo ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 shrink-0 text-xs"
+              asChild
+            >
+              <a href={linkedRepo.htmlUrl} target="_blank" rel="noreferrer">
+                {linkedRepo.fullName}
+                <ExternalLink className="size-3.5" />
+              </a>
+            </Button>
+          ) : null}
+        </div>
+      )}
 
-      <div className="flex flex-col gap-3 px-4 py-3">
+      <div
+        className={cn(
+          "flex flex-col gap-3",
+          isPanel ? "px-3 py-2" : "px-4 py-3"
+        )}
+      >
         {!branch && multipleRepos ? (
           <div className="space-y-1.5">
             <Label htmlFor="task-dev-repo" className="text-xs">
@@ -414,34 +454,80 @@ export function TaskDevelopmentSection({
       </div>
 
       {branch && checkoutCommand ? (
-        <div className="space-y-2 border-t border-border/60 px-4 py-3">
-          <div className="flex items-start gap-2">
-            <code className="bg-background/80 flex-1 truncate rounded border px-2 py-1.5 text-xs">
-              {checkoutCommand}
-            </code>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => copy(checkoutCommand, "Checkout command")}
-            >
-              <Copy className="size-3.5" />
-            </Button>
+        isPanel ? (
+          <Collapsible
+            open={gitCommandsOpen}
+            onOpenChange={setGitCommandsOpen}
+            className="border-t border-border/60"
+          >
+            <CollapsibleTrigger className="text-muted-foreground flex w-full items-center justify-between px-3 py-2 text-xs hover:bg-muted/40">
+              Git commands
+              <ChevronDown
+                className={cn(
+                  "size-3.5 transition-transform",
+                  gitCommandsOpen && "rotate-180"
+                )}
+              />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-2 px-3 pb-3">
+              <div className="flex items-start gap-2">
+                <code className="bg-background/80 flex-1 truncate rounded border px-2 py-1.5 text-xs">
+                  {checkoutCommand}
+                </code>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copy(checkoutCommand, "Checkout command")}
+                >
+                  <Copy className="size-3.5" />
+                </Button>
+              </div>
+              <div className="flex items-start gap-2">
+                <code className="bg-background/80 flex-1 truncate rounded border px-2 py-1.5 text-xs">
+                  {branch.ref}
+                </code>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copy(branch.ref, "Branch name")}
+                >
+                  <Copy className="size-3.5" />
+                </Button>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        ) : (
+          <div className="space-y-2 border-t border-border/60 px-4 py-3">
+            <div className="flex items-start gap-2">
+              <code className="bg-background/80 flex-1 truncate rounded border px-2 py-1.5 text-xs">
+                {checkoutCommand}
+              </code>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => copy(checkoutCommand, "Checkout command")}
+              >
+                <Copy className="size-3.5" />
+              </Button>
+            </div>
+            <div className="flex items-start gap-2">
+              <code className="bg-background/80 flex-1 truncate rounded border px-2 py-1.5 text-xs">
+                {branch.ref}
+              </code>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => copy(branch.ref, "Branch name")}
+              >
+                <Copy className="size-3.5" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-start gap-2">
-            <code className="bg-background/80 flex-1 truncate rounded border px-2 py-1.5 text-xs">
-              {branch.ref}
-            </code>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => copy(branch.ref, "Branch name")}
-            >
-              <Copy className="size-3.5" />
-            </Button>
-          </div>
-        </div>
+        )
       ) : null}
 
       {phase !== "no_repo" && phase !== "not_started" ? (
@@ -449,6 +535,7 @@ export function TaskDevelopmentSection({
           taskId={taskId}
           gitContext={{ projectRepos, branches, pullRequests }}
           isPanel={isPanel}
+          className={isPanel ? "min-h-0 flex-1" : undefined}
         />
       ) : null}
 

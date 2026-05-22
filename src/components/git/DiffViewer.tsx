@@ -1,15 +1,21 @@
 import { FileDiff } from "@pierre/diffs/react";
 import { parsePatchFiles } from "@pierre/diffs";
 import type { DiffLineAnnotation } from "@pierre/diffs";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import type { GitDiffFile, GitReviewComment } from "~/lib/git/types";
 import {
   buildDiffLineIndex,
   commentToDiffAnnotation,
 } from "~/lib/git/review-comment-annotation";
-import { ReviewComment } from "~/components/git/ReviewComment";
+import { isReviewThreadRoot } from "~/lib/git/review-thread";
+import {
+  buildCommentCountByPath,
+  DiffFileTree,
+} from "~/components/git/DiffFileTree";
+import { DiffInlineReviewComment } from "~/components/git/DiffInlineReviewComment";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { scrollDiffToLine } from "~/lib/git/scroll-diff-to-line";
 import { cn } from "~/lib/utils";
 
 function PatchDiff({ patch, path }: { patch: string; path: string }) {
@@ -69,10 +75,13 @@ export function DiffViewer({
   comments = [],
   pendingCommentIds,
   readOnly = false,
-  fillHeight = false,
+  fillHeight = true,
   interactionDisabled = false,
   onLineClick,
   selectedLine,
+  canResolveThreads = false,
+  onToggleThreadResolved,
+  resolvingThreadNodeId = null,
 }: {
   files: GitDiffFile[];
   className?: string;
@@ -87,11 +96,42 @@ export function DiffViewer({
     line: number;
     side?: "LEFT" | "RIGHT";
   } | null;
+  canResolveThreads?: boolean;
+  onToggleThreadResolved?: (
+    threadNodeId: string,
+    resolved: boolean
+  ) => void | Promise<void>;
+  resolvingThreadNodeId?: string | null;
 }) {
   const { resolvedTheme } = useTheme();
+  const diffScrollRef = useRef<HTMLDivElement>(null);
   const withPatch = files.filter((f) => f.patch);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const active = withPatch[activeIndex];
+  const [activePath, setActivePath] = useState<string | null>(
+    () => withPatch[0]?.path ?? null
+  );
+  const active =
+    withPatch.find((f) => f.path === activePath) ?? withPatch[0];
+  const commentCountByPath = useMemo(
+    () => buildCommentCountByPath(comments),
+    [comments]
+  );
+
+  useEffect(() => {
+    if (withPatch.length === 0) {
+      setActivePath(null);
+      return;
+    }
+    if (!activePath || !withPatch.some((f) => f.path === activePath)) {
+      setActivePath(withPatch[0]!.path);
+    }
+  }, [withPatch, activePath]);
+
+  useEffect(() => {
+    if (selectedLine?.path) {
+      setActivePath(selectedLine.path);
+    }
+  }, [selectedLine?.path]);
+
   const lineClickDisabled = readOnly || interactionDisabled;
 
   const pierreOptions = useMemo(
@@ -136,10 +176,30 @@ export function DiffViewer({
 
   const fileDiff = parsed?.[0]?.files[0];
 
+  useEffect(() => {
+    if (!selectedLine || active?.path !== selectedLine.path || !fileDiff) {
+      return;
+    }
+    const side = selectedLine.side ?? "RIGHT";
+    const timer = window.setTimeout(() => {
+      scrollDiffToLine(diffScrollRef.current, selectedLine.line, side);
+    }, 200);
+    return () => window.clearTimeout(timer);
+  }, [selectedLine, active?.path, fileDiff]);
+
   const lineIndex = useMemo(
     () => (fileDiff ? buildDiffLineIndex(fileDiff) : undefined),
     [fileDiff]
   );
+
+  const threadCommentCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of comments) {
+      if (!c.threadNodeId) continue;
+      counts.set(c.threadNodeId, (counts.get(c.threadNodeId) ?? 0) + 1);
+    }
+    return counts;
+  }, [comments]);
 
   const fileAnnotations = active
     ? annotationsForFile(comments, active.path, lineIndex)
@@ -169,60 +229,84 @@ export function DiffViewer({
         className
       )}
     >
-      <ScrollArea className="w-48 shrink-0 border-r">
-        <ul className="p-1">
-          {withPatch.map((file, i) => (
-            <li key={file.path}>
-              <button
-                type="button"
-                className={cn(
-                  "w-full truncate rounded px-2 py-1.5 text-left text-xs",
-                  i === activeIndex
-                    ? "bg-muted font-medium"
-                    : "hover:bg-muted/60"
-                )}
-                onClick={() => setActiveIndex(i)}
-              >
-                {file.path}
-                {commentsForFile(comments, file.path).length > 0 ? (
-                  <span className="text-muted-foreground ml-1">
-                    ({commentsForFile(comments, file.path).length})
-                  </span>
-                ) : null}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </ScrollArea>
-      <div className="relative flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 w-48 shrink-0 flex-col overflow-hidden border-r">
+        <DiffFileTree
+          files={withPatch}
+          activePath={active?.path ?? null}
+          onSelectPath={setActivePath}
+          commentCountByPath={commentCountByPath}
+        />
+      </div>
+      <div
+        ref={diffScrollRef}
+        className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+      >
         <ScrollArea className="min-h-0 flex-1">
           {fileDiff ? (
-            <FileDiff
-              fileDiff={fileDiff}
-              options={pierreOptions}
-              lineAnnotations={fileAnnotations}
-              selectedLines={
-                selectedLine?.path === active?.path
-                  ? {
-                      start: selectedLine.line,
-                      end: selectedLine.line,
-                      side:
-                        selectedLine.side === "LEFT"
-                          ? ("deletions" as const)
-                          : ("additions" as const),
-                    }
-                  : null
-              }
-              renderAnnotation={(annotation) => {
-                if (!annotation.metadata) return null;
-                return (
-                  <ReviewComment
-                    comment={annotation.metadata}
-                    pending={pendingCommentIds?.has(annotation.metadata.id)}
-                  />
-                );
-              }}
-            />
+            <div
+              className={cn(
+                "min-h-0",
+                resolvedTheme === "dark" && "dark"
+              )}
+            >
+              <FileDiff
+                fileDiff={fileDiff}
+                options={pierreOptions}
+                lineAnnotations={fileAnnotations}
+                selectedLines={
+                  selectedLine?.path === active?.path
+                    ? {
+                        start: selectedLine.line,
+                        end: selectedLine.line,
+                        side:
+                          selectedLine.side === "LEFT"
+                            ? ("deletions" as const)
+                            : ("additions" as const),
+                      }
+                    : null
+                }
+                renderAnnotation={(annotation) => {
+                  if (!annotation.metadata) return null;
+                  const meta = annotation.metadata;
+                  const threadNodeId = meta.threadNodeId;
+                  const threadResolved = meta.threadIsResolved ?? false;
+                  const isRoot = isReviewThreadRoot(meta, comments);
+
+                  if (threadResolved && threadNodeId && !isRoot) {
+                    return null;
+                  }
+
+                  const showResolve =
+                    canResolveThreads &&
+                    !pendingCommentIds?.has(meta.id) &&
+                    Boolean(threadNodeId) &&
+                    isRoot;
+
+                  return (
+                    <DiffInlineReviewComment
+                      comment={meta}
+                      pending={pendingCommentIds?.has(meta.id)}
+                      showResolve={showResolve}
+                      threadCommentCount={
+                        threadNodeId
+                          ? (threadCommentCounts.get(threadNodeId) ?? 1)
+                          : 1
+                      }
+                      resolveLoading={resolvingThreadNodeId === threadNodeId}
+                      onToggleResolved={
+                        threadNodeId && onToggleThreadResolved
+                          ? () =>
+                              void onToggleThreadResolved(
+                                threadNodeId,
+                                !threadResolved
+                              )
+                          : undefined
+                      }
+                    />
+                  );
+                }}
+              />
+            </div>
           ) : active?.patch ? (
             <div className="p-2 text-sm">
               <PatchDiff patch={active.patch} path={active.path} />
@@ -230,12 +314,12 @@ export function DiffViewer({
           ) : null}
         </ScrollArea>
         {unmatchedComments.length > 0 ? (
-          <div className="space-y-2 border-t border-border/60 bg-muted/20 p-3">
+          <div className="space-y-2.5 border-t border-border/60 bg-muted/20 p-3">
             <p className="text-muted-foreground text-xs font-medium">
               Comments on this file
             </p>
             {unmatchedComments.map((c) => (
-              <ReviewComment key={c.id} comment={c} />
+              <DiffInlineReviewComment key={c.id} comment={c} />
             ))}
           </div>
         ) : null}

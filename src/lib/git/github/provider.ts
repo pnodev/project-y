@@ -11,8 +11,12 @@ import type {
   GitProvider,
   GitPullRequest,
   GitRepo,
+  GitPullRequestCheck,
+  GitPullRequestIssueComment,
+  GitPullRequestMergeStatus,
   GitPullRequestReview,
   GitReviewComment,
+  GitReviewThread,
   SubmitPullRequestReviewInput,
 } from "../types";
 import {
@@ -172,6 +176,420 @@ export class GitHubProvider implements GitProvider {
       }
     );
     return this.mapPullRequest(data);
+  }
+
+  async getPullRequestMergeStatus(
+    connection: GitConnection,
+    repo: GitRepo,
+    prNumber: number,
+    options?: { userAccessToken?: string }
+  ): Promise<GitPullRequestMergeStatus> {
+    const { owner, repo: repoName } = parseRepoFullName(repo.fullName);
+    const octokit = await this.getInstallationClient(connection);
+    const { mergeable, mergeableState, pr } =
+      await this.resolvePullRequestMergeability(
+        octokit,
+        owner,
+        repoName,
+        prNumber,
+        options?.userAccessToken
+      );
+
+    const checks: GitPullRequestCheck[] = [];
+    const seenNames = new Set<string>();
+
+    const { data: checkRuns } = await octokit.request(
+      "GET /repos/{owner}/{repo}/commits/{ref}/check-runs",
+      {
+        owner,
+        repo: repoName,
+        ref: pr.head.sha,
+        per_page: 100,
+      }
+    );
+
+    for (const run of checkRuns.check_runs ?? []) {
+      const name = run.name ?? "Check";
+      seenNames.add(name);
+      checks.push({
+        id: `run-${run.id}`,
+        name,
+        status: this.mapCheckRunStatus(run.status),
+        conclusion: this.mapCheckRunConclusion(run.conclusion),
+        htmlUrl: run.html_url ?? pr.html_url,
+        description: run.output?.summary ?? run.output?.title ?? null,
+        source: "check_run",
+        appSlug: run.app?.slug ?? null,
+        avatarUrl: run.app?.owner?.avatar_url ?? null,
+      });
+    }
+
+    try {
+      const { data: combined } = await octokit.request(
+        "GET /repos/{owner}/{repo}/commits/{ref}/status",
+        {
+          owner,
+          repo: repoName,
+          ref: pr.head.sha,
+          per_page: 100,
+        }
+      );
+      for (const status of combined.statuses ?? []) {
+        const name = status.context ?? "Status";
+        if (seenNames.has(name)) continue;
+        seenNames.add(name);
+        checks.push({
+          id: `status-${status.id}`,
+          name,
+          status:
+            status.state === "pending"
+              ? "in_progress"
+              : "completed",
+          conclusion: this.mapLegacyStatusState(status.state),
+          htmlUrl: status.target_url ?? pr.html_url,
+          description: status.description ?? null,
+          source: "status",
+          appSlug: null,
+          avatarUrl: status.avatar_url ?? null,
+        });
+      }
+    } catch {
+      // Legacy statuses are optional when check runs cover CI.
+    }
+
+    return {
+      state: mapPrState(
+        pr.state,
+        Boolean(pr.merged_at),
+        pr.draft ?? false
+      ),
+      mergeable,
+      mergeableState,
+      checks,
+    };
+  }
+
+  /** REST `mergeable` is often null; GraphQL by PR `node_id` avoids repo name casing issues. */
+  private async resolvePullRequestMergeability(
+    installationOctokit: InstallationOctokit,
+    owner: string,
+    repo: string,
+    prNumber: number,
+    userAccessToken?: string
+  ): Promise<{
+    mergeable: boolean | null;
+    mergeableState: string;
+    pr: {
+      head: { sha: string };
+      html_url: string;
+      state: string;
+      merged_at: string | null;
+      draft?: boolean;
+    };
+  }> {
+    const fetchRestPull = () =>
+      installationOctokit.request(
+        "GET /repos/{owner}/{repo}/pulls/{pull_number}",
+        { owner, repo, pull_number: prNumber }
+      );
+
+    const { data: initialPr } = await fetchRestPull();
+    let pr = initialPr;
+
+    const repoOwner =
+      pr.base?.repo?.owner?.login ?? pr.head?.repo?.owner?.login ?? owner;
+    const repoName = pr.base?.repo?.name ?? pr.head?.repo?.name ?? repo;
+    const nodeId = pr.node_id;
+
+    const userOctokit = userAccessToken
+      ? new Octokit({ auth: userAccessToken })
+      : null;
+
+    const graphqlFromUser = userOctokit
+      ? await this.fetchPullRequestMergeGraphql(userOctokit, {
+          nodeId,
+          owner: repoOwner,
+          repo: repoName,
+          prNumber,
+        })
+      : null;
+    const graphqlFromInstall = await this.fetchPullRequestMergeGraphql(
+      installationOctokit,
+      { nodeId, owner: repoOwner, repo: repoName, prNumber }
+    );
+
+    const graphql = graphqlFromUser ?? graphqlFromInstall;
+
+    if (graphql) {
+      const fromGraphql = this.resolveMergeabilityFromGraphql(graphql);
+      if (fromGraphql) {
+        return { ...fromGraphql, pr };
+      }
+    }
+
+    let mergeable = pr.mergeable;
+    let mergeableState = pr.mergeable_state ?? "unknown";
+
+    const restResolved = this.resolveMergeabilityFromRest(mergeable, mergeableState);
+    if (restResolved) {
+      return { ...restResolved, pr };
+    }
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      await sleep(500 * attempt);
+      const { data } = await fetchRestPull();
+      pr = data;
+      mergeable = data.mergeable;
+      mergeableState = data.mergeable_state ?? "unknown";
+      const resolved = this.resolveMergeabilityFromRest(mergeable, mergeableState);
+      if (resolved) {
+        return { ...resolved, pr };
+      }
+    }
+
+    if (graphql) {
+      const inferred = this.inferMergeabilityFromGraphqlHints(graphql);
+      if (inferred) {
+        return { ...inferred, pr };
+      }
+    }
+
+    return {
+      mergeable,
+      mergeableState,
+      pr,
+    };
+  }
+
+  private resolveMergeabilityFromRest(
+    mergeable: boolean | null,
+    mergeableState: string
+  ): { mergeable: boolean | null; mergeableState: string } | null {
+    if (mergeable === false) {
+      return {
+        mergeable: false,
+        mergeableState:
+          mergeableState === "unknown" ? "dirty" : mergeableState,
+      };
+    }
+    if (mergeable === true && mergeableState !== "unknown") {
+      return { mergeable: true, mergeableState };
+    }
+    if (mergeableState === "dirty") {
+      return { mergeable: false, mergeableState: "dirty" };
+    }
+    return null;
+  }
+
+  private async fetchPullRequestMergeGraphql(
+    octokit: InstallationOctokit | Octokit,
+    params: {
+      nodeId?: string;
+      owner: string;
+      repo: string;
+      prNumber: number;
+    }
+  ): Promise<{
+    mergeable: string;
+    mergeStateStatus: string;
+    hasPotentialMergeCommit: boolean;
+    isDraft: boolean;
+  } | null> {
+    type PullRequestFields = {
+      mergeable?: string | null;
+      mergeStateStatus?: string | null;
+      isDraft?: boolean | null;
+      potentialMergeCommit?: { oid?: string | null } | null;
+    };
+
+    const mapPull = (pull: PullRequestFields | null | undefined) => {
+      if (!pull?.mergeable || !pull.mergeStateStatus) return null;
+      return {
+        mergeable: pull.mergeable,
+        mergeStateStatus: pull.mergeStateStatus,
+        hasPotentialMergeCommit: Boolean(pull.potentialMergeCommit?.oid),
+        isDraft: pull.isDraft ?? false,
+      };
+    };
+
+    if (params.nodeId) {
+      type NodeQuery = {
+        node?: PullRequestFields | null;
+      };
+      try {
+        const result = await octokit.graphql<NodeQuery>(
+          `query($id: ID!) {
+            node(id: $id) {
+              ... on PullRequest {
+                mergeable
+                mergeStateStatus
+                isDraft
+                potentialMergeCommit { oid }
+              }
+            }
+          }`,
+          { id: params.nodeId }
+        );
+        const mapped = mapPull(result.node ?? null);
+        if (mapped) return mapped;
+      } catch (error) {
+        logGitHubApiGraphql("pullRequest mergeability (node) failed", {
+          query: "node PullRequest mergeable",
+          variables: { id: params.nodeId },
+          error,
+        });
+      }
+    }
+
+    type RepoQuery = {
+      repository?: {
+        pullRequest?: PullRequestFields | null;
+      } | null;
+    };
+
+    try {
+      const result = await octokit.graphql<RepoQuery>(
+        `query($owner: String!, $repo: String!, $pr: Int!) {
+          repository(owner: $owner, name: $repo) {
+            pullRequest(number: $pr) {
+              mergeable
+              mergeStateStatus
+              isDraft
+              potentialMergeCommit { oid }
+            }
+          }
+        }`,
+        {
+          owner: params.owner,
+          repo: params.repo,
+          pr: params.prNumber,
+        }
+      );
+      return mapPull(result.repository?.pullRequest ?? null);
+    } catch (error) {
+      logGitHubApiGraphql("pullRequest mergeability (repo) failed", {
+        query: "repository pullRequest mergeable",
+        variables: {
+          owner: params.owner,
+          repo: params.repo,
+          pr: params.prNumber,
+        },
+        error,
+      });
+      return null;
+    }
+  }
+
+  private resolveMergeabilityFromGraphql(graphql: {
+    mergeable: string;
+    mergeStateStatus: string;
+    hasPotentialMergeCommit: boolean;
+    isDraft: boolean;
+  }): { mergeable: boolean | null; mergeableState: string } | null {
+    if (graphql.mergeable === "CONFLICTING") {
+      return { mergeable: false, mergeableState: "dirty" };
+    }
+
+    switch (graphql.mergeStateStatus) {
+      case "DIRTY":
+        return { mergeable: false, mergeableState: "dirty" };
+      case "BEHIND":
+        return { mergeable: false, mergeableState: "behind" };
+      case "BLOCKED":
+        return { mergeable: false, mergeableState: "blocked" };
+      case "UNSTABLE":
+        return { mergeable: false, mergeableState: "unstable" };
+      case "CLEAN":
+      case "HAS_HOOKS":
+        return { mergeable: true, mergeableState: "clean" };
+      case "DRAFT":
+        return { mergeable: false, mergeableState: "blocked" };
+    }
+
+    if (graphql.mergeable === "MERGEABLE") {
+      return { mergeable: true, mergeableState: "clean" };
+    }
+
+    if (
+      !graphql.isDraft &&
+      !graphql.hasPotentialMergeCommit &&
+      graphql.mergeable === "UNKNOWN" &&
+      graphql.mergeStateStatus === "UNKNOWN"
+    ) {
+      return { mergeable: false, mergeableState: "dirty" };
+    }
+
+    return null;
+  }
+
+  /** When primary GraphQL fields stay UNKNOWN but merge is clearly blocked. */
+  private inferMergeabilityFromGraphqlHints(graphql: {
+    mergeable: string;
+    mergeStateStatus: string;
+    hasPotentialMergeCommit: boolean;
+    isDraft: boolean;
+  }): { mergeable: boolean | null; mergeableState: string } | null {
+    if (graphql.isDraft) return null;
+
+    if (
+      !graphql.hasPotentialMergeCommit &&
+      graphql.mergeable !== "MERGEABLE" &&
+      graphql.mergeStateStatus !== "CLEAN" &&
+      graphql.mergeStateStatus !== "HAS_HOOKS"
+    ) {
+      if (graphql.mergeStateStatus === "BEHIND") {
+        return { mergeable: false, mergeableState: "behind" };
+      }
+      if (graphql.mergeStateStatus === "BLOCKED") {
+        return { mergeable: false, mergeableState: "blocked" };
+      }
+      return { mergeable: false, mergeableState: "dirty" };
+    }
+
+    return null;
+  }
+
+  async mergePullRequest(
+    connection: GitConnection,
+    repo: GitRepo,
+    prNumber: number,
+    userAccessToken: string,
+    options?: { mergeMethod?: "merge" | "squash" | "rebase" }
+  ): Promise<GitPullRequest> {
+    const { owner, repo: repoName } = parseRepoFullName(repo.fullName);
+    const octokit = new Octokit({ auth: userAccessToken });
+    try {
+      await octokit.rest.pulls.merge({
+        owner,
+        repo: repoName,
+        pull_number: prNumber,
+        merge_method: options?.mergeMethod ?? "merge",
+      });
+    } catch (error) {
+      throw new Error(formatGitHubApiError(error));
+    }
+    return this.getPullRequest(connection, repo, prNumber);
+  }
+
+  async closePullRequest(
+    connection: GitConnection,
+    repo: GitRepo,
+    prNumber: number,
+    userAccessToken: string
+  ): Promise<GitPullRequest> {
+    const { owner, repo: repoName } = parseRepoFullName(repo.fullName);
+    const octokit = new Octokit({ auth: userAccessToken });
+    try {
+      const { data } = await octokit.rest.pulls.update({
+        owner,
+        repo: repoName,
+        pull_number: prNumber,
+        state: "closed",
+      });
+      return this.mapPullRequest(data);
+    } catch (error) {
+      throw new Error(formatGitHubApiError(error));
+    }
   }
 
   async listPullRequestsForRef(
@@ -354,6 +772,20 @@ export class GitHubProvider implements GitProvider {
     );
   }
 
+  async listPullRequestIssueComments(
+    connection: GitConnection,
+    repo: GitRepo,
+    prNumber: number
+  ): Promise<GitPullRequestIssueComment[]> {
+    const { owner, repo: repoName } = parseRepoFullName(repo.fullName);
+    const octokit = await this.getInstallationClient(connection);
+    const { data } = await octokit.request(
+      "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
+      { owner, repo: repoName, issue_number: prNumber }
+    );
+    return data.map((c) => this.mapIssueComment(c));
+  }
+
   async listPullRequestReviewComments(
     connection: GitConnection,
     repo: GitRepo,
@@ -404,20 +836,19 @@ export class GitHubProvider implements GitProvider {
     );
   }
 
-  async listPullRequestReviewThreadCommentsAsUser(
-    _connection: GitConnection,
-    repo: GitRepo,
-    prNumber: number,
-    userAccessToken: string
-  ): Promise<GitReviewComment[]> {
-    const { owner, repo: repoName } = parseRepoFullName(repo.fullName);
-    const octokit = new Octokit({ auth: userAccessToken });
-
+  private async fetchPullRequestReviewThreadsGraphql(
+    octokit: Pick<Octokit, "graphql">,
+    owner: string,
+    repoName: string,
+    prNumber: number
+  ): Promise<{ threads: GitReviewThread[]; comments: GitReviewComment[] }> {
     type ThreadQuery = {
       repository?: {
         pullRequest?: {
           reviewThreads?: {
             nodes?: Array<{
+              id?: string | null;
+              isResolved?: boolean | null;
               path?: string | null;
               line?: number | null;
               originalLine?: number | null;
@@ -438,6 +869,7 @@ export class GitHubProvider implements GitProvider {
                     url?: string | null;
                   } | null;
                   pullRequestReview?: { databaseId?: number | string | null } | null;
+                  replyTo?: { databaseId?: number | string | null } | null;
                 } | null> | null;
               } | null;
             } | null> | null;
@@ -452,11 +884,13 @@ export class GitHubProvider implements GitProvider {
           pullRequest(number: $number) {
             reviewThreads(first: 100) {
               nodes {
+                id
+                isResolved
                 path
                 line
                 originalLine
                 diffSide
-                comments(first: 20) {
+                comments(first: 50) {
                   nodes {
                     databaseId
                     body
@@ -468,6 +902,7 @@ export class GitHubProvider implements GitProvider {
                     commit { oid }
                     author { login avatarUrl url }
                     pullRequestReview { databaseId }
+                    replyTo { databaseId }
                   }
                 }
               }
@@ -478,38 +913,133 @@ export class GitHubProvider implements GitProvider {
       { owner, name: repoName, number: prNumber }
     );
 
+    const threads: GitReviewThread[] = [];
     const comments: GitReviewComment[] = [];
-    const threads = repository?.pullRequest?.reviewThreads?.nodes ?? [];
-    for (const thread of threads) {
+    const nodes = repository?.pullRequest?.reviewThreads?.nodes ?? [];
+
+    for (const thread of nodes) {
+      if (!thread?.id) continue;
       const threadSide =
-        thread?.diffSide === "LEFT" || thread?.diffSide === "RIGHT"
+        thread.diffSide === "LEFT" || thread.diffSide === "RIGHT"
           ? thread.diffSide
           : null;
-      for (const node of thread?.comments?.nodes ?? []) {
-        const path = node?.path ?? thread?.path;
+      const commentIds: number[] = [];
+
+      for (const node of thread.comments?.nodes ?? []) {
+        const path = node?.path ?? thread.path;
         if (node?.databaseId == null || !path) continue;
+        const id = Number(node.databaseId);
+        commentIds.push(id);
         const authorLogin = node.author?.login ?? "unknown";
         comments.push({
-          id: Number(node.databaseId),
+          id,
           body: node.body ?? "",
           path,
-          line: node.line ?? thread?.line ?? null,
-          originalLine: node.originalLine ?? thread?.originalLine ?? null,
+          line: node.line ?? thread.line ?? null,
+          originalLine: node.originalLine ?? thread.originalLine ?? null,
           side: threadSide,
           commitId: node.commit?.oid ?? "",
           authorLogin,
           authorAvatarUrl: node.author?.avatarUrl ?? null,
           authorHtmlUrl: node.author?.url ?? `https://github.com/${authorLogin}`,
           createdAt: node.createdAt ? new Date(node.createdAt) : new Date(),
-          inReplyToId: null,
+          inReplyToId:
+            node.replyTo?.databaseId != null
+              ? Number(node.replyTo.databaseId)
+              : null,
           reviewId: node.pullRequestReview?.databaseId
             ? Number(node.pullRequestReview.databaseId)
             : null,
           url: node.url ?? "",
+          threadNodeId: thread.id,
+          threadIsResolved: thread.isResolved ?? false,
+        });
+      }
+
+      if (commentIds.length > 0) {
+        const threadPath =
+          thread.path ??
+          comments.find((c) => c.id === commentIds[0])?.path ??
+          "";
+        threads.push({
+          nodeId: thread.id,
+          isResolved: thread.isResolved ?? false,
+          path: threadPath,
+          line: thread.line ?? null,
+          originalLine: thread.originalLine ?? null,
+          side: threadSide,
+          commentIds,
         });
       }
     }
+
+    return { threads, comments };
+  }
+
+  async listPullRequestReviewThreads(
+    connection: GitConnection,
+    repo: GitRepo,
+    prNumber: number
+  ): Promise<GitReviewThread[]> {
+    const { owner, repo: repoName } = parseRepoFullName(repo.fullName);
+    const octokit = await this.getInstallationClient(connection);
+    const { threads } = await this.fetchPullRequestReviewThreadsGraphql(
+      octokit,
+      owner,
+      repoName,
+      prNumber
+    );
+    return threads;
+  }
+
+  async listPullRequestReviewThreadCommentsAsUser(
+    _connection: GitConnection,
+    repo: GitRepo,
+    prNumber: number,
+    userAccessToken: string
+  ): Promise<GitReviewComment[]> {
+    const { owner, repo: repoName } = parseRepoFullName(repo.fullName);
+    const octokit = new Octokit({ auth: userAccessToken });
+    const { comments } = await this.fetchPullRequestReviewThreadsGraphql(
+      octokit,
+      owner,
+      repoName,
+      prNumber
+    );
     return comments;
+  }
+
+  async setReviewThreadResolved(
+    threadNodeId: string,
+    resolved: boolean,
+    userAccessToken: string
+  ): Promise<void> {
+    const octokit = new Octokit({ auth: userAccessToken });
+    const mutation = resolved
+      ? `mutation($threadId: ID!) {
+          resolveReviewThread(input: { threadId: $threadId }) {
+            thread { isResolved }
+          }
+        }`
+      : `mutation($threadId: ID!) {
+          unresolveReviewThread(input: { threadId: $threadId }) {
+            thread { isResolved }
+          }
+        }`;
+
+    logGitHubApiGraphql(
+      resolved ? "resolveReviewThread" : "unresolveReviewThread",
+      {
+        mutation,
+        variables: { threadId: threadNodeId },
+      }
+    );
+
+    try {
+      await octokit.graphql(mutation, { threadId: threadNodeId });
+    } catch (error) {
+      throw new Error(formatGitHubApiError(error));
+    }
   }
 
   async listPullRequestReviews(
@@ -1183,6 +1713,33 @@ export class GitHubProvider implements GitProvider {
     };
   }
 
+  private mapIssueComment(data: {
+    id: number;
+    body?: string | null;
+    created_at: string;
+    updated_at?: string | null;
+    html_url: string;
+    user?: {
+      login?: string | null;
+      avatar_url?: string | null;
+      html_url?: string | null;
+      type?: string | null;
+    } | null;
+  }): GitPullRequestIssueComment {
+    const login = data.user?.login ?? "unknown";
+    return {
+      id: data.id,
+      body: data.body ?? "",
+      authorLogin: login,
+      authorAvatarUrl: data.user?.avatar_url ?? null,
+      authorHtmlUrl: data.user?.html_url ?? `https://github.com/${login}`,
+      isBot: data.user?.type === "Bot" || /\[bot\]$/i.test(login),
+      createdAt: new Date(data.created_at),
+      updatedAt: data.updated_at ? new Date(data.updated_at) : null,
+      url: data.html_url,
+    };
+  }
+
   private mapReviewComment(data: {
     id: number;
     body: string;
@@ -1255,6 +1812,66 @@ export class GitHubProvider implements GitProvider {
       submittedAt: data.submitted_at ? new Date(data.submitted_at) : null,
       url: data.html_url ?? null,
     };
+  }
+
+  private mapCheckRunStatus(
+    status: string | null | undefined
+  ): GitPullRequestCheck["status"] {
+    switch (status) {
+      case "queued":
+        return "queued";
+      case "in_progress":
+        return "in_progress";
+      case "waiting":
+        return "waiting";
+      case "pending":
+        return "pending";
+      case "requested":
+        return "requested";
+      default:
+        return "completed";
+    }
+  }
+
+  private mapCheckRunConclusion(
+    conclusion: string | null | undefined
+  ): GitPullRequestCheck["conclusion"] {
+    switch (conclusion) {
+      case "success":
+        return "success";
+      case "failure":
+        return "failure";
+      case "neutral":
+        return "neutral";
+      case "cancelled":
+        return "cancelled";
+      case "skipped":
+        return "skipped";
+      case "timed_out":
+        return "timed_out";
+      case "action_required":
+        return "action_required";
+      case "stale":
+        return "stale";
+      default:
+        return null;
+    }
+  }
+
+  private mapLegacyStatusState(
+    state: string
+  ): GitPullRequestCheck["conclusion"] {
+    switch (state) {
+      case "success":
+        return "success";
+      case "failure":
+      case "error":
+        return "failure";
+      case "pending":
+        return null;
+      default:
+        return "neutral";
+    }
   }
 
   private mapPullRequest(data: {

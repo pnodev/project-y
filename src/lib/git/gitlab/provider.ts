@@ -34,6 +34,9 @@ export class GitLabProvider implements GitProvider {
   getCommitDiff() {
     return Promise.reject(new Error(NOT_IMPLEMENTED));
   }
+  listPullRequestIssueComments() {
+    return Promise.reject(new Error(NOT_IMPLEMENTED));
+  }
   listPullRequestReviewComments() {
     return Promise.reject(new Error(NOT_IMPLEMENTED));
   }
@@ -44,6 +47,12 @@ export class GitLabProvider implements GitProvider {
     return Promise.reject(new Error(NOT_IMPLEMENTED));
   }
   listPullRequestReviewThreadCommentsAsUser() {
+    return Promise.reject(new Error(NOT_IMPLEMENTED));
+  }
+  listPullRequestReviewThreads() {
+    return Promise.reject(new Error(NOT_IMPLEMENTED));
+  }
+  setReviewThreadResolved() {
     return Promise.reject(new Error(NOT_IMPLEMENTED));
   }
   listPullRequestReviews() {
@@ -62,6 +71,15 @@ export class GitLabProvider implements GitProvider {
     return Promise.reject(new Error(NOT_IMPLEMENTED));
   }
   discardPendingReview() {
+    return Promise.reject(new Error(NOT_IMPLEMENTED));
+  }
+  getPullRequestMergeStatus() {
+    return Promise.reject(new Error(NOT_IMPLEMENTED));
+  }
+  mergePullRequest() {
+    return Promise.reject(new Error(NOT_IMPLEMENTED));
+  }
+  closePullRequest() {
     return Promise.reject(new Error(NOT_IMPLEMENTED));
   }
   parsePullRequestUrl() {

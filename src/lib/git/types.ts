@@ -57,6 +57,72 @@ export type GitReviewComment = {
   inReplyToId: number | null;
   reviewId: number | null;
   url: string;
+  /** GraphQL node id of the review thread (for resolve / unresolve). */
+  threadNodeId?: string;
+  threadIsResolved?: boolean;
+};
+
+export type GitReviewThread = {
+  nodeId: string;
+  isResolved: boolean;
+  path: string;
+  line: number | null;
+  originalLine: number | null;
+  side: "LEFT" | "RIGHT" | null;
+  commentIds: number[];
+};
+
+/** General PR conversation comment (timeline), not tied to a diff line. */
+export type GitPullRequestIssueComment = {
+  id: number;
+  body: string;
+  authorLogin: string;
+  authorAvatarUrl: string | null;
+  authorHtmlUrl: string | null;
+  isBot: boolean;
+  createdAt: Date;
+  updatedAt: Date | null;
+  url: string;
+};
+
+export type GitCheckConclusion =
+  | "success"
+  | "failure"
+  | "neutral"
+  | "cancelled"
+  | "skipped"
+  | "timed_out"
+  | "action_required"
+  | "stale"
+  | null;
+
+export type GitCheckStatus =
+  | "queued"
+  | "in_progress"
+  | "completed"
+  | "waiting"
+  | "pending"
+  | "requested";
+
+export type GitPullRequestCheck = {
+  id: string;
+  name: string;
+  status: GitCheckStatus;
+  conclusion: GitCheckConclusion;
+  htmlUrl: string;
+  description: string | null;
+  source: "check_run" | "status";
+  /** GitHub App slug when from a check run. */
+  appSlug: string | null;
+  /** App or status creator avatar from GitHub. */
+  avatarUrl: string | null;
+};
+
+export type GitPullRequestMergeStatus = {
+  state: GitPullRequest["state"];
+  mergeable: boolean | null;
+  mergeableState: string;
+  checks: GitPullRequestCheck[];
 };
 
 export type GitPullRequestReview = {
@@ -154,6 +220,11 @@ export interface GitProvider {
     repo: GitRepo,
     sha: string
   ): Promise<GitDiffFile[]>;
+  listPullRequestIssueComments(
+    connection: GitConnection,
+    repo: GitRepo,
+    prNumber: number
+  ): Promise<GitPullRequestIssueComment[]>;
   listPullRequestReviewComments(
     connection: GitConnection,
     repo: GitRepo,
@@ -180,6 +251,16 @@ export interface GitProvider {
     prNumber: number,
     userAccessToken: string
   ): Promise<GitReviewComment[]>;
+  listPullRequestReviewThreads(
+    connection: GitConnection,
+    repo: GitRepo,
+    prNumber: number
+  ): Promise<GitReviewThread[]>;
+  setReviewThreadResolved(
+    threadNodeId: string,
+    resolved: boolean,
+    userAccessToken: string
+  ): Promise<void>;
   listPullRequestReviews(
     connection: GitConnection,
     repo: GitRepo,
@@ -222,6 +303,25 @@ export interface GitProvider {
     reviewId: number,
     userAccessToken: string
   ): Promise<void>;
+  getPullRequestMergeStatus(
+    connection: GitConnection,
+    repo: GitRepo,
+    prNumber: number,
+    options?: { userAccessToken?: string }
+  ): Promise<GitPullRequestMergeStatus>;
+  mergePullRequest(
+    connection: GitConnection,
+    repo: GitRepo,
+    prNumber: number,
+    userAccessToken: string,
+    options?: { mergeMethod?: "merge" | "squash" | "rebase" }
+  ): Promise<GitPullRequest>;
+  closePullRequest(
+    connection: GitConnection,
+    repo: GitRepo,
+    prNumber: number,
+    userAccessToken: string
+  ): Promise<GitPullRequest>;
   parsePullRequestUrl(url: string): {
     owner: string;
     repo: string;

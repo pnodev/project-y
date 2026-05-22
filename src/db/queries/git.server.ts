@@ -27,8 +27,12 @@ import {
   resolveBaseRef,
   type TaskDevPhaseContext,
 } from "~/lib/git/task-dev-phase";
-import type { GitReviewComment } from "~/lib/git/types";
+import type { GitPullRequest, GitReviewComment } from "~/lib/git/types";
+import { upsertTaskPullRequest } from "~/lib/git/upsert-task-pull-request";
+import { sync } from "~/db/mutations/sync";
+import { v7 as uuid } from "uuid";
 import { pickRicherReviewComment } from "~/lib/git/review-comment-annotation";
+import { applyReviewThreadMetadata } from "~/lib/git/review-thread";
 import type { requireSessionFromRequest } from "~/lib/session";
 
 function mergeReviewCommentsById(
@@ -353,11 +357,14 @@ export async function getTaskPullRequestReviewComments(
   const { getGitProvider } = await import("~/lib/git/factory");
   const provider = getGitProvider(connection.provider);
   const repo = toGitRepo(repository);
-  const [installationComments, reviews, livePr] = await Promise.all([
-    provider.listPullRequestReviewComments(connection, repo, pr.number),
-    provider.listPullRequestReviews(connection, repo, pr.number),
-    provider.getPullRequest(connection, repo, pr.number),
-  ]);
+  const [installationComments, issueComments, reviews, livePr, reviewThreads] =
+    await Promise.all([
+      provider.listPullRequestReviewComments(connection, repo, pr.number),
+      provider.listPullRequestIssueComments(connection, repo, pr.number),
+      provider.listPullRequestReviews(connection, repo, pr.number),
+      provider.getPullRequest(connection, repo, pr.number),
+      provider.listPullRequestReviewThreads(connection, repo, pr.number),
+    ]);
 
   let pendingReview: Awaited<
     ReturnType<typeof provider.findPendingReviewForUser>
@@ -429,11 +436,14 @@ export async function getTaskPullRequestReviewComments(
     }
   }
 
-  const comments = mergeReviewCommentsById(
-    installationComments,
-    viewerComments,
-    pendingReviewComments,
-    threadComments
+  const comments = applyReviewThreadMetadata(
+    mergeReviewCommentsById(
+      installationComments,
+      viewerComments,
+      pendingReviewComments,
+      threadComments
+    ),
+    reviewThreads
   );
   const pendingReviewCommentIds = new Set(
     pendingReviewComments.map((c) => c.id)
@@ -451,6 +461,7 @@ export async function getTaskPullRequestReviewComments(
 
   return {
     comments: submittedComments,
+    issueComments,
     pendingComments,
     pendingReview,
     reviews: reviews.filter((r) => r.state !== "PENDING"),
@@ -565,6 +576,30 @@ export async function startTaskPullRequestReview(
     commitId,
     token,
     login
+  );
+}
+
+export async function setTaskPullRequestReviewThreadResolved(
+  session: Awaited<ReturnType<typeof requireSessionFromRequest>>,
+  taskId: string,
+  pullRequestId: string,
+  input: { threadNodeId: string; resolved: boolean }
+) {
+  const { token } = await requireGitUserLink(session);
+  const owner = getOwningIdentity(session);
+  const { repository, connection, pullRequest: pr } = await resolveTaskRepository(
+    owner,
+    taskId,
+    { pullRequestId }
+  );
+  if (!pr) throw new Error("Pull request not found");
+
+  const { getGitProvider } = await import("~/lib/git/factory");
+  const provider = getGitProvider(connection.provider);
+  await provider.setReviewThreadResolved(
+    input.threadNodeId,
+    input.resolved,
+    token
   );
 }
 
@@ -708,6 +743,159 @@ export async function discardTaskPullRequestReview(
     pending.id,
     token
   );
+}
+
+export async function getTaskPullRequestMergeStatus(
+  session: Awaited<ReturnType<typeof requireSessionFromRequest>>,
+  taskId: string,
+  pullRequestId: string
+) {
+  const owner = getOwningIdentity(session);
+  const { repository, connection, pullRequest: pr } = await resolveTaskRepository(
+    owner,
+    taskId,
+    { pullRequestId }
+  );
+  if (!pr) throw new Error("Pull request not found");
+
+  const { getGitProvider } = await import("~/lib/git/factory");
+  const provider = getGitProvider(connection.provider);
+  const repo = toGitRepo(repository);
+
+  let userAccessToken: string | undefined;
+  try {
+    userAccessToken = await requireGitUserAccessToken(session);
+  } catch {
+    userAccessToken = undefined;
+  }
+
+  return provider.getPullRequestMergeStatus(connection, repo, pr.number, {
+    userAccessToken,
+  });
+}
+
+async function persistTaskPullRequestFromGit(
+  owner: string,
+  taskId: string,
+  repositoryId: string,
+  branchId: string | null,
+  pr: GitPullRequest
+) {
+  await upsertTaskPullRequest({
+    owner,
+    taskId,
+    repositoryId,
+    branchId,
+    providerPrId: pr.providerPrId,
+    number: pr.number,
+    url: pr.url,
+    title: pr.title,
+    state: pr.state,
+    headRef: pr.headRef,
+    baseRef: pr.baseRef,
+    mergedAt: pr.mergedAt,
+    closedAt: pr.closedAt,
+  });
+}
+
+export async function mergeTaskPullRequest(
+  session: Awaited<ReturnType<typeof requireSessionFromRequest>>,
+  taskId: string,
+  pullRequestId: string,
+  options?: { mergeMethod?: "merge" | "squash" | "rebase" }
+) {
+  const owner = getOwningIdentity(session);
+  const token = await requireGitUserAccessToken(session);
+  const { repository, connection, pullRequest: pr, branch } =
+    await resolveTaskRepository(owner, taskId, { pullRequestId });
+  if (!pr) throw new Error("Pull request not found");
+
+  const { getGitProvider } = await import("~/lib/git/factory");
+  const provider = getGitProvider(connection.provider);
+  const repo = toGitRepo(repository);
+
+  const merged = await provider.mergePullRequest(
+    connection,
+    repo,
+    pr.number,
+    token,
+    options
+  );
+
+  await persistTaskPullRequestFromGit(
+    owner,
+    taskId,
+    repository.id,
+    branch?.id ?? pr.branchId,
+    merged
+  );
+
+  await db.insert(taskGitActivity).values({
+    id: uuid(),
+    taskId,
+    owner,
+    type: "pull_request",
+    payload: {
+      number: merged.number,
+      state: merged.state,
+      url: merged.url,
+      title: pr.title,
+      action: "merged",
+    },
+    occurredAt: new Date(),
+  });
+
+  await sync(`task-update-${taskId}`, { id: taskId });
+  return merged;
+}
+
+export async function closeTaskPullRequest(
+  session: Awaited<ReturnType<typeof requireSessionFromRequest>>,
+  taskId: string,
+  pullRequestId: string
+) {
+  const owner = getOwningIdentity(session);
+  const token = await requireGitUserAccessToken(session);
+  const { repository, connection, pullRequest: pr, branch } =
+    await resolveTaskRepository(owner, taskId, { pullRequestId });
+  if (!pr) throw new Error("Pull request not found");
+
+  const { getGitProvider } = await import("~/lib/git/factory");
+  const provider = getGitProvider(connection.provider);
+  const repo = toGitRepo(repository);
+
+  const closed = await provider.closePullRequest(
+    connection,
+    repo,
+    pr.number,
+    token
+  );
+
+  await persistTaskPullRequestFromGit(
+    owner,
+    taskId,
+    repository.id,
+    branch?.id ?? pr.branchId,
+    closed
+  );
+
+  await db.insert(taskGitActivity).values({
+    id: uuid(),
+    taskId,
+    owner,
+    type: "pull_request",
+    payload: {
+      number: closed.number,
+      state: closed.state,
+      url: closed.url,
+      title: pr.title,
+      action: "closed",
+    },
+    occurredAt: new Date(),
+  });
+
+  await sync(`task-update-${taskId}`, { id: taskId });
+  return closed;
 }
 
 export async function getTaskGitSummariesForTasks(

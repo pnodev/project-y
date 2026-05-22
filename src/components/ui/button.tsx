@@ -84,9 +84,9 @@ function Button({
   ) : (
     <Comp
       className={cn(buttonVariants({ variant, size, className }))}
-      disabled={loading}
       type={type}
       {...props}
+      disabled={loading || props.disabled}
     >
       {content}
     </Comp>

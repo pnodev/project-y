@@ -54,7 +54,12 @@ export function pickRicherReviewComment(
     (c.line != null ? 2 : 0) +
     (c.originalLine != null ? 2 : 0) +
     (c.side != null ? 1 : 0);
-  return score(a) >= score(b) ? a : b;
+  const winner = score(a) >= score(b) ? a : b;
+  const other = winner === a ? b : a;
+  return {
+    ...winner,
+    inReplyToId: winner.inReplyToId ?? other.inReplyToId,
+  };
 }
 
 export function commentToDiffAnnotation(

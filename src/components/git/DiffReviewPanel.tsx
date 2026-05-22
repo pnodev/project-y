@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { DiffViewer } from "~/components/git/DiffViewer";
 import { LineCommentPopover } from "~/components/git/review/LineCommentPopover";
-import { ReviewHistorySection } from "~/components/git/review/ReviewHistorySection";
 import { ReviewLoadingOverlay } from "~/components/git/review/ReviewLoadingOverlay";
 import { ReviewToolbar } from "~/components/git/review/ReviewToolbar";
 import { ReviewToolbarSkeleton } from "~/components/git/review/ReviewToolbarSkeleton";
@@ -17,6 +16,7 @@ import {
 import {
   useCreateTaskPullRequestReviewCommentMutation,
   useDiscardTaskPullRequestReviewMutation,
+  useSetTaskPullRequestReviewThreadResolvedMutation,
   useStartTaskPullRequestReviewMutation,
   useSubmitTaskPullRequestReviewMutation,
 } from "~/db/mutations/git";
@@ -30,6 +30,7 @@ import {
   isPendingReviewConflictMessage,
 } from "~/lib/git/errors";
 import { toast } from "sonner";
+import { useTaskGitReviewNav } from "~/lib/git/task-git-review-nav";
 import { cn } from "~/lib/utils";
 
 function shouldRecoverPendingReview(message: string): boolean {
@@ -46,6 +47,7 @@ export function DiffReviewPanel({
   files,
   headSha,
   readOnly = false,
+  compactToolbar = false,
   className,
 }: {
   taskId: string;
@@ -54,6 +56,7 @@ export function DiffReviewPanel({
   files: GitDiffFile[];
   headSha: string;
   readOnly?: boolean;
+  compactToolbar?: boolean;
   className?: string;
 }) {
   const queryClient = useQueryClient();
@@ -70,6 +73,8 @@ export function DiffReviewPanel({
   const createComment = useCreateTaskPullRequestReviewCommentMutation();
   const submitReview = useSubmitTaskPullRequestReviewMutation();
   const discardReview = useDiscardTaskPullRequestReviewMutation();
+  const setThreadResolved =
+    useSetTaskPullRequestReviewThreadResolvedMutation();
 
   const [selectedLine, setSelectedLine] = useState<SelectedReviewLine | null>(
     null
@@ -77,6 +82,9 @@ export function DiffReviewPanel({
   const [draft, setDraft] = useState("");
   const [reviewBody, setReviewBody] = useState("");
   const [operation, setOperation] = useState<ReviewOperation>(null);
+  const [resolvingThreadNodeId, setResolvingThreadNodeId] = useState<
+    string | null
+  >(null);
   const [submittingEvent, setSubmittingEvent] = useState<
     "COMMENT" | "APPROVE" | "REQUEST_CHANGES" | null
   >(null);
@@ -87,12 +95,12 @@ export function DiffReviewPanel({
     null
   );
   const diffBoundsRef = useRef<HTMLDivElement>(null);
+  const gitReviewNav = useTaskGitReviewNav();
 
   const submittedComments: GitReviewComment[] = reviewData?.comments ?? [];
   const pendingComments: GitReviewComment[] = reviewData?.pendingComments ?? [];
   const pendingReview = reviewData?.pendingReview ?? null;
   const activePendingReview = pendingReview ?? sessionPending;
-  const reviews = reviewData?.reviews ?? [];
   const hasUserLink = Boolean(connectionData?.userLink);
   const canInteract = !readOnly && hasUserLink;
   const reviewInProgress = Boolean(activePendingReview);
@@ -100,6 +108,20 @@ export function DiffReviewPanel({
   useEffect(() => {
     if (pendingReview) setSessionPending(null);
   }, [pendingReview]);
+
+  useEffect(() => {
+    const focus = gitReviewNav?.lineFocus;
+    if (!focus) return;
+    setSelectedLine({
+      path: focus.path,
+      line: focus.line,
+      side: focus.side,
+      anchorRect: null,
+      lineElement: null,
+    });
+    const timer = window.setTimeout(() => gitReviewNav?.clearLineFocus(), 800);
+    return () => window.clearTimeout(timer);
+  }, [gitReviewNav?.lineFocus, gitReviewNav]);
 
   const diffComments: GitReviewComment[] = [
     ...submittedComments,
@@ -281,6 +303,31 @@ export function DiffReviewPanel({
 
   const toolbarLoading = connectionLoading || reviewLoading;
 
+  const handleToggleThreadResolved = async (
+    threadNodeId: string,
+    resolved: boolean
+  ) => {
+    setResolvingThreadNodeId(threadNodeId);
+    try {
+      await setThreadResolved({
+        taskId,
+        pullRequestId,
+        threadNodeId,
+        resolved,
+      });
+      toast.success(
+        resolved ? "Conversation resolved" : "Conversation unresolved"
+      );
+      await refetch();
+    } catch (e) {
+      toast.error(
+        formatClientError(e, "Failed to update conversation on GitHub")
+      );
+    } finally {
+      setResolvingThreadNodeId(null);
+    }
+  };
+
   return (
     <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
       {toolbarLoading ? (
@@ -288,6 +335,7 @@ export function DiffReviewPanel({
       ) : (
         <ReviewToolbar
           scopeLabel={scopeLabel}
+          compact={compactToolbar}
           canInteract={canInteract}
           readOnly={readOnly}
           hasUserLink={hasUserLink}
@@ -308,7 +356,7 @@ export function DiffReviewPanel({
 
       <div
         ref={diffBoundsRef}
-        className="relative flex min-h-0 flex-1 flex-col"
+        className="relative flex min-h-0 flex-1 flex-col overflow-hidden"
       >
         <DiffViewer
           files={files}
@@ -320,6 +368,9 @@ export function DiffReviewPanel({
           className="min-h-0 flex-1 border-t-0"
           selectedLine={selectedLine}
           onLineClick={canInteract ? handleLineClick : undefined}
+          canResolveThreads={hasUserLink}
+          onToggleThreadResolved={handleToggleThreadResolved}
+          resolvingThreadNodeId={resolvingThreadNodeId}
         />
         <ReviewLoadingOverlay
           active={overlayMessage != null}
@@ -341,8 +392,6 @@ export function DiffReviewPanel({
           }}
         />
       ) : null}
-
-      <ReviewHistorySection reviews={reviews} />
     </div>
   );
 }

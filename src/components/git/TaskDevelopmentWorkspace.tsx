@@ -22,6 +22,7 @@ import {
   getTaskDevPhase,
   type TaskDevPhaseContext,
 } from "~/lib/git/task-dev-phase";
+import { useTaskGitReviewNav } from "~/lib/git/task-git-review-nav";
 import { cn } from "~/lib/utils";
 
 type WorkspaceTab = "pull_request" | "commits" | "branch";
@@ -30,6 +31,7 @@ export function TaskDevelopmentWorkspace({
   taskId,
   gitContext,
   isPanel,
+  className,
 }: {
   taskId: string;
   gitContext: TaskDevPhaseContext & {
@@ -43,6 +45,7 @@ export function TaskDevelopmentWorkspace({
     }>;
   };
   isPanel: boolean;
+  className?: string;
 }) {
   const phase = getTaskDevPhase(gitContext);
   const branch = getActiveBranch(gitContext);
@@ -52,6 +55,7 @@ export function TaskDevelopmentWorkspace({
 
   const [tab, setTab] = useState<WorkspaceTab>("commits");
   const [selectedSha, setSelectedSha] = useState<string | null>(null);
+  const gitReviewNav = useTaskGitReviewNav();
 
   useEffect(() => {
     if (phase === "open_pr" || phase === "closed_pr") {
@@ -61,6 +65,12 @@ export function TaskDevelopmentWorkspace({
     }
     setSelectedSha(null);
   }, [phase, taskId]);
+
+  useEffect(() => {
+    if (gitReviewNav?.lineFocus) {
+      setTab("pull_request");
+    }
+  }, [gitReviewNav?.lineFocus]);
 
   const showPrTab = Boolean(reviewPr);
   const showBranchTab = Boolean(branch);
@@ -129,10 +139,11 @@ export function TaskDevelopmentWorkspace({
     <div
       className={cn(
         "flex min-h-0 flex-col border-t border-border/60",
-        isPanel && "flex-1"
+        isPanel && "flex-1",
+        className
       )}
     >
-      <PhaseBanner phase={phase} />
+      {!isPanel ? <PhaseBanner phase={phase} /> : null}
 
       <Tabs
         value={tab}
@@ -162,21 +173,10 @@ export function TaskDevelopmentWorkspace({
           ) : null}
         </TabsList>
 
-        <div className="flex min-h-0 flex-1">
-          {tab === "commits" ? (
-            <div className="w-56 shrink-0 overflow-y-auto border-r border-border/60">
-              <CommitList
-                commits={commits}
-                selectedSha={selectedSha}
-                onSelect={setSelectedSha}
-              />
-            </div>
-          ) : null}
-
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <TabsContent
               value="pull_request"
-              className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+              className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden"
             >
               {prDiffQuery.isLoading ? (
                 <DiffLoadingSkeleton className="flex-1 border-t-0" />
@@ -188,6 +188,7 @@ export function TaskDevelopmentWorkspace({
                   files={prDiffQuery.data.files}
                   headSha={prDiffQuery.data.headSha}
                   readOnly={readOnlyReview}
+                  compactToolbar={isPanel}
                   className="flex-1"
                 />
               ) : null}
@@ -195,48 +196,64 @@ export function TaskDevelopmentWorkspace({
 
             <TabsContent
               value="commits"
-              className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+              className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden"
             >
-              {commitDiffQuery.isLoading ? (
-                <p className="text-muted-foreground p-4 text-sm">Loading diff…</p>
-              ) : commitDiffQuery.data ? (
-                <>
-                  <p className="border-b border-border/60 px-4 py-2 text-sm font-medium">
-                    {scopeLabel}
+              <div className="bg-muted/20 shrink-0 border-b border-border/60">
+                <div className="text-muted-foreground border-b border-border/60 px-3 py-1.5 text-[10px] font-medium tracking-wide uppercase">
+                  Commits
+                </div>
+                <CommitList
+                  layout="strip"
+                  commits={commits}
+                  selectedSha={selectedSha}
+                  onSelect={setSelectedSha}
+                />
+              </div>
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                {commitDiffQuery.isLoading ? (
+                  <p className="text-muted-foreground p-4 text-sm">Loading diff…</p>
+                ) : commitDiffQuery.data ? (
+                  <>
+                    {!isPanel ? (
+                      <p className="shrink-0 border-b border-border/60 px-4 py-2 text-sm font-medium">
+                        {scopeLabel}
+                      </p>
+                    ) : null}
+                    <DiffViewer
+                      files={commitDiffQuery.data.files}
+                      readOnly
+                      className="min-h-0 flex-1 border-t-0"
+                    />
+                  </>
+                ) : (
+                  <p className="text-muted-foreground p-4 text-sm">
+                    Select a commit to view its diff.
                   </p>
-                  <DiffViewer
-                    files={commitDiffQuery.data.files}
-                    readOnly
-                    className="flex-1 border-t-0"
-                  />
-                </>
-              ) : (
-                <p className="text-muted-foreground p-4 text-sm">
-                  Select a commit to view its diff.
-                </p>
-              )}
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent
               value="branch"
-              className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+              className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden"
             >
               {branchDiffQuery.isLoading ? (
                 <p className="text-muted-foreground p-4 text-sm">Loading diff…</p>
               ) : branchDiffQuery.data ? (
-                <>
-                  <p className="border-b border-border/60 px-4 py-2 text-sm font-medium">
-                    {scopeLabel}
-                  </p>
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                  {!isPanel ? (
+                    <p className="shrink-0 border-b border-border/60 px-4 py-2 text-sm font-medium">
+                      {scopeLabel}
+                    </p>
+                  ) : null}
                   <DiffViewer
                     files={branchDiffQuery.data.files}
                     readOnly
-                    className="flex-1 border-t-0"
+                    className="min-h-0 flex-1 border-t-0"
                   />
-                </>
+                </div>
               ) : null}
             </TabsContent>
-          </div>
         </div>
       </Tabs>
     </div>

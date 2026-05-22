@@ -1,3 +1,4 @@
+import { GitHubMarkdownBody } from "~/components/git/GitHubMarkdownBody";
 import type { GitPullRequestReview, GitReviewComment } from "~/lib/git/types";
 import { cn } from "~/lib/utils";
 
@@ -62,7 +63,9 @@ export function ReviewComment({
           on GitHub
         </a>
       </div>
-      <p className="mt-1 whitespace-pre-wrap pl-7">{comment.body}</p>
+      <div className="mt-1 pl-7">
+        <GitHubMarkdownBody body={comment.body} collapsible={false} />
+      </div>
     </div>
   );
 }
@@ -104,10 +107,10 @@ export function PullRequestReviewItem({
           </a>
         ) : null}
       </div>
-      {review.body ? (
-        <p className="text-muted-foreground mt-1 whitespace-pre-wrap pl-7">
-          {review.body}
-        </p>
+      {review.body?.trim() ? (
+        <div className="mt-1 pl-7">
+          <GitHubMarkdownBody body={review.body} collapsible={false} />
+        </div>
       ) : null}
     </div>
   );
