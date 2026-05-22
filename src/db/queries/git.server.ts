@@ -466,7 +466,16 @@ export async function getTaskPullRequestReviewComments(
     pendingReview,
     reviews: reviews.filter((r) => r.state !== "PENDING"),
     headSha: livePr.headSha,
-    pullRequest: pr,
+    pullRequest: {
+      id: pr.id,
+      number: livePr.number,
+      url: livePr.url,
+      title: livePr.title,
+      body: livePr.body,
+      state: livePr.state,
+      headRef: livePr.headRef,
+      baseRef: livePr.baseRef,
+    },
     viewerLogin: userLink?.providerLogin ?? null,
   };
 }

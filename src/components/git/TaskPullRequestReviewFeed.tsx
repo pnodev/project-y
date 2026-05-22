@@ -41,7 +41,11 @@ export function TaskPullRequestReviewFeed({
     isLoading: commentsLoading,
     isFetching,
     refetch,
-  } = useTaskPullRequestReviewCommentsQuery(taskId, reviewPr?.id);
+  } = useTaskPullRequestReviewCommentsQuery(
+    taskId,
+    reviewPr?.id,
+    Boolean(connectionData?.connection)
+  );
   const setThreadResolved =
     useSetTaskPullRequestReviewThreadResolvedMutation();
   const [resolvingThreadNodeId, setResolvingThreadNodeId] = useState<
@@ -116,17 +120,25 @@ export function TaskPullRequestReviewFeed({
             Link or open a pull request to see review comments and feedback from
             GitHub here.
           </p>
-        ) : !connectionData?.userLink ? (
+        ) : !connectionData?.connection ? (
           <p className="text-muted-foreground text-sm">
-            Connect GitHub in settings to load review comments for PR #
-            {reviewPr.number}.
+            Connect the GitHub app to load pull request activity.
           </p>
         ) : entries.length === 0 ? (
           <p className="text-muted-foreground text-sm">
-            No reviews or comments on PR #{reviewPr.number} yet.
+            {connectionData.userLink
+              ? "No reviews or comments yet."
+              : "No reviews or comments yet. Connect your GitHub account in settings to see pending reviews and post comments."}
           </p>
         ) : (
-          <ul className="space-y-2.5">
+          <>
+            {!connectionData.userLink ? (
+              <p className="text-muted-foreground mb-2 text-xs">
+                Connect GitHub in settings to see pending reviews and post
+                comments.
+              </p>
+            ) : null}
+            <ul className="space-y-2.5">
             {entries.map((entry) => {
               if (entry.kind === "issue_comment") {
                 return (
@@ -180,7 +192,8 @@ export function TaskPullRequestReviewFeed({
                 </li>
               );
             })}
-          </ul>
+            </ul>
+          </>
         )}
       </div>
 

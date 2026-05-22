@@ -1879,6 +1879,7 @@ export class GitHubProvider implements GitProvider {
     number: number;
     html_url: string;
     title: string;
+    body?: string | null;
     state: string;
     merged_at: string | null;
     closed_at: string | null;
@@ -1891,6 +1892,7 @@ export class GitHubProvider implements GitProvider {
       number: data.number,
       url: data.html_url,
       title: data.title,
+      body: data.body ?? null,
       state: mapPrState(data.state, Boolean(data.merged_at), data.draft ?? false),
       headRef: data.head.ref,
       baseRef: data.base.ref,

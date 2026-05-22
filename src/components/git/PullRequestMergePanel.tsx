@@ -327,7 +327,7 @@ export function PullRequestMergePanel({
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   size="sm"
-                  className="bg-emerald-600 text-white hover:bg-emerald-600/90"
+                  className="border-emerald-600 bg-emerald-600 text-white hover:border-emerald-700 hover:bg-emerald-700"
                   disabled={!mergeAllowed || busy !== null}
                   loading={busy === "merge"}
                   icon={GitMerge}

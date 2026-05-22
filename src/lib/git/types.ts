@@ -19,6 +19,7 @@ export type GitPullRequest = {
   number: number;
   url: string;
   title: string;
+  body: string | null;
   state: "open" | "closed" | "merged" | "draft";
   headRef: string;
   baseRef: string;

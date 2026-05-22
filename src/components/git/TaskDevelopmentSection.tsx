@@ -34,6 +34,7 @@ import {
 import { MULTI_REPO_SELECTION_MESSAGE } from "~/lib/git/constants";
 import { useGitTaskLiveSync } from "~/hooks/use-git-task-live-sync";
 import { formatClientError } from "~/lib/git/errors";
+import { PullRequestDescriptionPanel } from "~/components/git/PullRequestDescriptionPanel";
 import { TaskDevelopmentWorkspace } from "~/components/git/TaskDevelopmentWorkspace";
 import {
   getActiveBranch,
@@ -125,6 +126,7 @@ export function TaskDevelopmentSection({
   });
   const pr = pullRequests[0];
   const openPr = getOpenPr({ projectRepos, branches, pullRequests });
+  const displayPr = openPr ?? pr;
   const linkedRepo = branch?.repository;
   const multipleRepos = projectRepos.length > 1;
   const commitCount = activity.filter((a) => a.type === "commit").length;
@@ -253,7 +255,7 @@ export function TaskDevelopmentSection({
             />
           </div>
         </>
-      ) : (
+      ) : isPanel && displayPr ? null : (
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
           <p className="text-muted-foreground min-w-0 truncate text-xs">
             {branch
@@ -262,7 +264,7 @@ export function TaskDevelopmentSection({
                 : branch.ref
               : "No branch"}
             {commitCount > 0 ? ` · ${commitCount} commit${commitCount === 1 ? "" : "s"}` : ""}
-            {pr ? ` · PR #${pr.number} ${pr.state}` : ""}
+            {pr && !displayPr ? ` · PR #${pr.number} ${pr.state}` : ""}
           </p>
           {linkedRepo ? (
             <Button
@@ -281,6 +283,51 @@ export function TaskDevelopmentSection({
         </div>
       )}
 
+      {displayPr ? (
+        <PullRequestDescriptionPanel
+          taskId={taskId}
+          pullRequestId={displayPr.id}
+          repository={
+            linkedRepo
+              ? { fullName: linkedRepo.fullName, htmlUrl: linkedRepo.htmlUrl }
+              : undefined
+          }
+          headerActions={
+            branch ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8"
+                disabled={busy}
+                onClick={async () => {
+                  if (
+                    !window.confirm(
+                      `Disconnect ${branch.repository.fullName} from this task? Linked pull requests for this repo will be removed. The branch stays on GitHub.`
+                    )
+                  ) {
+                    return;
+                  }
+                  setBusy(true);
+                  try {
+                    await disconnectBranch({ taskId, branchId: branch.id });
+                    toast.success("Disconnected from repository");
+                  } catch (e) {
+                    toast.error(formatClientError(e, "Failed to disconnect"));
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                <Unlink className="size-3.5" />
+                Disconnect
+              </Button>
+            ) : null
+          }
+        />
+      ) : null}
+
+      {isPanel && displayPr ? null : (
       <div
         className={cn(
           "flex flex-col gap-3",
@@ -411,11 +458,11 @@ export function TaskDevelopmentSection({
               Disconnect
             </Button>
           </>
-        ) : pr && branch ? (
+        ) : pr && branch && !displayPr ? (
           <>
             <Button type="button" variant="outline" size="sm" asChild>
               <a href={pr.url} target="_blank" rel="noreferrer">
-                PR #{pr.number} on GitHub
+                Open on GitHub
                 <ExternalLink className="size-3.5" />
               </a>
             </Button>
@@ -437,9 +484,7 @@ export function TaskDevelopmentSection({
                   await disconnectBranch({ taskId, branchId: branch.id });
                   toast.success("Disconnected from repository");
                 } catch (e) {
-                  toast.error(
-                    formatClientError(e, "Failed to disconnect")
-                  );
+                  toast.error(formatClientError(e, "Failed to disconnect"));
                 } finally {
                   setBusy(false);
                 }
@@ -452,6 +497,7 @@ export function TaskDevelopmentSection({
         ) : null}
         </div>
       </div>
+      )}
 
       {branch && checkoutCommand ? (
         isPanel ? (

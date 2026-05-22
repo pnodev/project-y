@@ -5,7 +5,7 @@ import { DiffViewer } from "~/components/git/DiffViewer";
 import { DiffReviewPanel } from "~/components/git/DiffReviewPanel";
 import { DiffLoadingSkeleton } from "~/components/git/review/DiffLoadingSkeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Badge } from "~/components/ui/badge";
+import { PullRequestStateBadge } from "~/components/git/PullRequestStateBadge";
 import {
   fetchTaskPullRequestDiff,
   useTaskBranchCommitsQuery,
@@ -155,9 +155,7 @@ export function TaskDevelopmentWorkspace({
             <TabsTrigger value="pull_request" className="text-xs">
               Pull request
               {openPr ? (
-                <Badge variant="secondary" className="ml-1.5 h-5 text-[10px]">
-                  {openPr.state}
-                </Badge>
+                <PullRequestStateBadge state={openPr.state} className="ml-1.5" />
               ) : null}
             </TabsTrigger>
           ) : null}
