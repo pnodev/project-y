@@ -19,15 +19,15 @@ export function groupPullRequestChecks(
       c.conclusion === "timed_out" ||
       c.conclusion === "action_required"
   );
-  const neutral = completed.filter((c) => c.conclusion === "neutral");
-  const successful = completed.filter(
+  const neutral = completed.filter(
     (c) =>
-      c.conclusion === "success" ||
+      c.conclusion === "neutral" ||
       c.conclusion === "skipped" ||
       c.conclusion === "cancelled" ||
       c.conclusion === "stale" ||
       c.conclusion === null
   );
+  const successful = completed.filter((c) => c.conclusion === "success");
 
   return { neutral, successful, failed, inProgress };
 }
@@ -64,6 +64,14 @@ export function checksSummaryLabel(group: PrCheckGroup): {
       headline: "Some checks failed",
       detail: formatCheckCounts(group),
       tone: "failure",
+    };
+  }
+
+  if (group.successful.length === 0) {
+    return {
+      headline: "No successful checks",
+      detail: formatCheckCounts(group),
+      tone: "none",
     };
   }
 
@@ -119,7 +127,7 @@ export function mergeabilityMessage(params: {
 }): { ok: boolean; title: string; detail: string } {
   const state = params.mergeableState.toLowerCase();
 
-  if (params.mergeable === true || state === "clean") {
+  if (params.mergeable === true && state === "clean") {
     return {
       ok: true,
       title: "No conflicts with base branch",

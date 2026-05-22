@@ -40,18 +40,27 @@ export function CommitList({
         <ul className="divide-y divide-border/60" role="listbox">
           {commits.map((commit) => {
             const selected = selectedSha === commit.sha;
+            const selectCommit = () => onSelect(commit.sha);
             return (
-              <li key={commit.sha} role="option" aria-selected={selected}>
-                <button
-                  type="button"
-                  onClick={() => onSelect(commit.sha)}
-                  className={cn(
-                    "flex h-10 w-full cursor-pointer items-center gap-3 px-3 text-left transition-colors",
-                    "hover:bg-muted/50",
-                    selected &&
-                      "bg-primary/10 ring-1 ring-inset ring-primary/25"
-                  )}
-                >
+              <li
+                key={commit.sha}
+                role="option"
+                aria-selected={selected}
+                tabIndex={selected ? 0 : -1}
+                onClick={selectCommit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    selectCommit();
+                  }
+                }}
+                className={cn(
+                  "flex h-10 w-full cursor-pointer items-center gap-3 px-3 text-left transition-colors outline-none",
+                  "hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring/50",
+                  selected &&
+                    "bg-primary/10 ring-1 ring-inset ring-primary/25"
+                )}
+              >
                 <span className="shrink-0 font-mono text-xs font-semibold tabular-nums">
                   {commit.sha.slice(0, 7)}
                 </span>
@@ -64,7 +73,6 @@ export function CommitList({
                 <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
                   {formatRelativeTime(commit.committedAt)}
                 </span>
-                </button>
               </li>
             );
           })}

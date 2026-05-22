@@ -118,6 +118,7 @@ export function DiffReviewPanel({
       side: focus.side,
       anchorRect: null,
       lineElement: null,
+      opensPopover: false,
     });
     const timer = window.setTimeout(() => gitReviewNav?.clearLineFocus(), 800);
     return () => window.clearTimeout(timer);
@@ -368,8 +369,10 @@ export function DiffReviewPanel({
           className="min-h-0 flex-1 border-t-0"
           selectedLine={selectedLine}
           onLineClick={canInteract ? handleLineClick : undefined}
-          canResolveThreads={hasUserLink}
-          onToggleThreadResolved={handleToggleThreadResolved}
+          canResolveThreads={canInteract}
+          onToggleThreadResolved={
+            canInteract ? handleToggleThreadResolved : undefined
+          }
           resolvingThreadNodeId={resolvingThreadNodeId}
         />
         <ReviewLoadingOverlay
@@ -380,7 +383,11 @@ export function DiffReviewPanel({
 
       {canInteract ? (
         <LineCommentPopover
-          open={Boolean(selectedLine && reviewInProgress)}
+          open={Boolean(
+            selectedLine &&
+              reviewInProgress &&
+              (selectedLine.opensPopover ?? true)
+          )}
           selectedLine={selectedLine}
           diffBoundsRef={diffBoundsRef}
           draft={draft}

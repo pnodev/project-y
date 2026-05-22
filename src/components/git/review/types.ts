@@ -6,4 +6,6 @@ export type SelectedReviewLine = {
   side: "LEFT" | "RIGHT";
   anchorRect: DOMRect | null;
   lineElement: HTMLElement | null;
+  /** When false, line is highlighted/scrolled only (review nav), not comment draft. */
+  opensPopover?: boolean;
 };

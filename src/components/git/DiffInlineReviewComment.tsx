@@ -127,9 +127,12 @@ export function DiffInlineReviewComment({
             </a>
           </div>
           <CommentBody body={body} />
-          {showResolve && comment.threadNodeId && onToggleResolved ? (
+          {showResolve &&
+          !resolved &&
+          comment.threadNodeId &&
+          onToggleResolved ? (
             <ReviewThreadResolveButton
-              resolved={false}
+              resolved={resolved}
               loading={resolveLoading}
               onToggle={onToggleResolved}
               className="-ml-2 text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-50"

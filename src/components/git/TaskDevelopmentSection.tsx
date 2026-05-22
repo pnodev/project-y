@@ -197,6 +197,7 @@ export function TaskDevelopmentSection({
                 variant="ghost"
                 size="icon"
                 className="size-7"
+                aria-label="Copy task key"
                 onClick={() => copy(taskKey, "Task key")}
               >
                 <Copy className="size-3.5" />
@@ -524,6 +525,7 @@ export function TaskDevelopmentSection({
                   type="button"
                   variant="outline"
                   size="sm"
+                  aria-label="Copy checkout command"
                   onClick={() => copy(checkoutCommand, "Checkout command")}
                 >
                   <Copy className="size-3.5" />
@@ -537,6 +539,7 @@ export function TaskDevelopmentSection({
                   type="button"
                   variant="outline"
                   size="sm"
+                  aria-label="Copy branch name"
                   onClick={() => copy(branch.ref, "Branch name")}
                 >
                   <Copy className="size-3.5" />
@@ -554,6 +557,7 @@ export function TaskDevelopmentSection({
                 type="button"
                 variant="outline"
                 size="sm"
+                aria-label="Copy checkout command"
                 onClick={() => copy(checkoutCommand, "Checkout command")}
               >
                 <Copy className="size-3.5" />
@@ -567,6 +571,7 @@ export function TaskDevelopmentSection({
                 type="button"
                 variant="outline"
                 size="sm"
+                aria-label="Copy branch name"
                 onClick={() => copy(branch.ref, "Branch name")}
               >
                 <Copy className="size-3.5" />

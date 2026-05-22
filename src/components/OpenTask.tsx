@@ -318,6 +318,7 @@ export function OpenTask({
         </DialogHeader>
         {task && currentStatus ? (
           <TaskGitReviewNavProvider
+            key={task.id}
             onOpenDevelopment={() => setDialogView("development")}
           >
           <div className="grid min-h-0 flex-1 grid-cols-12">

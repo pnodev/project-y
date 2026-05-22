@@ -69,7 +69,11 @@ function CheckStatusIcon({
       />
     );
   }
-  if (check.conclusion === "failure" || check.conclusion === "timed_out") {
+  if (
+    check.conclusion === "failure" ||
+    check.conclusion === "timed_out" ||
+    check.conclusion === "action_required"
+  ) {
     return <X className={cn("size-4 shrink-0 text-destructive", className)} />;
   }
   if (check.conclusion === "neutral") {
@@ -170,10 +174,10 @@ export function PullRequestMergePanel({
   const [checksOpen, setChecksOpen] = useState(true);
   const [busy, setBusy] = useState<"merge" | "close" | null>(null);
 
-  const isOpen = prState === "open" || prState === "draft";
   const liveState = status?.state ?? prState;
+  const isOpen = liveState === "open" || liveState === "draft";
 
-  if (!isOpen && liveState !== "open" && liveState !== "draft") {
+  if (!isOpen) {
     const label =
       liveState === "merged"
         ? "Pull request merged"

@@ -318,9 +318,40 @@ export function DiffViewer({
             <p className="text-muted-foreground text-xs font-medium">
               Comments on this file
             </p>
-            {unmatchedComments.map((c) => (
-              <DiffInlineReviewComment key={c.id} comment={c} />
-            ))}
+            {unmatchedComments.map((c) => {
+              const threadNodeId = c.threadNodeId;
+              const threadResolved = c.threadIsResolved ?? false;
+              const isRoot = isReviewThreadRoot(c, comments);
+              const showResolve =
+                canResolveThreads &&
+                !pendingCommentIds?.has(c.id) &&
+                Boolean(threadNodeId) &&
+                isRoot;
+
+              return (
+                <DiffInlineReviewComment
+                  key={c.id}
+                  comment={c}
+                  pending={pendingCommentIds?.has(c.id)}
+                  showResolve={showResolve}
+                  threadCommentCount={
+                    threadNodeId
+                      ? (threadCommentCounts.get(threadNodeId) ?? 1)
+                      : 1
+                  }
+                  resolveLoading={resolvingThreadNodeId === threadNodeId}
+                  onToggleResolved={
+                    threadNodeId && onToggleThreadResolved
+                      ? () =>
+                          void onToggleThreadResolved(
+                            threadNodeId,
+                            !threadResolved
+                          )
+                      : undefined
+                  }
+                />
+              );
+            })}
           </div>
         ) : null}
       </div>

@@ -198,30 +198,34 @@ export class GitHubProvider implements GitProvider {
     const checks: GitPullRequestCheck[] = [];
     const seenNames = new Set<string>();
 
-    const { data: checkRuns } = await octokit.request(
-      "GET /repos/{owner}/{repo}/commits/{ref}/check-runs",
-      {
-        owner,
-        repo: repoName,
-        ref: pr.head.sha,
-        per_page: 100,
-      }
-    );
+    try {
+      const { data: checkRuns } = await octokit.request(
+        "GET /repos/{owner}/{repo}/commits/{ref}/check-runs",
+        {
+          owner,
+          repo: repoName,
+          ref: pr.head.sha,
+          per_page: 100,
+        }
+      );
 
-    for (const run of checkRuns.check_runs ?? []) {
-      const name = run.name ?? "Check";
-      seenNames.add(name);
-      checks.push({
-        id: `run-${run.id}`,
-        name,
-        status: this.mapCheckRunStatus(run.status),
-        conclusion: this.mapCheckRunConclusion(run.conclusion),
-        htmlUrl: run.html_url ?? pr.html_url,
-        description: run.output?.summary ?? run.output?.title ?? null,
-        source: "check_run",
-        appSlug: run.app?.slug ?? null,
-        avatarUrl: run.app?.owner?.avatar_url ?? null,
-      });
+      for (const run of checkRuns.check_runs ?? []) {
+        const name = run.name ?? "Check";
+        seenNames.add(name);
+        checks.push({
+          id: `run-${run.id}`,
+          name,
+          status: this.mapCheckRunStatus(run.status),
+          conclusion: this.mapCheckRunConclusion(run.conclusion),
+          htmlUrl: run.html_url ?? pr.html_url,
+          description: run.output?.summary ?? run.output?.title ?? null,
+          source: "check_run",
+          appSlug: run.app?.slug ?? null,
+          avatarUrl: run.app?.owner?.avatar_url ?? null,
+        });
+      }
+    } catch {
+      // Fall through to combined commit status lookup.
     }
 
     try {
@@ -779,11 +783,24 @@ export class GitHubProvider implements GitProvider {
   ): Promise<GitPullRequestIssueComment[]> {
     const { owner, repo: repoName } = parseRepoFullName(repo.fullName);
     const octokit = await this.getInstallationClient(connection);
-    const { data } = await octokit.request(
-      "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
-      { owner, repo: repoName, issue_number: prNumber }
-    );
-    return data.map((c) => this.mapIssueComment(c));
+    const all: GitPullRequestIssueComment[] = [];
+    let page = 1;
+    for (;;) {
+      const { data } = await octokit.request(
+        "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
+        {
+          owner,
+          repo: repoName,
+          issue_number: prNumber,
+          per_page: 100,
+          page,
+        }
+      );
+      all.push(...data.map((c) => this.mapIssueComment(c)));
+      if (data.length < 100) break;
+      page += 1;
+    }
+    return all;
   }
 
   async listPullRequestReviewComments(
@@ -842,82 +859,164 @@ export class GitHubProvider implements GitProvider {
     repoName: string,
     prNumber: number
   ): Promise<{ threads: GitReviewThread[]; comments: GitReviewComment[] }> {
+    type GraphqlCommentNode = {
+      databaseId?: number | string | null;
+      body?: string | null;
+      path?: string | null;
+      line?: number | null;
+      originalLine?: number | null;
+      createdAt?: string | null;
+      url?: string | null;
+      commit?: { oid?: string | null } | null;
+      author?: {
+        login?: string | null;
+        avatarUrl?: string | null;
+        url?: string | null;
+      } | null;
+      pullRequestReview?: { databaseId?: number | string | null } | null;
+      replyTo?: { databaseId?: number | string | null } | null;
+    };
+
+    type GraphqlThreadNode = {
+      id?: string | null;
+      isResolved?: boolean | null;
+      path?: string | null;
+      line?: number | null;
+      originalLine?: number | null;
+      diffSide?: string | null;
+      comments?: {
+        pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
+        nodes?: Array<GraphqlCommentNode | null> | null;
+      } | null;
+    };
+
     type ThreadQuery = {
       repository?: {
         pullRequest?: {
           reviewThreads?: {
-            nodes?: Array<{
-              id?: string | null;
-              isResolved?: boolean | null;
-              path?: string | null;
-              line?: number | null;
-              originalLine?: number | null;
-              diffSide?: string | null;
-              comments?: {
-                nodes?: Array<{
-                  databaseId?: number | string | null;
-                  body?: string | null;
-                  path?: string | null;
-                  line?: number | null;
-                  originalLine?: number | null;
-                  createdAt?: string | null;
-                  url?: string | null;
-                  commit?: { oid?: string | null } | null;
-                  author?: {
-                    login?: string | null;
-                    avatarUrl?: string | null;
-                    url?: string | null;
-                  } | null;
-                  pullRequestReview?: { databaseId?: number | string | null } | null;
-                  replyTo?: { databaseId?: number | string | null } | null;
-                } | null> | null;
-              } | null;
-            } | null> | null;
+            pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
+            nodes?: Array<GraphqlThreadNode | null> | null;
           } | null;
         } | null;
       } | null;
     };
 
-    const { repository } = await octokit.graphql<ThreadQuery>(
-      `query($owner: String!, $name: String!, $number: Int!) {
-        repository(owner: $owner, name: $name) {
-          pullRequest(number: $number) {
-            reviewThreads(first: 100) {
-              nodes {
-                id
-                isResolved
-                path
-                line
-                originalLine
-                diffSide
-                comments(first: 50) {
-                  nodes {
-                    databaseId
-                    body
-                    path
-                    line
-                    originalLine
-                    createdAt
-                    url
-                    commit { oid }
-                    author { login avatarUrl url }
-                    pullRequestReview { databaseId }
-                    replyTo { databaseId }
+    const threadNodes: GraphqlThreadNode[] = [];
+    let threadsAfter: string | null = null;
+
+    do {
+      const pageResult: ThreadQuery = await octokit.graphql<ThreadQuery>(
+        `query($owner: String!, $name: String!, $number: Int!, $threadsAfter: String) {
+          repository(owner: $owner, name: $name) {
+            pullRequest(number: $number) {
+              reviewThreads(first: 100, after: $threadsAfter) {
+                pageInfo { hasNextPage endCursor }
+                nodes {
+                  id
+                  isResolved
+                  path
+                  line
+                  originalLine
+                  diffSide
+                  comments(first: 50) {
+                    pageInfo { hasNextPage endCursor }
+                    nodes {
+                      databaseId
+                      body
+                      path
+                      line
+                      originalLine
+                      createdAt
+                      url
+                      commit { oid }
+                      author { login avatarUrl url }
+                      pullRequestReview { databaseId }
+                      replyTo { databaseId }
+                    }
                   }
                 }
               }
             }
           }
+        }`,
+        {
+          owner,
+          name: repoName,
+          number: prNumber,
+          threadsAfter,
         }
-      }`,
-      { owner, name: repoName, number: prNumber }
-    );
+      );
+      const repository: ThreadQuery["repository"] = pageResult.repository;
+      const connection: NonNullable<
+        NonNullable<ThreadQuery["repository"]>["pullRequest"]
+      >["reviewThreads"] = repository?.pullRequest?.reviewThreads;
+      for (const thread of connection?.nodes ?? []) {
+        if (!thread?.id) continue;
+
+        const commentNodes: GraphqlCommentNode[] = [
+          ...((thread.comments?.nodes ?? []).filter(
+            (n): n is GraphqlCommentNode => n != null
+          )),
+        ];
+        let commentsAfter = thread.comments?.pageInfo?.endCursor ?? null;
+        let commentsHasNext = thread.comments?.pageInfo?.hasNextPage ?? false;
+
+        while (commentsHasNext && commentsAfter) {
+          const { node } = await octokit.graphql<{
+            node?: {
+              comments?: {
+                pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
+                nodes?: Array<GraphqlCommentNode | null> | null;
+              } | null;
+            } | null;
+          }>(
+            `query($threadId: ID!, $commentsAfter: String) {
+              node(id: $threadId) {
+                ... on PullRequestReviewThread {
+                  comments(first: 50, after: $commentsAfter) {
+                    pageInfo { hasNextPage endCursor }
+                    nodes {
+                      databaseId
+                      body
+                      path
+                      line
+                      originalLine
+                      createdAt
+                      url
+                      commit { oid }
+                      author { login avatarUrl url }
+                      pullRequestReview { databaseId }
+                      replyTo { databaseId }
+                    }
+                  }
+                }
+              }
+            }`,
+            { threadId: thread.id, commentsAfter }
+          );
+
+          const page = node?.comments;
+          commentNodes.push(
+            ...((page?.nodes ?? []).filter(
+              (n): n is GraphqlCommentNode => n != null
+            ))
+          );
+          commentsHasNext = page?.pageInfo?.hasNextPage ?? false;
+          commentsAfter = page?.pageInfo?.endCursor ?? null;
+        }
+
+        threadNodes.push({ ...thread, comments: { nodes: commentNodes } });
+      }
+
+      threadsAfter = connection?.pageInfo?.hasNextPage
+        ? (connection.pageInfo.endCursor ?? null)
+        : null;
+    } while (threadsAfter);
 
     const threads: GitReviewThread[] = [];
     const comments: GitReviewComment[] = [];
-    const nodes = repository?.pullRequest?.reviewThreads?.nodes ?? [];
 
-    for (const thread of nodes) {
+    for (const thread of threadNodes) {
       if (!thread?.id) continue;
       const threadSide =
         thread.diffSide === "LEFT" || thread.diffSide === "RIGHT"
@@ -1261,7 +1360,8 @@ export class GitHubProvider implements GitProvider {
         repo: repoName,
         pull_number: prNumber,
       });
-      const createPayload = { commit_id: pr.head.sha };
+      const commitId = _commitId || pr.head.sha;
+      const createPayload = { commit_id: commitId };
       logGitHubApiRest("POST create pending review", {
         method: "POST",
         url: `https://api.github.com/repos/${owner}/${repoName}/pulls/${prNumber}/reviews`,
@@ -1271,7 +1371,7 @@ export class GitHubProvider implements GitProvider {
         owner,
         repo: repoName,
         pull_number: prNumber,
-        commit_id: pr.head.sha,
+        commit_id: commitId,
       });
       logGitHubApi("create pending review ok", { reviewId: data.id, state: data.state });
       return this.mapPullRequestReview(data);
