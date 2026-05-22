@@ -23,6 +23,7 @@ import {
 } from "~/components/ui/surface-styles";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
+import { ProjectGitSection } from "~/components/git/ProjectGitSection";
 
 type FormLayout = "page" | "sheet";
 
@@ -352,6 +353,7 @@ export function ProjectFormEdit({
                   )}
                 />
               </FormSheetSection>
+              <ProjectGitSection project={project} />
             </>
           ) : (
             <>

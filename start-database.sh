@@ -27,9 +27,10 @@ if [ "$(docker ps -q -a -f name=$DB_CONTAINER_NAME)" ]; then
   exit 0
 fi
 
-# import env variables from .env
-set -a
-source .env
+# Read database URL only (do not source .env — values may contain spaces).
+NETLIFY_DATABASE_URL="$(
+  grep -E '^NETLIFY_DATABASE_URL=' .env | head -1 | sed -E 's/^NETLIFY_DATABASE_URL=//' | sed -E 's/^["'\'']|["'\'']$//g'
+)"
 
 DB_PASSWORD=$(echo "$NETLIFY_DATABASE_URL" | awk -F':' '{print $3}' | awk -F'@' '{print $1}')
 DB_PORT=$(echo "$NETLIFY_DATABASE_URL" | awk -F':' '{print $4}' | awk -F'/' '{print $1}')

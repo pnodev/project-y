@@ -17,15 +17,21 @@ import { useQueryClient } from "@tanstack/react-query";
 import { sync } from "./sync";
 import { and, eq } from "drizzle-orm";
 import z from "zod";
+import { suggestTaskKeyPrefix } from "~/lib/git/task-key";
 
 const createProject = createServerFn({ method: "POST" })
   .inputValidator(insertProjectValidator)
   .handler(async ({ data }) => {
     const session = await requireSessionFromRequest();
 
+    const taskKeyPrefix =
+      data.taskKeyPrefix ?? suggestTaskKeyPrefix(data.name ?? "Project");
+
     await db.insert(projects).values({
       ...data,
       id: uuid(),
+      taskKeyPrefix,
+      nextTaskNumber: 1,
       owner: getOwningIdentity(session),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -64,6 +70,7 @@ const updateProject = createServerFn({ method: "POST" })
         name: data.name,
         description: data.description,
         logo: data.logo,
+        taskKeyPrefix: data.taskKeyPrefix,
         updatedAt: new Date(),
       })
       .where(

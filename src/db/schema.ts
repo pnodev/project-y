@@ -12,6 +12,7 @@ import {
   pgEnum,
   primaryKey,
   index,
+  uniqueIndex,
   boolean,
   jsonb,
 } from "drizzle-orm/pg-core";
@@ -59,6 +60,7 @@ export const tasks = createTable(
   "task",
   {
     id: uuid("id").primaryKey(),
+    number: integer("number").notNull(),
     name: varchar("name", { length: 256 }).notNull(),
     description: text("description"),
     statusId: uuid("status_id"),
@@ -76,6 +78,11 @@ export const tasks = createTable(
     index("task_owner_idx").on(example.owner),
     index("task_owner_project_idx").on(example.owner, example.projectId),
     index("task_owner_sprint_idx").on(example.owner, example.sprintId),
+    uniqueIndex("task_owner_project_number_idx").on(
+      example.owner,
+      example.projectId,
+      example.number
+    ),
   ]
 );
 
@@ -172,6 +179,8 @@ export const projects = createTable(
     id: uuid("id").primaryKey(),
     name: varchar("name", { length: 256 }).notNull(),
     description: text("description"),
+    taskKeyPrefix: varchar("task_key_prefix", { length: 16 }),
+    nextTaskNumber: integer("next_task_number").notNull().default(1),
     owner: varchar("owner", { length: 256 }).notNull(),
     logo: varchar("logo", { length: 256 }),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -179,7 +188,13 @@ export const projects = createTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }),
   },
-  (example) => [index("project_owner_idx").on(example.owner)]
+  (example) => [
+    index("project_owner_idx").on(example.owner),
+    uniqueIndex("project_owner_task_key_prefix_idx").on(
+      example.owner,
+      example.taskKeyPrefix
+    ),
+  ]
 );
 
 export const comments = createTable(
@@ -364,6 +379,7 @@ export type TaskWithRelations = Task & {
 export const insertTaskValidator = createInsertSchema(tasks, {
   id: (schema) => schema.optional(),
   owner: (schema) => schema.optional(),
+  number: (schema) => schema.optional(),
 });
 /** Partial task updates; dates are coerced because RPC serializes them as strings. */
 export const updateTaskValidator = z.object({
@@ -378,7 +394,7 @@ export const updateTaskValidator = z.object({
 });
 export type CreateTask = Omit<
   typeof tasks.$inferInsert,
-  "id" | "createdAt" | "updatedAt" | "owner"
+  "id" | "createdAt" | "updatedAt" | "owner" | "number"
 >;
 export type UpdateTask = z.infer<typeof updateTaskValidator>;
 
@@ -481,6 +497,8 @@ export const updateProjectValidator = createInsertSchema(projects, {
   name: (schema) => schema.optional(),
   description: (schema) => schema.optional(),
   logo: (schema) => schema.optional(),
+  taskKeyPrefix: (schema) => schema.optional(),
+  nextTaskNumber: (schema) => schema.optional(),
 });
 export type CreateProject = Omit<
   typeof projects.$inferInsert,
@@ -522,3 +540,5 @@ export type CreateLabel = Omit<
   "id" | "createdAt" | "updatedAt" | "owner"
 >;
 export type UpdateLabel = Omit<Label, "createdAt" | "updatedAt" | "owner">;
+
+export * from "./schema/git";

@@ -11,9 +11,13 @@ import {
   Flag,
   Folder,
   Paperclip,
+  GitBranch,
+  GitPullRequest,
   TextIcon,
   Users,
 } from "lucide-react";
+import { formatTaskKey } from "~/lib/git/task-key";
+import type { TaskGitSummary } from "~/db/queries/git";
 import { DateDisplay } from "./ui/date-display";
 import { Avatar, AvatarFallback, AvatarImage, AvatarList } from "./ui/avatar";
 import { useUsersQuery } from "~/db/queries/users";
@@ -40,12 +44,14 @@ export default function TaskCard({
   showSprint,
   showProject,
   taskLinkTo,
+  gitSummary,
 }: {
   task: TaskWithRelations;
   columnTaskIds: string[];
   showSprint?: boolean;
   showProject?: boolean;
   taskLinkTo?: "project" | "sprint" | "all";
+  gitSummary?: TaskGitSummary;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `task:${task.id}`,
@@ -107,6 +113,7 @@ export default function TaskCard({
             taskLinkTo={taskLinkTo}
             isSelected={isSelected}
             isHovered={isHovered}
+            gitSummary={gitSummary}
           />
         </div>
       </div>
@@ -187,6 +194,7 @@ export const TaskCardComponent = ({
   taskLinkTo,
   isSelected = false,
   isHovered = false,
+  gitSummary,
 }: {
   task: TaskWithRelations;
   columnTaskIds?: string[];
@@ -195,8 +203,13 @@ export const TaskCardComponent = ({
   taskLinkTo?: "project" | "sprint" | "all";
   isSelected?: boolean;
   isHovered?: boolean;
+  gitSummary?: TaskGitSummary;
 }) => {
   const isOverdue = task.deadline && task.deadline < new Date();
+  const taskKeyLabel =
+    task.project.taskKeyPrefix != null
+      ? formatTaskKey(task.project.taskKeyPrefix, task.number)
+      : null;
   const usersQuery = useUsersQuery();
   const { data: session } = authClient.useSession();
   const currentUserId = session?.user.id;
@@ -287,7 +300,22 @@ export const TaskCardComponent = ({
               ))}
             </div>
           ) : null}
-          <CardTitle className="line-clamp-4">{task.name}</CardTitle>
+          <div className="flex items-start justify-between gap-2">
+            <CardTitle className="line-clamp-4">{task.name}</CardTitle>
+            <div className="flex shrink-0 items-center gap-1">
+              {taskKeyLabel ? (
+                <Badge variant="outline" className="font-mono text-[10px]">
+                  {taskKeyLabel}
+                </Badge>
+              ) : null}
+              {gitSummary?.hasBranch ? (
+                <GitBranch className="text-muted-foreground size-3.5" />
+              ) : null}
+              {gitSummary?.hasOpenPr ? (
+                <GitPullRequest className="text-primary size-3.5" />
+              ) : null}
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-3">
           {task.subTasks.length ? (
