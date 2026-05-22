@@ -12,8 +12,18 @@ export type BotReviewCommentSummary = {
 
 const ACTIONABLE_COUNT_RE = /Actionable comments posted:\s*(\d+)/i;
 
+/** Per-file finding header in CodeRabbit digests, e.g. `\n`@src/foo.ts:12` */
+const FINDING_PATH_HEADER_RE = /(?:^|\n)`@[^`\n]+`/;
+
+/** CodeRabbit status line on a resolved finding, e.g. `✅ Addressed in commits abc to def`. */
+export const ADDRESSED_FINDING_STATUS_RE =
+  /(?:^|\n)\s*✅?\s*Addressed in commits?\s+[\da-f]+(?:\s+to\s+[\da-f]+)?/i;
+
 function countAddressedMarkers(body: string): number {
-  return (body.match(/Addressed in commits?/gi) ?? []).length;
+  const matches = body.match(
+    new RegExp(ADDRESSED_FINDING_STATUS_RE.source, "gi")
+  );
+  return matches?.length ?? 0;
 }
 
 function isCoderabbitAuthor(login: string): boolean {
@@ -25,7 +35,7 @@ export function isBotReviewDigest(body: string): boolean {
   return (
     ACTIONABLE_COUNT_RE.test(body) ||
     /Potential issue|Committable suggestion|Prompt for AI agents/i.test(body) ||
-    countAddressedMarkers(body) > 0
+    (FINDING_PATH_HEADER_RE.test(body) && countAddressedMarkers(body) > 0)
   );
 }
 
@@ -44,14 +54,12 @@ export function summarizeBotReviewComment(
     : null;
 
   const addressedCount = countAddressedMarkers(body);
+  const baseSuggestedCount =
+    /Committable suggestion|Potential issue/i.test(body) ? 1 : 0;
   const openCount =
     actionableCount != null
       ? Math.max(0, actionableCount - addressedCount)
-      : addressedCount > 0
-        ? 0
-        : /Potential issue/i.test(body)
-          ? 1
-          : 0;
+      : Math.max(0, baseSuggestedCount - addressedCount);
 
   const needsAction = openCount > 0;
 

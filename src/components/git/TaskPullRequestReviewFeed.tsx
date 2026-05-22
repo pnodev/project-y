@@ -136,7 +136,8 @@ export function TaskPullRequestReviewFeed({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <TaskLabel>Pull request</TaskLabel>
         <div className="flex items-center gap-2">
-          {botDigestRollup && botDigestRollup.digestCount > 0 ? (
+          {botDigestRollup &&
+          (botDigestRollup.digestCount > 0 || needsActionOnly) ? (
             <Button
               type="button"
               variant={needsActionOnly ? "default" : "outline"}
