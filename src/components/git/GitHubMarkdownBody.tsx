@@ -113,16 +113,42 @@ const markdownComponents: Components = {
   td: ({ children }) => (
     <td className="border-border/60 border px-2 py-1">{children}</td>
   ),
-  details: ({ children }) => (
-    <details className="bg-muted/30 my-2 rounded-md border border-border/60">
-      {children}
-    </details>
-  ),
-  summary: ({ children }) => (
-    <summary className="cursor-pointer px-2.5 py-2 text-xs font-medium select-none">
-      {children}
-    </summary>
-  ),
+  details: ({ className, children, ...props }) => {
+    const isAddressed = String(className ?? "").includes(
+      "gh-bot-finding-addressed"
+    );
+    return (
+      <details
+        {...props}
+        className={cn(
+          "my-2 rounded-md border",
+          isAddressed
+            ? "border-emerald-500/40 bg-emerald-50/50 dark:bg-emerald-950/20"
+            : "border-border/60 bg-muted/30",
+          className
+        )}
+      >
+        {children}
+      </details>
+    );
+  },
+  summary: ({ className, children, ...props }) => {
+    const isAddressed = String(className ?? "").includes(
+      "gh-bot-finding-addressed"
+    );
+    return (
+      <summary
+        {...props}
+        className={cn(
+          "cursor-pointer px-2.5 py-2 text-xs font-medium select-none",
+          isAddressed && "text-emerald-800 dark:text-emerald-200",
+          className
+        )}
+      >
+        {children}
+      </summary>
+    );
+  },
   hr: () => <hr className="border-border/60 my-3" />,
   ul: ({ children }) => (
     <ul className="my-1.5 list-disc space-y-0.5 pl-5">{children}</ul>
@@ -151,13 +177,22 @@ export function GitHubMarkdownBody({
   body,
   className,
   collapsible = true,
+  collapseAddressedFindings = false,
 }: {
   body: string;
   className?: string;
   collapsible?: boolean;
+  /** Wrap CodeRabbit "Addressed" finding blocks in closed &lt;details&gt;. */
+  collapseAddressedFindings?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const processed = useMemo(() => preprocessGitHubMarkdown(body), [body]);
+  const processed = useMemo(
+    () =>
+      preprocessGitHubMarkdown(body, {
+        collapseAddressedFindings,
+      }),
+    [body, collapseAddressedFindings]
+  );
   const hasNestedCollapsibles = useMemo(
     () => hasGitHubCollapsibleSections(processed),
     [processed]
