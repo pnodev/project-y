@@ -6,6 +6,8 @@ export const formSheetSearchSchema = z.object({
       "create-project",
       "create-sprint",
       "create-organization",
+      "create-label",
+      "create-status",
       "edit-project",
       "edit-sprint",
     ])
@@ -47,6 +49,14 @@ export const FORM_SHEET_CREATE_LINKS = {
   organization: {
     to: "/settings/organization" as const,
     search: { sheet: "create-organization" } satisfies FormSheetSearch,
+  },
+  label: {
+    to: "/labels" as const,
+    search: { sheet: "create-label" } satisfies FormSheetSearch,
+  },
+  status: {
+    to: "/statuses" as const,
+    search: { sheet: "create-status" } satisfies FormSheetSearch,
   },
 };
 

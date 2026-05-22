@@ -13,7 +13,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { CreateProject, Project, UpdateProject } from "~/db/schema";
-import { UploadButton } from "~/utils/uploadthing";
+import { ImageUploadField } from "~/components/ImageUploadField";
 import { FormLayoutShell } from "~/components/FormLayoutShell";
 import { FormSheetSection } from "~/components/FormSheetSection";
 import {
@@ -25,6 +25,29 @@ import { cn } from "~/lib/utils";
 import { toast } from "sonner";
 
 type FormLayout = "page" | "sheet";
+
+function ProjectLogoUpload({
+  imageUrl,
+  projectName,
+  onUploaded,
+}: {
+  imageUrl?: string;
+  projectName: string;
+  onUploaded: (url: string) => void;
+}) {
+  const fallback = projectName.trim().slice(0, 1).toUpperCase() || "P";
+
+  return (
+    <ImageUploadField
+      endpoint="projectLogoUploader"
+      imageUrl={imageUrl}
+      fallback={fallback}
+      label="Project logo"
+      previewShape="rounded"
+      onUploaded={onUploaded}
+    />
+  );
+}
 
 type ProjectFormCreateProps = {
   onSubmit: (data: CreateProject) => void | Promise<void>;
@@ -124,22 +147,15 @@ export function ProjectFormCreate({
                   name="logo"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Project Logo</FormLabel>
                       <FormControl>
                         <Input type="hidden" {...field} />
                       </FormControl>
-                      <FormMessage />
-                      {field.value ? (
-                        <img src={field.value} className="h-16 w-16" alt="" />
-                      ) : null}
-                      <UploadButton
-                        endpoint="projectLogoUploader"
-                        config={{ mode: "auto" }}
-                        onClientUploadComplete={(data) => {
-                          const [file] = data;
-                          form.setValue("logo", file.ufsUrl);
-                        }}
+                      <ProjectLogoUpload
+                        imageUrl={field.value}
+                        projectName={form.watch("name")}
+                        onUploaded={field.onChange}
                       />
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -182,22 +198,15 @@ export function ProjectFormCreate({
                 name="logo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Project Logo</FormLabel>
                     <FormControl>
                       <Input type="hidden" {...field} />
                     </FormControl>
-                    <FormMessage />
-                    {field.value ? (
-                      <img src={field.value} className="h-16 w-16" alt="" />
-                    ) : null}
-                    <UploadButton
-                      endpoint="projectLogoUploader"
-                      config={{ mode: "auto" }}
-                      onClientUploadComplete={(data) => {
-                        const [file] = data;
-                        form.setValue("logo", file.ufsUrl);
-                      }}
+                    <ProjectLogoUpload
+                      imageUrl={field.value}
+                      projectName={form.watch("name")}
+                      onUploaded={field.onChange}
                     />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -330,22 +339,15 @@ export function ProjectFormEdit({
                   name="logo"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Project Logo</FormLabel>
                       <FormControl>
                         <Input type="hidden" {...field} />
                       </FormControl>
-                      <FormMessage />
-                      {field.value ? (
-                        <img src={field.value} className="h-16 w-16" alt="" />
-                      ) : null}
-                      <UploadButton
-                        endpoint="projectLogoUploader"
-                        config={{ mode: "auto" }}
-                        onClientUploadComplete={(data) => {
-                          const [file] = data;
-                          form.setValue("logo", file.ufsUrl);
-                        }}
+                      <ProjectLogoUpload
+                        imageUrl={field.value}
+                        projectName={form.watch("name")}
+                        onUploaded={field.onChange}
                       />
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -388,22 +390,15 @@ export function ProjectFormEdit({
                 name="logo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Project Logo</FormLabel>
                     <FormControl>
                       <Input type="hidden" {...field} />
                     </FormControl>
-                    <FormMessage />
-                    {field.value ? (
-                      <img src={field.value} className="h-16 w-16" alt="" />
-                    ) : null}
-                    <UploadButton
-                      endpoint="projectLogoUploader"
-                      config={{ mode: "auto" }}
-                      onClientUploadComplete={(data) => {
-                        const [file] = data;
-                        form.setValue("logo", file.ufsUrl);
-                      }}
+                    <ProjectLogoUpload
+                      imageUrl={field.value}
+                      projectName={form.watch("name")}
+                      onUploaded={field.onChange}
                     />
+                    <FormMessage />
                   </FormItem>
                 )}
               />

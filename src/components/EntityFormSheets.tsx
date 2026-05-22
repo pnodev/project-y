@@ -7,8 +7,10 @@ import { FormSheetFormFooter } from "~/components/FormSheetFormFooter";
 import { Button } from "~/components/ui/button";
 import { ProjectFormCreate, ProjectFormEdit } from "~/components/forms/ProjectForm";
 import { SprintFormCreate, SprintFormEdit } from "~/components/forms/SprintForm";
+import { EntityConfigCreateForm } from "~/components/forms/EntityConfigCreateForm";
 import { CreateOrganizationForm } from "~/components/settings/CreateOrganizationForm";
-import { OrganizationSettingsForm } from "~/components/settings/OrganizationSettingsForm";
+import { useCreateLabelMutation } from "~/db/mutations/labels";
+import { useCreateStatusMutation } from "~/db/mutations/statuses";
 import {
   useCreateProjectMutation,
   useDeleteProjectMutation,
@@ -23,7 +25,6 @@ import { useProjectQuery } from "~/db/queries/projects";
 import { useSprintQuery } from "~/db/queries/sprints";
 import type { Project } from "~/db/schema";
 import type { Sprint } from "~/db/schema";
-import type { Organization } from "~/hooks/use-organizations";
 import { useOrganizations } from "~/hooks/use-organizations";
 
 const signedInRoute = getRouteApi("/_signed-in");
@@ -264,6 +265,82 @@ export function SprintEditSheet({
   );
 }
 
+export function LabelCreateSheet({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const createLabel = useCreateLabelMutation();
+  const formId = "label-create-form";
+  const close = () => onOpenChange(false);
+
+  return (
+    <FormSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Add label"
+      description="Create a label to categorize tasks."
+    >
+      <EntityConfigCreateForm
+        kind="label"
+        layout="sheet"
+        formId={formId}
+        sheetFooter={
+          <FormSheetFormFooter
+            onCancel={close}
+            submitLabel="Create label"
+            formId={formId}
+          />
+        }
+        onSubmit={async (data) => {
+          await createLabel(data);
+          close();
+        }}
+      />
+    </FormSheet>
+  );
+}
+
+export function StatusCreateSheet({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const createStatus = useCreateStatusMutation();
+  const formId = "status-create-form";
+  const close = () => onOpenChange(false);
+
+  return (
+    <FormSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Add status"
+      description="Create a workflow status for your task board."
+    >
+      <EntityConfigCreateForm
+        kind="status"
+        layout="sheet"
+        formId={formId}
+        sheetFooter={
+          <FormSheetFormFooter
+            onCancel={close}
+            submitLabel="Create status"
+            formId={formId}
+          />
+        }
+        onSubmit={async (data) => {
+          await createStatus(data);
+          close();
+        }}
+      />
+    </FormSheet>
+  );
+}
+
 export function OrganizationCreateSheet({
   open,
   onOpenChange,
@@ -296,43 +373,6 @@ export function OrganizationCreateSheet({
           void loadOrganizations();
           close();
         }}
-      />
-    </FormSheet>
-  );
-}
-
-export function OrganizationEditSheet({
-  open,
-  onOpenChange,
-  organization,
-  onUpdated,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  organization: Organization;
-  onUpdated: () => void;
-}) {
-  const formId = "organization-edit-form";
-
-  return (
-    <FormSheet
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Edit organization"
-      description="Update organization name, slug, and logo."
-    >
-      <OrganizationSettingsForm
-        layout="sheet"
-        formId={formId}
-        organization={organization}
-        onUpdated={onUpdated}
-        sheetFooter={
-          <FormSheetFormFooter
-            onCancel={() => onOpenChange(false)}
-            submitLabel="Save changes"
-            formId={formId}
-          />
-        }
       />
     </FormSheet>
   );
@@ -397,6 +437,14 @@ export function FormSheetsHost() {
     sheet === "create-organization",
     closeSheet
   );
+  const [labelCreateOpen, onLabelCreateOpenChange] = useSheetOpenState(
+    sheet === "create-label",
+    closeSheet
+  );
+  const [statusCreateOpen, onStatusCreateOpenChange] = useSheetOpenState(
+    sheet === "create-status",
+    closeSheet
+  );
   const [projectEditOpen, onProjectEditOpenChange] = useSheetOpenState(
     sheet === "edit-project",
     closeSheet
@@ -419,6 +467,14 @@ export function FormSheetsHost() {
       <OrganizationCreateSheet
         open={orgCreateOpen}
         onOpenChange={onOrgCreateOpenChange}
+      />
+      <LabelCreateSheet
+        open={labelCreateOpen}
+        onOpenChange={onLabelCreateOpenChange}
+      />
+      <StatusCreateSheet
+        open={statusCreateOpen}
+        onOpenChange={onStatusCreateOpenChange}
       />
       {projectId ? (
         <Suspense fallback={null}>

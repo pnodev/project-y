@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Clock, Folder, FolderPlus, ListTodo, Plus } from "lucide-react";
+import { Clock, Folder, FolderPlus, ListTodo } from "lucide-react";
 
+import { PageCreateMenu } from "~/components/PageCreateButton";
 import { PageLayout } from "~/components/PageLayout";
 import {
   PageSection,
@@ -49,7 +50,27 @@ function RouteComponent() {
   const isSprintActive = (start: Date, end: Date) => start < now && end > now;
 
   return (
-    <PageLayout title="Dashboard">
+    <PageLayout
+      title="Dashboard"
+      actions={
+        <PageCreateMenu
+          items={[
+            {
+              label: "Add project",
+              icon: FolderPlus,
+              to: FORM_SHEET_CREATE_LINKS.project.to,
+              search: FORM_SHEET_CREATE_LINKS.project.search,
+            },
+            {
+              label: "Add sprint",
+              icon: Clock,
+              to: FORM_SHEET_CREATE_LINKS.sprint.to,
+              search: FORM_SHEET_CREATE_LINKS.sprint.search,
+            },
+          ]}
+        />
+      }
+    >
       <p className="text-muted-foreground text-sm">
         Welcome back, {displayName}.
       </p>
@@ -91,43 +112,14 @@ function RouteComponent() {
             All tasks
           </Link>
         </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link
-            to={FORM_SHEET_CREATE_LINKS.project.to}
-            search={FORM_SHEET_CREATE_LINKS.project.search}
-          >
-            <FolderPlus />
-            Add project
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link
-            to={FORM_SHEET_CREATE_LINKS.sprint.to}
-            search={FORM_SHEET_CREATE_LINKS.sprint.search}
-          >
-            <Plus />
-            Add sprint
-          </Link>
-        </Button>
       </div>
 
       <PageSection title="Projects">
         <PageSectionContent>
           {projectsQuery.data.length === 0 ? (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                No projects yet. Create one to start organizing tasks.
-              </p>
-              <Button variant="outline" size="sm" asChild>
-                <Link
-                  to={FORM_SHEET_CREATE_LINKS.project.to}
-                  search={FORM_SHEET_CREATE_LINKS.project.search}
-                >
-                  <FolderPlus />
-                  Add project
-                </Link>
-              </Button>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              No projects yet. Use Create (+) above to add a project.
+            </p>
           ) : (
             <ul className="divide-y">
               {projectsQuery.data.map((project) => (
@@ -158,20 +150,9 @@ function RouteComponent() {
       <PageSection title="Sprints">
         <PageSectionContent>
           {sprintsQuery.data.length === 0 ? (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                No sprints yet. Plan your work in time-boxed iterations.
-              </p>
-              <Button variant="outline" size="sm" asChild>
-                <Link
-                  to={FORM_SHEET_CREATE_LINKS.sprint.to}
-                  search={FORM_SHEET_CREATE_LINKS.sprint.search}
-                >
-                  <Plus />
-                  Add sprint
-                </Link>
-              </Button>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              No sprints yet. Use Create (+) above to add a sprint.
+            </p>
           ) : (
             <ul className="divide-y">
               {sprintsQuery.data.map((sprint) => {

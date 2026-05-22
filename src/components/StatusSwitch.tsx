@@ -27,6 +27,10 @@ function StatusColorDot({
   );
 }
 
+function StatusLabel({ name }: { name: string }) {
+  return <span className="truncate leading-none">{name}</span>;
+}
+
 export function StatusSwitch({
   status,
   statuses,
@@ -39,8 +43,10 @@ export function StatusSwitch({
   return (
     <Select value={status.id} onValueChange={onValueChange}>
       <SelectTrigger size="sm" className="capitalize">
-        <StatusColorDot color={status.color ?? "neutral"} />
-        <span className="truncate">{status.name}</span>
+        <span className="inline-flex min-w-0 items-center gap-1.5">
+          <StatusColorDot color={status.color ?? "neutral"} />
+          <StatusLabel name={status.name} />
+        </span>
       </SelectTrigger>
       <SelectContent>
         {statuses.map((item) => (
@@ -48,12 +54,12 @@ export function StatusSwitch({
             key={item.id}
             value={item.id}
             textValue={item.name}
-            className="capitalize"
-          >
-            <span className="flex items-center gap-1.5">
+            className="gap-1.5 capitalize"
+            leading={
               <StatusColorDot color={item.color ?? "neutral"} />
-              {item.name}
-            </span>
+            }
+          >
+            {item.name}
           </SelectItem>
         ))}
       </SelectContent>
