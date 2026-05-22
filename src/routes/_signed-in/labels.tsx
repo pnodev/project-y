@@ -71,7 +71,7 @@ function LabelsComponent() {
             </p>
           ) : (
             <EntityList
-              items={[...labelsQuery.data]}
+              items={sortedLabels}
               onReorder={async (data) => {
                 data.forEach((item, index) => {
                   item.order = index;

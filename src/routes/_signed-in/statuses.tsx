@@ -73,7 +73,7 @@ function StatusesComponent() {
             </p>
           ) : (
             <EntityList
-              items={[...statusesQuery.data]}
+              items={sortedStatuses}
               onReorder={async (data) => {
                 data.forEach((item, index) => {
                   item.order = index;

@@ -28,7 +28,7 @@ function StatusColorDot({
 }
 
 function StatusLabel({ name }: { name: string }) {
-  return <span className="truncate leading-none">{name}</span>;
+  return <span className="min-w-0 truncate leading-none">{name}</span>;
 }
 
 export function StatusSwitch({

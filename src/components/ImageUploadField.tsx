@@ -46,7 +46,12 @@ export function ImageUploadField({
     onClientUploadComplete: (files) => {
       const file = files[0];
       if (file?.ufsUrl) {
-        void onUploaded(file.ufsUrl);
+        void Promise.resolve(onUploaded(file.ufsUrl)).catch((error) => {
+          console.error("Image upload callback failed", error);
+          toast.error(
+            error instanceof Error ? error.message : "Failed to save image"
+          );
+        });
       }
     },
     onUploadError: (error) => {
