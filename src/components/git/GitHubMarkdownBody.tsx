@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { Copy } from "lucide-react";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
+import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { githubMarkdownSanitizeSchema } from "~/components/git/github-markdown-sanitize";
 import {
@@ -13,6 +15,50 @@ import {
 import { cn } from "~/lib/utils";
 
 const COLLAPSE_CHAR_THRESHOLD = 1_400;
+
+/** Paragraph spacing without <p> — GitHub HTML often nests blocks inside loose paragraphs. */
+const markdownParagraphClass = "gh-markdown-p my-1.5 leading-relaxed";
+
+function markdownNodeText(node: ReactNode): string {
+  if (node == null || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(markdownNodeText).join("");
+  if (typeof node === "object" && "props" in node) {
+    const el = node as { props: { children?: ReactNode } };
+    return markdownNodeText(el.props.children);
+  }
+  return "";
+}
+
+function MarkdownPreWithCopy({ children }: { children?: ReactNode }) {
+  const text = useMemo(() => markdownNodeText(children).trimEnd(), [children]);
+
+  const copy = () => {
+    if (!text) return;
+    void navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard");
+  };
+
+  return (
+    <div className="group/gh-pre relative my-2">
+      {text ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground absolute top-1 right-1 z-10 size-7 bg-background/80 opacity-100 shadow-sm backdrop-blur-sm sm:opacity-0 sm:group-hover/gh-pre:opacity-100 sm:focus-visible:opacity-100"
+          aria-label="Copy code"
+          onClick={copy}
+        >
+          <Copy className="size-3.5" />
+        </Button>
+      ) : null}
+      <pre className="bg-muted/80 overflow-x-auto rounded-md border border-border/60 p-2.5 pr-10 text-[11px] leading-relaxed">
+        {children}
+      </pre>
+    </div>
+  );
+}
 
 const markdownComponents: Components = {
   a: ({ href, children }) => (
@@ -25,11 +71,7 @@ const markdownComponents: Components = {
       {children}
     </a>
   ),
-  pre: ({ children }) => (
-    <pre className="bg-muted/80 my-2 overflow-x-auto rounded-md border border-border/60 p-2.5 text-[11px] leading-relaxed">
-      {children}
-    </pre>
-  ),
+  pre: ({ children }) => <MarkdownPreWithCopy>{children}</MarkdownPreWithCopy>,
   code: ({ className, children, ...props }) => {
     const isBlock = Boolean(className);
     if (isBlock) {
@@ -83,7 +125,9 @@ const markdownComponents: Components = {
   ol: ({ children }) => (
     <ol className="my-1.5 list-decimal space-y-0.5 pl-5">{children}</ol>
   ),
-  p: ({ children }) => <p className="my-1.5 leading-relaxed">{children}</p>,
+  p: ({ children }) => (
+    <div className={markdownParagraphClass}>{children}</div>
+  ),
   h1: ({ children }) => (
     <h1 className="mt-2 mb-1 text-sm font-semibold">{children}</h1>
   ),

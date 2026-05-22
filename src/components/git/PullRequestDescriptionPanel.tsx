@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ChevronDown, ExternalLink } from "lucide-react";
 import { GitHubMarkdownBody } from "~/components/git/GitHubMarkdownBody";
 import { PullRequestStateBadge } from "~/components/git/PullRequestStateBadge";
@@ -33,6 +33,10 @@ export function PullRequestDescriptionPanel({
   const pr = data?.pullRequest;
   const description = pr?.body?.trim() ?? "";
   const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    setCollapsed(false);
+  }, [pullRequestId, description]);
 
   if (!connectionData?.connection) return null;
 
@@ -119,7 +123,7 @@ export function PullRequestDescriptionPanel({
           ) : null}
           <div
             className={cn(
-              "[&_.gh-markdown_p:first-child]:mt-0",
+              "[&_.gh-markdown-p:first-child]:mt-0",
               description.length > 0 &&
                 "max-h-56 overflow-y-auto overscroll-contain pr-1"
             )}

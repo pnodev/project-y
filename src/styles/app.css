@@ -199,7 +199,8 @@
 .pr-description-markdown.gh-markdown h1:first-child,
 .pr-description-markdown.gh-markdown h2:first-child,
 .pr-description-markdown.gh-markdown h3:first-child,
-.pr-description-markdown.gh-markdown p:first-child {
+.pr-description-markdown.gh-markdown p:first-child,
+.pr-description-markdown.gh-markdown .gh-markdown-p:first-child {
   margin-top: 0;
 }
 
@@ -211,7 +212,8 @@
   font-weight: 600;
 }
 
-.pr-description-markdown.gh-markdown p {
+.pr-description-markdown.gh-markdown p,
+.pr-description-markdown.gh-markdown .gh-markdown-p {
   margin-top: 0.375rem;
   margin-bottom: 0.375rem;
 }

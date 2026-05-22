@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { PlayCircle } from "lucide-react";
 import { FinishReviewPopover } from "~/components/git/review/FinishReviewPopover";
 import type { ReviewOperation } from "~/components/git/review/types";
 import { Badge } from "~/components/ui/badge";
@@ -133,8 +134,9 @@ export function ReviewToolbar({
         <Button
           type="button"
           size="sm"
-          variant="outline"
-          className="h-7 text-xs"
+          variant="default"
+          icon={PlayCircle}
+          className="h-8 px-3.5 text-xs font-semibold shadow-sm"
           loading={operation === "start"}
           disabled={reviewActionsDisabled}
           onClick={onStartReview}
