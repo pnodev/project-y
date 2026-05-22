@@ -13,6 +13,8 @@ export default defineConfig({
   },
   server: {
     port: 3001,
+    // Listen on IPv4 too; default [::1] breaks smee/curl to 127.0.0.1
+    host: true,
   },
   plugins: [
     devtools(),

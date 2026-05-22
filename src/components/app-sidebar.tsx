@@ -8,6 +8,7 @@ import {
   Flag,
   Folder,
   FolderPlus,
+  GitBranch,
   LayoutDashboard,
   LucideIcon,
   Tag,
@@ -52,6 +53,11 @@ const settingsNav = [
     name: "Organization",
     url: "/settings/organization",
     icon: Building2,
+  },
+  {
+    name: "Integrations",
+    url: "/settings/integrations",
+    icon: GitBranch,
   },
   {
     name: "Statuses",

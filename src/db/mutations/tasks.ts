@@ -8,6 +8,7 @@ import {
   Label,
   labelsToTasks,
   PRIORITY_VALUES,
+  projects,
   Task,
   taskAssignees,
   tasks,
@@ -158,19 +159,51 @@ const createTask = createServerFn({ method: "POST" })
   .inputValidator(insertTaskValidator)
   .handler(async ({ data }) => {
     const session = await requireSessionFromRequest();
+    const owner = getOwningIdentity(session);
 
-    const newTask = {
-      id: uuid(),
-      name: data.name,
-      description: data.description,
-      statusId: data.statusId,
-      projectId: data.projectId,
-      sprintId: data.sprintId,
-      owner: getOwningIdentity(session),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    await db.insert(tasks).values(newTask);
+    const newTask = await db.transaction(async (trx) => {
+      const [project] = await trx
+        .select({
+          id: projects.id,
+          nextTaskNumber: projects.nextTaskNumber,
+        })
+        .from(projects)
+        .where(
+          and(eq(projects.id, data.projectId), eq(projects.owner, owner))
+        )
+        .for("update");
+
+      if (!project) {
+        throw new Error("Project not found");
+      }
+
+      const taskNumber = project.nextTaskNumber;
+
+      await trx
+        .update(projects)
+        .set({
+          nextTaskNumber: taskNumber + 1,
+          updatedAt: new Date(),
+        })
+        .where(eq(projects.id, data.projectId));
+
+      const row = {
+        id: uuid(),
+        number: taskNumber,
+        name: data.name,
+        description: data.description,
+        statusId: data.statusId,
+        projectId: data.projectId,
+        sprintId: data.sprintId,
+        owner,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      await trx.insert(tasks).values(row);
+      return row;
+    });
+
     await sync(`task-create`, { data });
     await syncDashboard(newTask.owner, { data });
 

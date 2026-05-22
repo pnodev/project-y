@@ -46,6 +46,8 @@ function stubProject(task: BoardTaskRow): Project {
     id: task.projectId,
     name: "",
     description: null,
+    taskKeyPrefix: null,
+    nextTaskNumber: 1,
     owner: task.owner,
     logo: null,
     createdAt: task.createdAt,

@@ -73,20 +73,18 @@ function Button({
     </>
   );
 
+  const mergedClassName = cn(buttonVariants({ variant, size }), className);
+
   return asChild ? (
-    <Comp
-      className={cn(buttonVariants({ variant, size, className }))}
-      type={type}
-      {...props}
-    >
+    <Comp className={mergedClassName} type={type} {...props}>
       {children}
     </Comp>
   ) : (
     <Comp
-      className={cn(buttonVariants({ variant, size, className }))}
-      disabled={loading}
+      className={mergedClassName}
       type={type}
       {...props}
+      disabled={loading || props.disabled}
     >
       {content}
     </Comp>

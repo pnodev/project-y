@@ -1,5 +1,7 @@
 import { DndContext, DragOverlay } from "@dnd-kit/core";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { fetchTaskGitSummaries } from "~/db/queries/git";
 import TaskCard, { TaskCardComponent } from "~/components/TaskCard";
 import TaskColumn from "~/components/TaskColumn";
 import { useStore } from "@tanstack/react-store";
@@ -30,6 +32,13 @@ export const BoardView = ({
   );
 
   const sensors = useTaskViewSensors();
+
+  const taskIds = useMemo(() => tasks.map((t) => t.id), [tasks]);
+  const { data: gitSummaries } = useQuery({
+    queryKey: ["git", "summaries", taskIds],
+    queryFn: () => fetchTaskGitSummaries({ data: { taskIds } }),
+    enabled: taskIds.length > 0,
+  });
 
   const tasksByStatus = useMemo(() => {
     return tasks.reduce(
@@ -71,6 +80,7 @@ export const BoardView = ({
         showSprint={showSprint}
         showProject={showProject}
         taskLinkTo={taskLinkTo}
+        gitSummary={gitSummaries?.[task.id]}
       />
     ));
   };

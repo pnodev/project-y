@@ -20,12 +20,15 @@ import { Route as SignedInTasksRouteImport } from './routes/_signed-in/tasks'
 import { Route as SignedInStatusesRouteImport } from './routes/_signed-in/statuses'
 import { Route as SignedInLabelsRouteImport } from './routes/_signed-in/labels'
 import { Route as SignedInDashboardRouteImport } from './routes/_signed-in/dashboard'
+import { Route as ApiWebhooksGithubRouteImport } from './routes/api/webhooks/github'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as SignedInTasksTaskIdRouteImport } from './routes/_signed-in/tasks.$taskId'
 import { Route as SignedInSprintsNewRouteImport } from './routes/_signed-in/sprints.new'
 import { Route as SignedInSettingsOrganizationRouteImport } from './routes/_signed-in/settings.organization'
+import { Route as SignedInSettingsIntegrationsRouteImport } from './routes/_signed-in/settings.integrations'
 import { Route as SignedInSettingsAccountRouteImport } from './routes/_signed-in/settings.account'
 import { Route as SignedInProjectsNewRouteImport } from './routes/_signed-in/projects.new'
+import { Route as ApiGitGithubCallbackRouteImport } from './routes/api/git/github/callback'
 import { Route as SignedInSprintsSprintIdTasksRouteImport } from './routes/_signed-in/sprints.$sprintId.tasks'
 import { Route as SignedInSprintsSprintIdSettingsRouteImport } from './routes/_signed-in/sprints.$sprintId.settings'
 import { Route as SignedInSettingsOrganizationNewRouteImport } from './routes/_signed-in/settings.organization.new'
@@ -88,6 +91,11 @@ const SignedInDashboardRoute = SignedInDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => SignedInRoute,
 } as any)
+const ApiWebhooksGithubRoute = ApiWebhooksGithubRouteImport.update({
+  id: '/api/webhooks/github',
+  path: '/api/webhooks/github',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -109,6 +117,12 @@ const SignedInSettingsOrganizationRoute =
     path: '/settings/organization',
     getParentRoute: () => SignedInRoute,
   } as any)
+const SignedInSettingsIntegrationsRoute =
+  SignedInSettingsIntegrationsRouteImport.update({
+    id: '/settings/integrations',
+    path: '/settings/integrations',
+    getParentRoute: () => SignedInRoute,
+  } as any)
 const SignedInSettingsAccountRoute = SignedInSettingsAccountRouteImport.update({
   id: '/settings/account',
   path: '/settings/account',
@@ -118,6 +132,11 @@ const SignedInProjectsNewRoute = SignedInProjectsNewRouteImport.update({
   id: '/projects/new',
   path: '/projects/new',
   getParentRoute: () => SignedInRoute,
+} as any)
+const ApiGitGithubCallbackRoute = ApiGitGithubCallbackRouteImport.update({
+  id: '/api/git/github/callback',
+  path: '/api/git/github/callback',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const SignedInSprintsSprintIdTasksRoute =
   SignedInSprintsSprintIdTasksRouteImport.update({
@@ -175,15 +194,18 @@ export interface FileRoutesByFullPath {
   '/sign-in/$': typeof SignInSplatRoute
   '/projects/new': typeof SignedInProjectsNewRoute
   '/settings/account': typeof SignedInSettingsAccountRoute
+  '/settings/integrations': typeof SignedInSettingsIntegrationsRoute
   '/settings/organization': typeof SignedInSettingsOrganizationRouteWithChildren
   '/sprints/new': typeof SignedInSprintsNewRoute
   '/tasks/$taskId': typeof SignedInTasksTaskIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/projects/$projectId/settings': typeof SignedInProjectsProjectIdSettingsRoute
   '/projects/$projectId/tasks': typeof SignedInProjectsProjectIdTasksRouteWithChildren
   '/settings/organization/new': typeof SignedInSettingsOrganizationNewRoute
   '/sprints/$sprintId/settings': typeof SignedInSprintsSprintIdSettingsRoute
   '/sprints/$sprintId/tasks': typeof SignedInSprintsSprintIdTasksRouteWithChildren
+  '/api/git/github/callback': typeof ApiGitGithubCallbackRoute
   '/projects/$projectId/tasks/$taskId': typeof SignedInProjectsProjectIdTasksTaskIdRoute
   '/sprints/$sprintId/tasks/$taskId': typeof SignedInSprintsSprintIdTasksTaskIdRoute
 }
@@ -200,15 +222,18 @@ export interface FileRoutesByTo {
   '/sign-in/$': typeof SignInSplatRoute
   '/projects/new': typeof SignedInProjectsNewRoute
   '/settings/account': typeof SignedInSettingsAccountRoute
+  '/settings/integrations': typeof SignedInSettingsIntegrationsRoute
   '/settings/organization': typeof SignedInSettingsOrganizationRouteWithChildren
   '/sprints/new': typeof SignedInSprintsNewRoute
   '/tasks/$taskId': typeof SignedInTasksTaskIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/projects/$projectId/settings': typeof SignedInProjectsProjectIdSettingsRoute
   '/projects/$projectId/tasks': typeof SignedInProjectsProjectIdTasksRouteWithChildren
   '/settings/organization/new': typeof SignedInSettingsOrganizationNewRoute
   '/sprints/$sprintId/settings': typeof SignedInSprintsSprintIdSettingsRoute
   '/sprints/$sprintId/tasks': typeof SignedInSprintsSprintIdTasksRouteWithChildren
+  '/api/git/github/callback': typeof ApiGitGithubCallbackRoute
   '/projects/$projectId/tasks/$taskId': typeof SignedInProjectsProjectIdTasksTaskIdRoute
   '/sprints/$sprintId/tasks/$taskId': typeof SignedInSprintsSprintIdTasksTaskIdRoute
 }
@@ -227,15 +252,18 @@ export interface FileRoutesById {
   '/sign-in/$': typeof SignInSplatRoute
   '/_signed-in/projects/new': typeof SignedInProjectsNewRoute
   '/_signed-in/settings/account': typeof SignedInSettingsAccountRoute
+  '/_signed-in/settings/integrations': typeof SignedInSettingsIntegrationsRoute
   '/_signed-in/settings/organization': typeof SignedInSettingsOrganizationRouteWithChildren
   '/_signed-in/sprints/new': typeof SignedInSprintsNewRoute
   '/_signed-in/tasks/$taskId': typeof SignedInTasksTaskIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/webhooks/github': typeof ApiWebhooksGithubRoute
   '/_signed-in/projects/$projectId/settings': typeof SignedInProjectsProjectIdSettingsRoute
   '/_signed-in/projects/$projectId/tasks': typeof SignedInProjectsProjectIdTasksRouteWithChildren
   '/_signed-in/settings/organization/new': typeof SignedInSettingsOrganizationNewRoute
   '/_signed-in/sprints/$sprintId/settings': typeof SignedInSprintsSprintIdSettingsRoute
   '/_signed-in/sprints/$sprintId/tasks': typeof SignedInSprintsSprintIdTasksRouteWithChildren
+  '/api/git/github/callback': typeof ApiGitGithubCallbackRoute
   '/_signed-in/projects/$projectId/tasks/$taskId': typeof SignedInProjectsProjectIdTasksTaskIdRoute
   '/_signed-in/sprints/$sprintId/tasks/$taskId': typeof SignedInSprintsSprintIdTasksTaskIdRoute
 }
@@ -254,15 +282,18 @@ export interface FileRouteTypes {
     | '/sign-in/$'
     | '/projects/new'
     | '/settings/account'
+    | '/settings/integrations'
     | '/settings/organization'
     | '/sprints/new'
     | '/tasks/$taskId'
     | '/api/auth/$'
+    | '/api/webhooks/github'
     | '/projects/$projectId/settings'
     | '/projects/$projectId/tasks'
     | '/settings/organization/new'
     | '/sprints/$sprintId/settings'
     | '/sprints/$sprintId/tasks'
+    | '/api/git/github/callback'
     | '/projects/$projectId/tasks/$taskId'
     | '/sprints/$sprintId/tasks/$taskId'
   fileRoutesByTo: FileRoutesByTo
@@ -279,15 +310,18 @@ export interface FileRouteTypes {
     | '/sign-in/$'
     | '/projects/new'
     | '/settings/account'
+    | '/settings/integrations'
     | '/settings/organization'
     | '/sprints/new'
     | '/tasks/$taskId'
     | '/api/auth/$'
+    | '/api/webhooks/github'
     | '/projects/$projectId/settings'
     | '/projects/$projectId/tasks'
     | '/settings/organization/new'
     | '/sprints/$sprintId/settings'
     | '/sprints/$sprintId/tasks'
+    | '/api/git/github/callback'
     | '/projects/$projectId/tasks/$taskId'
     | '/sprints/$sprintId/tasks/$taskId'
   id:
@@ -305,15 +339,18 @@ export interface FileRouteTypes {
     | '/sign-in/$'
     | '/_signed-in/projects/new'
     | '/_signed-in/settings/account'
+    | '/_signed-in/settings/integrations'
     | '/_signed-in/settings/organization'
     | '/_signed-in/sprints/new'
     | '/_signed-in/tasks/$taskId'
     | '/api/auth/$'
+    | '/api/webhooks/github'
     | '/_signed-in/projects/$projectId/settings'
     | '/_signed-in/projects/$projectId/tasks'
     | '/_signed-in/settings/organization/new'
     | '/_signed-in/sprints/$sprintId/settings'
     | '/_signed-in/sprints/$sprintId/tasks'
+    | '/api/git/github/callback'
     | '/_signed-in/projects/$projectId/tasks/$taskId'
     | '/_signed-in/sprints/$sprintId/tasks/$taskId'
   fileRoutesById: FileRoutesById
@@ -327,6 +364,8 @@ export interface RootRouteChildren {
   ApiUploadthingRoute: typeof ApiUploadthingRoute
   SignInSplatRoute: typeof SignInSplatRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiWebhooksGithubRoute: typeof ApiWebhooksGithubRoute
+  ApiGitGithubCallbackRoute: typeof ApiGitGithubCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -408,6 +447,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignedInDashboardRouteImport
       parentRoute: typeof SignedInRoute
     }
+    '/api/webhooks/github': {
+      id: '/api/webhooks/github'
+      path: '/api/webhooks/github'
+      fullPath: '/api/webhooks/github'
+      preLoaderRoute: typeof ApiWebhooksGithubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -436,6 +482,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignedInSettingsOrganizationRouteImport
       parentRoute: typeof SignedInRoute
     }
+    '/_signed-in/settings/integrations': {
+      id: '/_signed-in/settings/integrations'
+      path: '/settings/integrations'
+      fullPath: '/settings/integrations'
+      preLoaderRoute: typeof SignedInSettingsIntegrationsRouteImport
+      parentRoute: typeof SignedInRoute
+    }
     '/_signed-in/settings/account': {
       id: '/_signed-in/settings/account'
       path: '/settings/account'
@@ -449,6 +502,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/projects/new'
       preLoaderRoute: typeof SignedInProjectsNewRouteImport
       parentRoute: typeof SignedInRoute
+    }
+    '/api/git/github/callback': {
+      id: '/api/git/github/callback'
+      path: '/api/git/github/callback'
+      fullPath: '/api/git/github/callback'
+      preLoaderRoute: typeof ApiGitGithubCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_signed-in/sprints/$sprintId/tasks': {
       id: '/_signed-in/sprints/$sprintId/tasks'
@@ -565,6 +625,7 @@ interface SignedInRouteChildren {
   SignedInTasksRoute: typeof SignedInTasksRouteWithChildren
   SignedInProjectsNewRoute: typeof SignedInProjectsNewRoute
   SignedInSettingsAccountRoute: typeof SignedInSettingsAccountRoute
+  SignedInSettingsIntegrationsRoute: typeof SignedInSettingsIntegrationsRoute
   SignedInSettingsOrganizationRoute: typeof SignedInSettingsOrganizationRouteWithChildren
   SignedInSprintsNewRoute: typeof SignedInSprintsNewRoute
   SignedInProjectsProjectIdSettingsRoute: typeof SignedInProjectsProjectIdSettingsRoute
@@ -580,6 +641,7 @@ const SignedInRouteChildren: SignedInRouteChildren = {
   SignedInTasksRoute: SignedInTasksRouteWithChildren,
   SignedInProjectsNewRoute: SignedInProjectsNewRoute,
   SignedInSettingsAccountRoute: SignedInSettingsAccountRoute,
+  SignedInSettingsIntegrationsRoute: SignedInSettingsIntegrationsRoute,
   SignedInSettingsOrganizationRoute:
     SignedInSettingsOrganizationRouteWithChildren,
   SignedInSprintsNewRoute: SignedInSprintsNewRoute,
@@ -605,6 +667,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiUploadthingRoute: ApiUploadthingRoute,
   SignInSplatRoute: SignInSplatRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiWebhooksGithubRoute: ApiWebhooksGithubRoute,
+  ApiGitGithubCallbackRoute: ApiGitGithubCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

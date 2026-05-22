@@ -14,6 +14,16 @@ import { VerifyEmailPending } from "~/components/auth/verify-email-pending";
 
 const signInSearchSchema = z.object({
   tab: z.enum(["sign-in", "sign-up"]).optional().catch(undefined),
+  redirectTo: z
+    .string()
+    .optional()
+    .refine(
+      (value) =>
+        value === undefined ||
+        (value.startsWith("/") && !value.startsWith("//")),
+      { message: "Invalid redirect" }
+    )
+    .catch(undefined),
 });
 
 export const Route = createFileRoute("/sign-in/$")({
@@ -23,7 +33,8 @@ export const Route = createFileRoute("/sign-in/$")({
 
 function RouteComponent() {
   const navigate = useNavigate();
-  const { tab } = Route.useSearch();
+  const { tab, redirectTo } = Route.useSearch();
+  const afterAuthPath = redirectTo ?? "/dashboard";
   const [isLoading, setIsLoading] = useState(false);
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState<
     string | null
@@ -69,7 +80,11 @@ function RouteComponent() {
         return;
       }
 
-      navigate({ to: "/dashboard" });
+      if (redirectTo) {
+        window.location.assign(redirectTo);
+      } else {
+        navigate({ to: "/dashboard" });
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Sign in failed");
     } finally {
@@ -132,7 +147,10 @@ function RouteComponent() {
         </Tabs>
 
         <AuthDivider />
-        <GoogleSignInButton disabled={isLoading} />
+        <GoogleSignInButton
+          disabled={isLoading}
+          callbackURL={afterAuthPath}
+        />
       </div>
     </AuthLayout>
   );

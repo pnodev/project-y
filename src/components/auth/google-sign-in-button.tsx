@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 type GoogleSignInButtonProps = {
   disabled?: boolean;
+  callbackURL?: string;
 };
 
 function GoogleIcon() {
@@ -29,12 +30,15 @@ function GoogleIcon() {
   );
 }
 
-export function GoogleSignInButton({ disabled }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({
+  disabled,
+  callbackURL = "/dashboard",
+}: GoogleSignInButtonProps) {
   const handleGoogleSignIn = async () => {
     try {
       const { error } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/dashboard",
+        callbackURL,
       });
 
       if (error) {

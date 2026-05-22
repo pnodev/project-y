@@ -19,6 +19,12 @@ export const env = createEnv({
     SYNC_PUBLISH_KEY: z.string().min(1),
     UPLOADTHING_TOKEN: z.string().min(1),
     SYNC_ENGINE_URL: z.string().url().optional(),
+    GITHUB_APP_ID: z.string().min(1).optional(),
+    GITHUB_APP_PRIVATE_KEY: z.string().min(1).optional(),
+    GITHUB_APP_WEBHOOK_SECRET: z.string().min(1).optional(),
+    GITHUB_APP_CLIENT_ID: z.string().min(1).optional(),
+    GITHUB_APP_CLIENT_SECRET: z.string().min(1).optional(),
+    GIT_TOKEN_ENCRYPTION_KEY: z.string().min(32).optional(),
   },
 
   clientPrefix: "PUBLIC_",
@@ -29,3 +35,21 @@ export const env = createEnv({
 
   emptyStringAsUndefined: true,
 });
+
+export function isGitHubConfigured() {
+  return Boolean(
+    env.GITHUB_APP_ID &&
+      env.GITHUB_APP_PRIVATE_KEY &&
+      env.GITHUB_APP_WEBHOOK_SECRET &&
+      env.GIT_TOKEN_ENCRYPTION_KEY
+  );
+}
+
+/** Personal GitHub account linking (user-to-server OAuth). */
+export function isGitHubUserOAuthConfigured() {
+  return Boolean(
+    isGitHubConfigured() &&
+      env.GITHUB_APP_CLIENT_ID &&
+      env.GITHUB_APP_CLIENT_SECRET
+  );
+}
