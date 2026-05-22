@@ -33,10 +33,15 @@ function markdownNodeText(node: ReactNode): string {
 function MarkdownPreWithCopy({ children }: { children?: ReactNode }) {
   const text = useMemo(() => markdownNodeText(children).trimEnd(), [children]);
 
-  const copy = () => {
+  const copy = async () => {
     if (!text) return;
-    void navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard");
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Copied to clipboard");
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : "Unknown error";
+      toast.error(`Failed to copy: ${detail}`);
+    }
   };
 
   return (
@@ -48,7 +53,7 @@ function MarkdownPreWithCopy({ children }: { children?: ReactNode }) {
           size="icon"
           className="text-muted-foreground absolute top-1 right-1 z-10 size-7 bg-background/80 opacity-100 shadow-sm backdrop-blur-sm sm:opacity-0 sm:group-hover/gh-pre:opacity-100 sm:focus-visible:opacity-100"
           aria-label="Copy code"
-          onClick={copy}
+          onClick={() => void copy()}
         >
           <Copy className="size-3.5" />
         </Button>

@@ -38,15 +38,17 @@ export function CommitList({
         )}
       >
         <ul className="divide-y divide-border/60" role="listbox">
-          {commits.map((commit) => {
+          {commits.map((commit, index) => {
             const selected = selectedSha === commit.sha;
             const selectCommit = () => onSelect(commit.sha);
+            const tabIndex =
+              selected || (selectedSha == null && index === 0) ? 0 : -1;
             return (
               <li
                 key={commit.sha}
                 role="option"
                 aria-selected={selected}
-                tabIndex={selected ? 0 : -1}
+                tabIndex={tabIndex}
                 onClick={selectCommit}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
