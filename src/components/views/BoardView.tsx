@@ -81,6 +81,7 @@ export const BoardView = ({
         setActiveTask(null);
         handleTaskStatusDrop(event, tasks, updateTask);
       }}
+      onDragCancel={() => setActiveTask(null)}
       sensors={sensors}
       onDragStart={(event) => {
         const taskId = (event.active.id as string).split(":")[1];

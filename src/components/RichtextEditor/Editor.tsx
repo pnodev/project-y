@@ -195,9 +195,10 @@ const MenuBar = () => {
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
 }
-const MenuBarButton = ({ children, className, ...props }: ButtonProps) => {
+const MenuBarButton = ({ children, className, type = "button", ...props }: ButtonProps) => {
   return (
     <button
+      type={type}
       className={cn(
         className,
         "flex h-10 w-10 cursor-pointer items-center justify-center rounded-sm px-2 py-1.5 [&_svg]:size-4"

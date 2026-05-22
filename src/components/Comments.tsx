@@ -37,11 +37,6 @@ export function Comments({
           .split(" ")
           .map((name) => name.charAt(0).toUpperCase())
           .join("");
-        const formattedContent = comment.content.replace(
-          /(\r\n|\n|\r)/g,
-          "<br />"
-        );
-
         return (
           <Card key={comment.id}>
             <CardHeader className="flex items-center flex-row space-x-2 py-2 space-y-0">
@@ -64,7 +59,7 @@ export function Comments({
               </span>
             </CardHeader>
             <CardContent className="text-foreground px-4 pb-4 pt-2 text-sm">
-              <div dangerouslySetInnerHTML={{ __html: formattedContent }} />
+              <p className="whitespace-pre-wrap break-words">{comment.content}</p>
             </CardContent>
           </Card>
         );

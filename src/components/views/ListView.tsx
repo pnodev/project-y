@@ -93,6 +93,7 @@ export function ListView({
         setActiveTask(null);
         handleTaskStatusDrop(event, tasks, updateTask);
       }}
+      onDragCancel={() => setActiveTask(null)}
     >
       <ScrollArea className="h-full min-h-0">
         <div className="pb-3 pr-2">

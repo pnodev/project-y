@@ -50,6 +50,7 @@ export function LabelSelect({
           size="sm"
           role="combobox"
           aria-expanded={open}
+          aria-label="Add label"
           className="size-8 shrink-0 border-border/60 p-0 shadow-none"
         >
           <Plus className="size-3.5" />

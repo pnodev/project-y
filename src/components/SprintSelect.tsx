@@ -42,7 +42,7 @@ export function SprintSelect({
               type="button"
               role="combobox"
               aria-expanded={open}
-              className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 border-0 bg-transparent px-2 outline-none"
+              className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 border-0 bg-transparent px-2 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <span className="truncate text-left">
                 {selectedName ?? "Select Sprint"}

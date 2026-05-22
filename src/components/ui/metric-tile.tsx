@@ -41,7 +41,10 @@ function MetricTile({
     >
       <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
         {highlight ? (
-          <AlertCircle className="text-destructive size-4 shrink-0" />
+          <AlertCircle
+            className="text-destructive size-4 shrink-0"
+            aria-hidden
+          />
         ) : null}
         {label}
       </p>

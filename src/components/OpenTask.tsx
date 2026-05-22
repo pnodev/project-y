@@ -407,11 +407,14 @@ export function OpenTask({
                     onValueChange={async (sprintId) => {
                       if (!task) return;
                       setIsAssigningSprint(true);
-                      await updateTask({
-                        id: task.id,
-                        sprintId: sprintId ?? null,
-                      });
-                      setIsAssigningSprint(false);
+                      try {
+                        await updateTask({
+                          id: task.id,
+                          sprintId: sprintId ?? null,
+                        });
+                      } finally {
+                        setIsAssigningSprint(false);
+                      }
                     }}
                   />
                 </DetailListItem>

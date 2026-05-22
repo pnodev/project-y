@@ -73,7 +73,8 @@ export const DetailListItem = ({
         ) : null}
         <span
           className={cn(
-            "text-muted-foreground truncate",
+            "truncate",
+            statusColor === "text-muted-foreground" && "text-muted-foreground",
             size === "large" ? "text-xs" : "text-[11px]"
           )}
         >
