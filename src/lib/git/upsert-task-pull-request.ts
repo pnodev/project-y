@@ -45,7 +45,7 @@ export async function upsertTaskPullRequest(
         providerPrId: input.providerPrId,
         url: input.url,
         title: input.title,
-        body: input.body ?? null,
+        ...(input.body !== undefined ? { body: input.body } : {}),
         state: input.state,
         headRef: input.headRef,
         baseRef: input.baseRef,

@@ -42,9 +42,16 @@ async function cacheInstallationToken(
 }
 
 export async function getInstallationOctokit(installationId: number) {
-  const cachedToken = await getCachedInstallationToken(installationId);
-  if (cachedToken) {
-    return new Octokit({ auth: cachedToken });
+  try {
+    const cachedToken = await getCachedInstallationToken(installationId);
+    if (cachedToken) {
+      return new Octokit({ auth: cachedToken });
+    }
+  } catch (error) {
+    console.warn(
+      `[github] installation token cache read failed for ${installationId}:`,
+      error
+    );
   }
 
   const app = getGitHubApp();
@@ -53,11 +60,19 @@ export async function getInstallationOctokit(installationId: number) {
     installationId,
   })) as { token: string; expiresAt: string | number };
 
-  await cacheInstallationToken(
-    installationId,
-    installationAuth.token,
-    installationAuth.expiresAt
-  );
+  try {
+    await cacheInstallationToken(
+      installationId,
+      installationAuth.token,
+      installationAuth.expiresAt
+    );
+  } catch (error) {
+    console.warn(
+      `[github] installation token cache write failed for ${installationId}:`,
+      error
+    );
+  }
+
   return new Octokit({ auth: installationAuth.token });
 }
 
