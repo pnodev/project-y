@@ -135,6 +135,7 @@ export const BoardView = ({
             showSprint={showSprint}
             showProject={showProject}
             taskLinkTo={taskLinkTo}
+            gitSummary={gitSummaries?.[activeTask.id]}
             closingStatusId={closingStatusId}
           />
         ) : null}

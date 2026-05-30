@@ -318,8 +318,20 @@ export const TaskCardComponent = ({
               {gitSummary?.hasBranch ? (
                 <GitBranch className="text-muted-foreground size-3.5" />
               ) : null}
-              {gitSummary?.hasOpenPr ? (
-                <GitPullRequest className="text-primary size-3.5" />
+              {gitSummary?.hasPr ? (
+                <GitPullRequest
+                  className={cn(
+                    "size-3.5",
+                    gitSummary.hasOpenPr
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  )}
+                  aria-label={
+                    gitSummary.prState
+                      ? `Pull request ${gitSummary.prState}`
+                      : "Pull request linked"
+                  }
+                />
               ) : null}
             </div>
           </div>

@@ -35,6 +35,7 @@ import { MULTI_REPO_SELECTION_MESSAGE } from "~/lib/git/constants";
 import { useGitTaskLiveSync } from "~/hooks/use-git-task-live-sync";
 import { formatClientError } from "~/lib/git/errors";
 import { PullRequestDescriptionPanel } from "~/components/git/PullRequestDescriptionPanel";
+import { TaskDevelopmentEmptyState } from "~/components/git/TaskDevelopmentEmptyState";
 import { TaskDevelopmentWorkspace } from "~/components/git/TaskDevelopmentWorkspace";
 import {
   getActiveBranch,
@@ -152,27 +153,130 @@ export function TaskDevelopmentSection({
       : "pending";
   const reviewStep: StepState = openPr ? "active" : pr ? "done" : "pending";
 
+  const startDevelopmentActions = (
+    <>
+      {!branch && multipleRepos ? (
+        <div className="w-full space-y-1.5">
+          <Label htmlFor="task-dev-repo-empty" className="text-xs">
+            Repository
+          </Label>
+          <Select
+            value={selectedRepositoryId}
+            onValueChange={setSelectedRepositoryId}
+          >
+            <SelectTrigger
+              id="task-dev-repo-empty"
+              className="h-8 w-full max-w-md"
+            >
+              <SelectValue placeholder="Select repository" />
+            </SelectTrigger>
+            <SelectContent>
+              {projectRepos.map((link) => (
+                <SelectItem key={link.repositoryId} value={link.repositoryId}>
+                  {link.repository.fullName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : null}
+      <Button
+        type="button"
+        disabled={busy || (multipleRepos && !selectedRepositoryId)}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            const result = await startDevelopment({
+              taskId,
+              repositoryId: selectedRepositoryId || undefined,
+            });
+            void navigator.clipboard.writeText(result.checkoutCommand);
+            toast.success("Development started — checkout command copied");
+          } catch (e) {
+            const message = formatClientError(e, "Failed to start development");
+            toast.error(
+              message.includes(MULTI_REPO_SELECTION_MESSAGE)
+                ? "Select a repository first"
+                : message
+            );
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        <Play className="size-3.5" />
+        Start development
+      </Button>
+    </>
+  );
+
   if (projectRepos.length === 0) {
     return (
-      <section
-        className={cn(
-          "px-4 py-3",
-          isPanel
-            ? "flex h-full min-h-0 flex-col justify-center"
-            : "rounded-lg border border-border/60 bg-muted/30"
-        )}
-      >
-        {!isPanel ? <h3 className="text-sm font-medium">Development</h3> : null}
-        <p className="text-muted-foreground mt-1 text-sm">
-          Link a repository in{" "}
-          <a
-            href={`/projects/${projectId}/settings`}
-            className="underline"
-          >
-            project settings
-          </a>{" "}
-          to start development on this task.
-        </p>
+      <TaskDevelopmentEmptyState
+        phase="no_repo"
+        projectId={projectId}
+        layout={isPanel ? "panel" : "inline"}
+      />
+    );
+  }
+
+  if (isPanel && phase === "not_started") {
+    return (
+      <section className="flex h-full min-h-0 flex-col">
+        <TaskDevelopmentEmptyState
+          phase="not_started"
+          projectId={projectId}
+          layout="panel"
+          actions={startDevelopmentActions}
+        />
+        <Collapsible
+          open={advancedOpen}
+          onOpenChange={setAdvancedOpen}
+          className="mt-auto border-t border-border/60"
+        >
+          <CollapsibleTrigger className="text-muted-foreground flex w-full items-center justify-between px-4 py-2 text-xs hover:bg-muted/40">
+            Advanced
+            <ChevronDown
+              className={cn(
+                "size-3.5 transition-transform",
+                advancedOpen && "rotate-180"
+              )}
+            />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="px-4 pb-3">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Paste PR URL"
+                value={prUrl}
+                onChange={(e) => setPrUrl(e.target.value)}
+                className="h-8 text-sm"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!prUrl || busy}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    await linkPr({ taskId, prUrl });
+                    setPrUrl("");
+                    toast.success("Pull request linked");
+                  } catch (e) {
+                    toast.error(
+                      formatClientError(e, "Failed to link pull request")
+                    );
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                <Link2 className="size-3.5" />
+                Link
+              </Button>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </section>
     );
   }

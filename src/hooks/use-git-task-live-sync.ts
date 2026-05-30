@@ -10,6 +10,7 @@ export function useGitTaskLiveSync(taskId: string | undefined) {
     callback: () => {
       if (!taskId) return;
       void queryClient.invalidateQueries({ queryKey: ["git", "task", taskId] });
+      void queryClient.invalidateQueries({ queryKey: ["git", "summaries"] });
     },
   });
 }

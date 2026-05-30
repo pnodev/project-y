@@ -21,6 +21,7 @@ import {
   feedEntryNeedsAction,
 } from "~/lib/git/bot-review-comment-summary";
 import { buildPrReviewFeedEntries } from "~/lib/git/pr-review-feed-entries";
+import { TaskPullRequestReviewEmptyState } from "~/components/git/TaskDevelopmentEmptyState";
 import { Button } from "~/components/ui/button";
 import { getLatestPr, getOpenPr } from "~/lib/git/task-dev-phase";
 import { cn } from "~/lib/utils";
@@ -158,10 +159,13 @@ export function TaskPullRequestReviewFeed({
         {isLoading ? (
           <p className="text-muted-foreground text-sm">Loading…</p>
         ) : !reviewPr ? (
-          <p className="text-muted-foreground text-sm">
-            Link or open a pull request to see review comments and feedback from
-            GitHub here.
-          </p>
+          <TaskPullRequestReviewEmptyState
+            variant={
+              !gitContext || gitContext.projectRepos.length === 0
+                ? "no_setup"
+                : "no_pr"
+            }
+          />
         ) : !connectionData?.connection ? (
           <p className="text-muted-foreground text-sm">
             Connect the GitHub app to load pull request activity.

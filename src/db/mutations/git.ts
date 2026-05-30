@@ -842,6 +842,16 @@ type SaveProjectGitInput = {
   defaultBaseBranches?: Record<string, string>;
 };
 
+function invalidateGitTaskBoardState(
+  queryClient: ReturnType<typeof useQueryClient>,
+  taskId: string
+) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["git", "task", taskId] }),
+    queryClient.invalidateQueries({ queryKey: ["git", "summaries"] }),
+  ]);
+}
+
 export function useSaveProjectGitRepositoriesMutation() {
   const queryClient = useQueryClient();
   const fn = useServerFn(saveProjectGitRepositories);
@@ -861,7 +871,7 @@ export function useCreateTaskBranchMutation() {
   return useCallback(
     async (input: { taskId: string; repositoryId?: string; branchName?: string }) => {
       const result = await fn({ data: input });
-      queryClient.invalidateQueries({ queryKey: ["git", "task", input.taskId] });
+      await invalidateGitTaskBoardState(queryClient, input.taskId);
       return result;
     },
     [fn, queryClient]
@@ -874,7 +884,7 @@ export function useStartTaskDevelopmentMutation() {
   return useCallback(
     async (input: { taskId: string; repositoryId?: string }) => {
       const result = await fn({ data: input });
-      queryClient.invalidateQueries({ queryKey: ["git", "task", input.taskId] });
+      await invalidateGitTaskBoardState(queryClient, input.taskId);
       return result;
     },
     [fn, queryClient]
@@ -887,7 +897,7 @@ export function useDisconnectTaskGitBranchMutation() {
   return useCallback(
     async (input: { taskId: string; branchId: string }) => {
       await fn({ data: input });
-      queryClient.invalidateQueries({ queryKey: ["git", "task", input.taskId] });
+      await invalidateGitTaskBoardState(queryClient, input.taskId);
     },
     [fn, queryClient]
   );
@@ -899,7 +909,7 @@ export function useLinkTaskPullRequestMutation() {
   return useCallback(
     async (input: { taskId: string; prUrl: string }) => {
       await fn({ data: input });
-      queryClient.invalidateQueries({ queryKey: ["git", "task", input.taskId] });
+      await invalidateGitTaskBoardState(queryClient, input.taskId);
     },
     [fn, queryClient]
   );
@@ -911,7 +921,7 @@ export function useCreateTaskPullRequestMutation() {
   return useCallback(
     async (taskId: string) => {
       const result = await fn({ data: { taskId } });
-      queryClient.invalidateQueries({ queryKey: ["git", "task", taskId] });
+      await invalidateGitTaskBoardState(queryClient, taskId);
       return result;
     },
     [fn, queryClient]
@@ -981,6 +991,7 @@ function invalidatePrReviewQueries(
       queryKey: ["git", "pr-status", taskId, pullRequestId],
     }),
     queryClient.invalidateQueries({ queryKey: ["git", "task", taskId] }),
+    queryClient.invalidateQueries({ queryKey: ["git", "summaries"] }),
   ]);
 }
 
