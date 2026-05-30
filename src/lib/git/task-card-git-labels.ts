@@ -16,8 +16,5 @@ const prStateLabels: Record<string, string> = {
 };
 
 export function taskPullRequestTooltipLabel(summary: TaskGitSummary): string {
-  if (summary.prState) {
-    return prStateLabels[summary.prState] ?? "Linked pull request";
-  }
-  return "Linked pull request";
+  return prStateLabels[summary.prState ?? ""] ?? "Linked pull request";
 }

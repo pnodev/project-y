@@ -198,6 +198,8 @@ const TaskCardLinkWrapper = ({
   );
 };
 
+// Supplementary hover hints only; indicators sit inside the card link, so they
+// stay non-focusable to avoid nested tab stops on the board.
 function TaskCardIndicatorTooltip({
   label,
   children,
