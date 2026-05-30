@@ -1,30 +1,34 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { ChevronDown, ExternalLink } from "lucide-react";
 import { GitHubMarkdownBody } from "~/components/git/GitHubMarkdownBody";
+import { GitProviderIcon } from "~/components/git/GitProviderIcon";
 import { PullRequestStateBadge } from "~/components/git/PullRequestStateBadge";
+import type { GitProviderType } from "~/db/schema/git";
 import { Button } from "~/components/ui/button";
 import { LoadingSpinner } from "~/components/ui/loading-spinner";
 import {
   useGitConnectionQuery,
-  useTaskPullRequestReviewCommentsQuery,
+  useTaskPullRequestMetaQuery,
 } from "~/db/queries/git";
 import { cn } from "~/lib/utils";
 
 export function PullRequestDescriptionPanel({
   taskId,
   pullRequestId,
+  gitProvider,
   repository,
   headerActions,
   className,
 }: {
   taskId: string;
   pullRequestId: string;
+  gitProvider?: GitProviderType | null;
   repository?: { fullName: string; htmlUrl: string };
   headerActions?: ReactNode;
   className?: string;
 }) {
   const { data: connectionData } = useGitConnectionQuery();
-  const { data, isLoading, isFetching } = useTaskPullRequestReviewCommentsQuery(
+  const { data, isLoading, isFetching } = useTaskPullRequestMetaQuery(
     taskId,
     pullRequestId,
     Boolean(connectionData?.connection)
@@ -60,14 +64,25 @@ export function PullRequestDescriptionPanel({
 
   if (!pr) return null;
 
+  const provider =
+    gitProvider ?? connectionData.connection.provider ?? null;
+
   return (
     <section
       className={cn("shrink-0 border-b border-border/60 px-4 py-3", className)}
     >
       <div className="flex items-start justify-between gap-3">
-        <h2 className="min-w-0 flex-1 text-base leading-snug font-semibold tracking-tight text-pretty">
-          {pr.title}
-        </h2>
+        <div className="flex min-w-0 flex-1 items-start gap-2">
+          {provider === "github" ? (
+            <GitProviderIcon
+              provider="github"
+              className="text-muted-foreground mt-0.5 size-4 shrink-0"
+            />
+          ) : null}
+          <h2 className="min-w-0 flex-1 text-base leading-snug font-semibold tracking-tight text-pretty">
+            {pr.title}
+          </h2>
+        </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           <Button type="button" variant="outline" size="sm" className="h-8" asChild>
             <a href={pr.url} target="_blank" rel="noopener noreferrer">

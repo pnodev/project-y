@@ -52,6 +52,23 @@ export const fetchTaskGitContext = createServerFn({ method: "GET" })
     return getTaskGitContext(session, data.taskId);
   });
 
+export const fetchTaskPullRequestMeta = createServerFn({ method: "GET" })
+  .inputValidator(
+    z.object({
+      taskId: z.string().uuid(),
+      pullRequestId: z.string().uuid(),
+    })
+  )
+  .handler(async ({ data }) => {
+    const session = await requireSessionFromRequest();
+    const { getTaskPullRequestMeta } = await import("~/db/queries/git.server");
+    return getTaskPullRequestMeta(
+      session,
+      data.taskId,
+      data.pullRequestId
+    );
+  });
+
 export const fetchTaskPullRequestDiff = createServerFn({ method: "GET" })
   .inputValidator(
     z.object({
@@ -219,11 +236,28 @@ export function useTaskGitContextQuery(taskId: string, enabled = true) {
   });
 }
 
+export function useTaskPullRequestMetaQuery(
+  taskId: string,
+  pullRequestId: string | undefined,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: ["git", "pr-meta", taskId, pullRequestId],
+    queryFn: () =>
+      fetchTaskPullRequestMeta({
+        data: { taskId, pullRequestId: pullRequestId! },
+      }),
+    enabled: enabled && Boolean(pullRequestId),
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function useTaskBranchCommitsQuery(taskId: string, enabled = true) {
   return useQuery({
     queryKey: ["git", "commits", taskId, "branch"],
     queryFn: () => fetchTaskBranchCommits({ data: { taskId } }),
     enabled,
+    staleTime: 60_000,
   });
 }
 
@@ -239,6 +273,7 @@ export function useTaskPullRequestCommitsQuery(
         data: { taskId, pullRequestId: pullRequestId! },
       }),
     enabled: enabled && Boolean(pullRequestId),
+    staleTime: 60_000,
   });
 }
 
@@ -251,6 +286,7 @@ export function useTaskCommitDiffQuery(
     queryKey: ["git", "diff", taskId, "commit", sha],
     queryFn: () => fetchTaskCommitDiff({ data: { taskId, sha: sha! } }),
     enabled: enabled && Boolean(sha),
+    staleTime: 3 * 60_000,
   });
 }
 
@@ -259,6 +295,7 @@ export function useTaskBranchDiffQuery(taskId: string, enabled = true) {
     queryKey: ["git", "diff", taskId, "branch"],
     queryFn: () => fetchTaskBranchDiff({ data: { taskId } }),
     enabled,
+    staleTime: 3 * 60_000,
   });
 }
 
@@ -275,6 +312,7 @@ export function useTaskPullRequestReviewCommentsQuery(
       }),
     enabled: enabled && Boolean(pullRequestId),
     placeholderData: (prev) => prev,
+    staleTime: 45_000,
   });
 }
 
@@ -290,6 +328,7 @@ export function useTaskPullRequestMergeStatusQuery(
         data: { taskId, pullRequestId: pullRequestId! },
       }),
     enabled: enabled && Boolean(pullRequestId),
+    staleTime: 30_000,
     refetchInterval: 60_000,
   });
 }

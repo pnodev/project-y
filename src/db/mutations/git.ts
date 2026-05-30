@@ -424,6 +424,7 @@ const linkTaskPullRequest = createServerFn({ method: "POST" })
       number: pr.number,
       url: pr.url,
       title: pr.title,
+      body: pr.body,
       state: pr.state,
       headRef: pr.headRef,
       baseRef: pr.baseRef,
@@ -517,6 +518,7 @@ const createTaskPullRequest = createServerFn({ method: "POST" })
       number: pr.number,
       url: pr.url,
       title: pr.title,
+      body: pr.body,
       state: pr.state,
       headRef: pr.headRef,
       baseRef: pr.baseRef,
@@ -989,6 +991,9 @@ function invalidatePrReviewQueries(
     }),
     queryClient.invalidateQueries({
       queryKey: ["git", "pr-status", taskId, pullRequestId],
+    }),
+    queryClient.invalidateQueries({
+      queryKey: ["git", "pr-meta", taskId, pullRequestId],
     }),
     queryClient.invalidateQueries({ queryKey: ["git", "task", taskId] }),
     queryClient.invalidateQueries({ queryKey: ["git", "summaries"] }),

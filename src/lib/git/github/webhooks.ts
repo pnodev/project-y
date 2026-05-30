@@ -1,7 +1,7 @@
 import "@tanstack/react-start/server-only";
 
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { v7 as uuid } from "uuid";
 import { db } from "~/db";
 import {
@@ -13,14 +13,21 @@ import {
   projects,
   taskGitActivity,
   taskGitBranches,
+  taskGitPullRequests,
   tasks,
 } from "~/db/schema";
 import { env } from "~/env";
 import { getGitProvider } from "../factory";
 import { matchStatusRules } from "../status-rules";
 import { branchMatchesTaskKey, extractTaskKeysFromText, formatTaskKey } from "../task-key";
-import { sync } from "~/db/mutations/sync";
 import { upsertTaskPullRequest } from "../upsert-task-pull-request";
+import {
+  syncTaskGitUpdate,
+} from "../sync-task-update.server";
+import type { GitInvalidateScope } from "../sync-task-update";
+import { invalidateGitHubCacheForPullRequest } from "~/lib/git/github/cache-invalidation";
+import { encodeRepoFullName } from "~/lib/git/github/cache-keys";
+import { deleteCacheByPrefix } from "~/lib/cache/redis";
 
 export function verifyGitHubWebhookSignature(
   payload: string,
@@ -137,6 +144,37 @@ async function findRepositoryByFullName(owner: string, fullName: string) {
   });
 }
 
+async function findLinkedPullRequests(
+  owner: string,
+  repositoryId: string,
+  prNumber: number
+) {
+  return db.query.taskGitPullRequests.findMany({
+    where: and(
+      eq(taskGitPullRequests.owner, owner),
+      eq(taskGitPullRequests.repositoryId, repositoryId),
+      eq(taskGitPullRequests.number, prNumber)
+    ),
+  });
+}
+
+async function notifyPullRequestGitUpdate(
+  owner: string,
+  repositoryFullName: string,
+  prNumber: number,
+  scopes: GitInvalidateScope[]
+) {
+  const repository = await findRepositoryByFullName(owner, repositoryFullName);
+  if (!repository) return;
+
+  await invalidateGitHubCacheForPullRequest(repositoryFullName, prNumber, scopes);
+
+  const linked = await findLinkedPullRequests(owner, repository.id, prNumber);
+  for (const pr of linked) {
+    await syncTaskGitUpdate(pr.taskId, scopes, { pullRequestId: pr.id });
+  }
+}
+
 async function linkPullRequestToTask(params: {
   owner: string;
   taskId: string;
@@ -147,6 +185,7 @@ async function linkPullRequestToTask(params: {
     number: number;
     url: string;
     title: string;
+    body?: string | null;
     state: "open" | "closed" | "merged" | "draft";
     headRef: string;
     baseRef: string;
@@ -163,6 +202,7 @@ async function linkPullRequestToTask(params: {
     number: params.pr.number,
     url: params.pr.url,
     title: params.pr.title,
+    body: params.pr.body ?? null,
     state: params.pr.state,
     headRef: params.pr.headRef,
     baseRef: params.pr.baseRef,
@@ -217,8 +257,24 @@ export async function processGitHubWebhook(
       await handlePushEvent(payload, deliveryId);
     }
 
-    if (eventType.startsWith("pull_request")) {
+    if (eventType === "pull_request") {
       await handlePullRequestEvent(payload);
+    }
+
+    if (
+      eventType === "issue_comment" ||
+      eventType === "pull_request_review" ||
+      eventType === "pull_request_review_comment"
+    ) {
+      await handlePullRequestReviewActivityEvent(payload);
+    }
+
+    if (
+      eventType === "check_run" ||
+      eventType === "check_suite" ||
+      eventType === "status"
+    ) {
+      await handleCheckStatusEvent(payload);
     }
 
     await markDeliveryProcessed(deliveryId, eventType);
@@ -292,7 +348,7 @@ async function handlePushEvent(
               updatedAt: new Date(),
             })
             .where(eq(tasks.id, task.id));
-          await sync(`task-update-${task.id}`, { id: task.id });
+          await syncTaskGitUpdate(task.id, ["task", "summaries"]);
         }
       }
     }
@@ -354,7 +410,30 @@ async function handlePushEvent(
           .where(eq(taskGitBranches.id, linkedBranch.id));
       }
 
-      await sync(`task-update-${task.id}`, { id: task.id });
+      await deleteCacheByPrefix(
+        `gh:github:${encodeRepoFullName(repo.full_name!)}:compare:`
+      );
+
+      const openPrs = await db.query.taskGitPullRequests.findMany({
+        where: and(
+          eq(taskGitPullRequests.taskId, task.id),
+          eq(taskGitPullRequests.repositoryId, repository.id),
+          eq(taskGitPullRequests.headRef, branchRef)
+        ),
+      });
+      await syncTaskGitUpdate(task.id, ["task", "summaries", "diff", "commits"]);
+
+      for (const openPr of openPrs) {
+        if (openPr.state !== "open" && openPr.state !== "draft") continue;
+        await invalidateGitHubCacheForPullRequest(
+          repo.full_name!,
+          openPr.number,
+          ["task", "diff", "commits", "pr-status", "pr-meta"]
+        );
+        await syncTaskGitUpdate(task.id, ["pr-status", "pr-meta"], {
+          pullRequestId: openPr.id,
+        });
+      }
     }
   }
 }
@@ -419,7 +498,7 @@ async function handlePullRequestEvent(payload: Record<string, unknown>) {
 
   if (!taskId) return;
 
-  await linkPullRequestToTask({
+  const linkedPrId = await linkPullRequestToTask({
     owner: connection.owner,
     taskId,
     repositoryId: repository.id,
@@ -429,6 +508,7 @@ async function handlePullRequestEvent(payload: Record<string, unknown>) {
       number: pr.number,
       url: pr.html_url,
       title: pr.title,
+      body: pr.body ?? null,
       state,
       headRef: pr.head.ref,
       baseRef: pr.base.ref,
@@ -459,5 +539,99 @@ async function handlePullRequestEvent(payload: Record<string, unknown>) {
     });
   }
 
-  await sync(`task-update-${taskId}`, { id: taskId });
+  await invalidateGitHubCacheForPullRequest(repo.full_name, pr.number, [
+    "task",
+    "diff",
+    "commits",
+    "pr-status",
+    "pr-meta",
+    "pr-comments",
+  ]);
+
+  await syncTaskGitUpdate(
+    taskId,
+    ["task", "summaries", "diff", "commits", "pr-status", "pr-meta"],
+    { pullRequestId: linkedPrId }
+  );
+}
+
+async function handlePullRequestReviewActivityEvent(
+  payload: Record<string, unknown>
+) {
+  const repo = payload.repository as { full_name?: string } | undefined;
+  const installation = payload.installation as { id: number } | undefined;
+  const pullRequest = payload.pull_request as { number?: number } | undefined;
+
+  if (!repo?.full_name || !installation || pullRequest?.number == null) return;
+
+  const connection = await findConnectionByInstallationId(installation.id);
+  if (!connection) return;
+
+  await notifyPullRequestGitUpdate(
+    connection.owner,
+    repo.full_name,
+    pullRequest.number,
+    ["pr-comments"]
+  );
+}
+
+async function handleCheckStatusEvent(payload: Record<string, unknown>) {
+  const repo = payload.repository as { full_name?: string } | undefined;
+  const installation = payload.installation as { id: number } | undefined;
+
+  if (!repo?.full_name || !installation) return;
+
+  const connection = await findConnectionByInstallationId(installation.id);
+  if (!connection) return;
+
+  const pullRequests = new Set<number>();
+
+  const checkRun = payload.check_run as
+    | { pull_requests?: Array<{ number?: number }> }
+    | undefined;
+  for (const pr of checkRun?.pull_requests ?? []) {
+    if (pr.number != null) pullRequests.add(pr.number);
+  }
+
+  const checkSuite = payload.check_suite as
+    | { pull_requests?: Array<{ number?: number }> }
+    | undefined;
+  for (const pr of checkSuite?.pull_requests ?? []) {
+    if (pr.number != null) pullRequests.add(pr.number);
+  }
+
+  const status = payload as {
+    branches?: Array<{ name?: string }>;
+  };
+  if (status.branches?.length) {
+    const repository = await findRepositoryByFullName(
+      connection.owner,
+      repo.full_name
+    );
+    if (repository) {
+      for (const branch of status.branches) {
+        if (!branch.name) continue;
+        const linkedPrs = await db.query.taskGitPullRequests.findMany({
+          where: and(
+            eq(taskGitPullRequests.owner, connection.owner),
+            eq(taskGitPullRequests.repositoryId, repository.id),
+            eq(taskGitPullRequests.headRef, branch.name),
+            inArray(taskGitPullRequests.state, ["open", "draft"])
+          ),
+        });
+        for (const pr of linkedPrs) {
+          pullRequests.add(pr.number);
+        }
+      }
+    }
+  }
+
+  for (const prNumber of pullRequests) {
+    await notifyPullRequestGitUpdate(
+      connection.owner,
+      repo.full_name,
+      prNumber,
+      ["pr-status"]
+    );
+  }
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Check,
   ChevronDown,
@@ -167,8 +167,16 @@ export function PullRequestMergePanel({
   /** Requires linked GitHub user OAuth for merge/close. */
   canAct?: boolean;
 }) {
+  const [deferReady, setDeferReady] = useState(false);
+
+  useEffect(() => {
+    setDeferReady(false);
+    const timer = window.setTimeout(() => setDeferReady(true), 300);
+    return () => window.clearTimeout(timer);
+  }, [taskId, pullRequestId]);
+
   const { data: status, isLoading, isFetching, refetch } =
-    useTaskPullRequestMergeStatusQuery(taskId, pullRequestId);
+    useTaskPullRequestMergeStatusQuery(taskId, pullRequestId, deferReady);
   const mergePr = useMergeTaskPullRequestMutation();
   const closePr = useCloseTaskPullRequestMutation();
   const [checksOpen, setChecksOpen] = useState(true);
@@ -242,7 +250,7 @@ export function PullRequestMergePanel({
   return (
     <div className="border-border/60 shrink-0 border-t">
       <div className="px-4 py-3">
-        {isLoading ? (
+        {!deferReady || isLoading ? (
           <p className="text-muted-foreground text-xs">Loading checks…</p>
         ) : (
           <div className="space-y-3">

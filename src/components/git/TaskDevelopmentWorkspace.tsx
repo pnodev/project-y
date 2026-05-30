@@ -113,6 +113,7 @@ export function TaskDevelopmentWorkspace({
         data: { taskId, pullRequestId: reviewPr!.id },
       }),
     enabled: tab === "pull_request" && Boolean(reviewPr),
+    staleTime: 3 * 60_000,
   });
 
   const branchDiffQuery = useTaskBranchDiffQuery(

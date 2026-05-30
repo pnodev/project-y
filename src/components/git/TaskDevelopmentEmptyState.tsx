@@ -10,6 +10,7 @@ import {
 import { GitProviderIcon } from "~/components/git/GitProviderIcon";
 import { Button } from "~/components/ui/button";
 import { useGitConnectionQuery } from "~/db/queries/git";
+import { resolveGitProvider } from "~/lib/git/resolve-git-provider";
 import { projectEditSheetSearch } from "~/lib/form-sheet-search";
 import type { TaskDevPhase } from "~/lib/git/task-dev-phase";
 import { cn } from "~/lib/utils";
@@ -75,8 +76,9 @@ export function TaskDevelopmentEmptyState({
   starting?: boolean;
 }) {
   const { data: connectionData } = useGitConnectionQuery();
-  const provider = connectionData?.connection?.provider ?? null;
-  /** Integrations UI and connection query are GitHub-only today. */
+  const provider = resolveGitProvider({
+    connectionProvider: connectionData?.connection?.provider,
+  });
   const isGitHubConnected = provider === "github";
   const isPanel = layout === "panel";
 

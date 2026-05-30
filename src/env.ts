@@ -25,6 +25,8 @@ export const env = createEnv({
     GITHUB_APP_CLIENT_ID: z.string().min(1).optional(),
     GITHUB_APP_CLIENT_SECRET: z.string().min(1).optional(),
     GIT_TOKEN_ENCRYPTION_KEY: z.string().min(32).optional(),
+    UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+    UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
   },
 
   clientPrefix: "PUBLIC_",
@@ -52,4 +54,8 @@ export function isGitHubUserOAuthConfigured() {
       env.GITHUB_APP_CLIENT_ID &&
       env.GITHUB_APP_CLIENT_SECRET
   );
+}
+
+export function isRedisConfigured() {
+  return Boolean(env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN);
 }

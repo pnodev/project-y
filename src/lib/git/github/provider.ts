@@ -853,6 +853,96 @@ export class GitHubProvider implements GitProvider {
     );
   }
 
+  private async paginateThreadCommentsGraphql(
+    octokit: Pick<Octokit, "graphql">,
+    thread: {
+      id?: string | null;
+      isResolved?: boolean | null;
+      path?: string | null;
+      line?: number | null;
+      originalLine?: number | null;
+      diffSide?: string | null;
+      comments?: {
+        pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
+        nodes?: Array<{
+          databaseId?: number | string | null;
+          body?: string | null;
+          path?: string | null;
+          line?: number | null;
+          originalLine?: number | null;
+          createdAt?: string | null;
+          url?: string | null;
+          commit?: { oid?: string | null } | null;
+          author?: {
+            login?: string | null;
+            avatarUrl?: string | null;
+            url?: string | null;
+          } | null;
+          pullRequestReview?: { databaseId?: number | string | null } | null;
+          replyTo?: { databaseId?: number | string | null } | null;
+        } | null> | null;
+      } | null;
+    }
+  ) {
+    type GraphqlCommentNode = NonNullable<
+      NonNullable<typeof thread.comments>["nodes"]
+    >[number];
+
+    const commentNodes: GraphqlCommentNode[] = [
+      ...((thread.comments?.nodes ?? []).filter(
+        (n): n is NonNullable<GraphqlCommentNode> => n != null
+      )),
+    ];
+    let commentsAfter = thread.comments?.pageInfo?.endCursor ?? null;
+    let commentsHasNext = thread.comments?.pageInfo?.hasNextPage ?? false;
+
+    while (commentsHasNext && commentsAfter && thread.id) {
+      const { node } = await octokit.graphql<{
+        node?: {
+          comments?: {
+            pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
+            nodes?: Array<GraphqlCommentNode | null> | null;
+          } | null;
+        } | null;
+      }>(
+        `query($threadId: ID!, $commentsAfter: String) {
+          node(id: $threadId) {
+            ... on PullRequestReviewThread {
+              comments(first: 100, after: $commentsAfter) {
+                pageInfo { hasNextPage endCursor }
+                nodes {
+                  databaseId
+                  body
+                  path
+                  line
+                  originalLine
+                  createdAt
+                  url
+                  commit { oid }
+                  author { login avatarUrl url }
+                  pullRequestReview { databaseId }
+                  replyTo { databaseId }
+                }
+              }
+            }
+          }
+        }`,
+        { threadId: thread.id, commentsAfter }
+      );
+
+      const page = node?.comments;
+      commentNodes.push(
+        ...((page?.nodes ?? []).filter(
+          (n): n is NonNullable<GraphqlCommentNode> => n != null
+        ))
+      );
+      commentsHasNext = page?.pageInfo?.hasNextPage ?? false;
+      commentsAfter = page?.pageInfo?.endCursor ?? null;
+    }
+
+    return { ...thread, comments: { nodes: commentNodes } };
+  }
+
   private async fetchPullRequestReviewThreadsGraphql(
     octokit: Pick<Octokit, "graphql">,
     owner: string,
@@ -901,7 +991,7 @@ export class GitHubProvider implements GitProvider {
       } | null;
     };
 
-    const threadNodes: GraphqlThreadNode[] = [];
+    const pendingThreads: GraphqlThreadNode[] = [];
     let threadsAfter: string | null = null;
 
     do {
@@ -918,7 +1008,7 @@ export class GitHubProvider implements GitProvider {
                   line
                   originalLine
                   diffSide
-                  comments(first: 50) {
+                  comments(first: 100) {
                     pageInfo { hasNextPage endCursor }
                     nodes {
                       databaseId
@@ -950,68 +1040,21 @@ export class GitHubProvider implements GitProvider {
       const connection: NonNullable<
         NonNullable<ThreadQuery["repository"]>["pullRequest"]
       >["reviewThreads"] = repository?.pullRequest?.reviewThreads;
+
       for (const thread of connection?.nodes ?? []) {
-        if (!thread?.id) continue;
-
-        const commentNodes: GraphqlCommentNode[] = [
-          ...((thread.comments?.nodes ?? []).filter(
-            (n): n is GraphqlCommentNode => n != null
-          )),
-        ];
-        let commentsAfter = thread.comments?.pageInfo?.endCursor ?? null;
-        let commentsHasNext = thread.comments?.pageInfo?.hasNextPage ?? false;
-
-        while (commentsHasNext && commentsAfter) {
-          const { node } = await octokit.graphql<{
-            node?: {
-              comments?: {
-                pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
-                nodes?: Array<GraphqlCommentNode | null> | null;
-              } | null;
-            } | null;
-          }>(
-            `query($threadId: ID!, $commentsAfter: String) {
-              node(id: $threadId) {
-                ... on PullRequestReviewThread {
-                  comments(first: 50, after: $commentsAfter) {
-                    pageInfo { hasNextPage endCursor }
-                    nodes {
-                      databaseId
-                      body
-                      path
-                      line
-                      originalLine
-                      createdAt
-                      url
-                      commit { oid }
-                      author { login avatarUrl url }
-                      pullRequestReview { databaseId }
-                      replyTo { databaseId }
-                    }
-                  }
-                }
-              }
-            }`,
-            { threadId: thread.id, commentsAfter }
-          );
-
-          const page = node?.comments;
-          commentNodes.push(
-            ...((page?.nodes ?? []).filter(
-              (n): n is GraphqlCommentNode => n != null
-            ))
-          );
-          commentsHasNext = page?.pageInfo?.hasNextPage ?? false;
-          commentsAfter = page?.pageInfo?.endCursor ?? null;
-        }
-
-        threadNodes.push({ ...thread, comments: { nodes: commentNodes } });
+        if (thread?.id) pendingThreads.push(thread);
       }
 
       threadsAfter = connection?.pageInfo?.hasNextPage
         ? (connection.pageInfo.endCursor ?? null)
         : null;
     } while (threadsAfter);
+
+    const threadNodes = await Promise.all(
+      pendingThreads.map((thread) =>
+        this.paginateThreadCommentsGraphql(octokit, thread)
+      )
+    );
 
     const threads: GitReviewThread[] = [];
     const comments: GitReviewComment[] = [];
