@@ -319,7 +319,7 @@ export function StatusCreateSheet({
       open={open}
       onOpenChange={onOpenChange}
       title="Add status"
-      description="Create a workflow status for your task board."
+      description="Create a workflow status for your task board. Only one status can be marked as closing."
     >
       <EntityConfigCreateForm
         kind="status"

@@ -15,20 +15,40 @@ import z from "zod";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
+
+async function clearOtherClosingStatuses(
+  owner: string,
+  exceptId?: string
+) {
+  const conditions = [eq(statuses.owner, owner), eq(statuses.isClosing, true)];
+  if (exceptId) {
+    conditions.push(ne(statuses.id, exceptId));
+  }
+  await db
+    .update(statuses)
+    .set({ isClosing: false, updatedAt: new Date() })
+    .where(and(...conditions));
+}
 
 const createStatus = createServerFn({ method: "POST" })
   .inputValidator(insertStatusValidator)
   .handler(async ({ data }) => {
     const session = await requireSessionFromRequest();
+    const owner = getOwningIdentity(session);
+    const id = uuid();
+
+    if (data.isClosing) {
+      await clearOtherClosingStatuses(owner);
+    }
 
     await db.insert(statuses).values({
       ...data,
-      id: uuid(),
-      owner: getOwningIdentity(session),
+      id,
+      owner,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -63,20 +83,22 @@ const updateStatus = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const session = await requireSessionFromRequest();
 
+    const owner = getOwningIdentity(session);
+
+    if (data.isClosing) {
+      await clearOtherClosingStatuses(owner, data.id!);
+    }
+
     await db
       .update(statuses)
       .set({
         name: data.name,
         color: data.color,
         order: data.order,
+        isClosing: data.isClosing,
         updatedAt: new Date(),
       })
-      .where(
-        and(
-          eq(statuses.id, data.id!),
-          eq(statuses.owner, getOwningIdentity(session))
-        )
-      );
+      .where(and(eq(statuses.id, data.id!), eq(statuses.owner, owner)));
     await sync(`status-update-${data.id}`, { data });
   });
 

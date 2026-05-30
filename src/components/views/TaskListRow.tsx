@@ -28,6 +28,7 @@ import {
   LIST_ROW_X,
   type ListColumnFlags,
 } from "./list-view-layout";
+import { isTaskOverdue } from "~/lib/statuses";
 
 const priorityDotClass: Record<Priority, string> = {
   low: "bg-blue-500",
@@ -53,6 +54,7 @@ export function TaskListRow({
   columnFlags,
   updateTask,
   isOverlay = false,
+  closingStatusId,
 }: {
   task: TaskWithRelations;
   orderedTaskIds: string[];
@@ -60,6 +62,7 @@ export function TaskListRow({
   columnFlags: ListColumnFlags;
   updateTask: (task: UpdateTask) => Promise<void>;
   isOverlay?: boolean;
+  closingStatusId?: string;
 }) {
   const { showSprint } = columnFlags;
   const assignTask = useAssignTaskMutation();
@@ -74,7 +77,7 @@ export function TaskListRow({
   const isSelected = useStore(TaskViewStore, (state) =>
     state.selectedTaskIds.includes(task.id)
   );
-  const isOverdue = task.deadline && task.deadline < new Date();
+  const isOverdue = isTaskOverdue(task, { closingStatusId });
   const subtitle = taskSubtitle(task, columnFlags);
   const assigneeIds = task.assignees.map((a) => a.userId);
 

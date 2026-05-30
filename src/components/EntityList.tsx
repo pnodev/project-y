@@ -6,7 +6,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
 import {
   EllipsisVertical,
@@ -86,6 +88,8 @@ export function EntityListItem({
   description,
   color,
   id,
+  isClosing = false,
+  showClosingFields = false,
   handleDelete,
   handleUpdate,
   ...props
@@ -94,11 +98,14 @@ export function EntityListItem({
   description: string;
   color: (typeof selectableColorClasses)[keyof typeof selectableColorClasses];
   id: string;
+  isClosing?: boolean;
+  showClosingFields?: boolean;
   icon?: LucideIcon;
   handleDelete: () => void;
   handleUpdate: (data: {
     name: string;
     color: keyof typeof selectableColorClasses;
+    isClosing?: boolean;
   }) => Promise<void>;
 }) {
   const [isClient, setIsClient] = useState(false);
@@ -106,6 +113,7 @@ export function EntityListItem({
   const [isSaving, setIsSaving] = useState(false);
   const nameInputId = `entity-${id}-name`;
   const colorSelectId = `entity-${id}-color`;
+  const closingCheckboxId = `entity-${id}-is-closing`;
 
   useEffect(() => {
     setIsClient(true);
@@ -136,6 +144,9 @@ export function EntityListItem({
       await handleUpdate({
         name: formData.get("name") as string,
         color: formData.get("color") as keyof typeof selectableColorClasses,
+        isClosing: showClosingFields
+          ? formData.get("isClosing") === "on"
+          : undefined,
       });
       setIsSaving(false);
       setIsEditing(false);
@@ -188,6 +199,21 @@ export function EntityListItem({
                     />
                   </div>
                 </div>
+                {showClosingFields ? (
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id={closingCheckboxId}
+                      name="isClosing"
+                      defaultChecked={isClosing}
+                    />
+                    <div className="grid gap-1">
+                      <Label htmlFor={closingCheckboxId}>Closing status</Label>
+                      <p className="text-muted-foreground text-sm">
+                        Tasks in this status are finished and no longer active.
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
                 <div className="flex justify-end gap-2">
                   <Button
                     size="sm"
@@ -209,8 +235,13 @@ export function EntityListItem({
               </form>
             ) : (
               <>
-                <p className="truncate text-sm font-medium text-foreground">
-                  {name}
+                <p className="flex items-center gap-2 truncate text-sm font-medium text-foreground">
+                  <span className="truncate">{name}</span>
+                  {showClosingFields && isClosing ? (
+                    <Badge variant="secondary" className="shrink-0">
+                      Closing
+                    </Badge>
+                  ) : null}
                 </p>
                 <p className="truncate text-sm text-muted-foreground">
                   {description}

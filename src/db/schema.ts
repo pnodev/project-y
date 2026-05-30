@@ -148,6 +148,7 @@ export const statuses = createTable(
     name: varchar("name", { length: 256 }).notNull(),
     color: colorsEnum("color").notNull().default("neutral"),
     order: integer("order").notNull().default(0),
+    isClosing: boolean("is_closing").notNull().default(false),
     owner: varchar("owner", { length: 256 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)

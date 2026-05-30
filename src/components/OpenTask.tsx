@@ -71,6 +71,7 @@ import { SprintSelect } from "./SprintSelect";
 import { TaskDevelopmentSection } from "~/components/git/TaskDevelopmentSection";
 import { TaskPullRequestReviewFeed } from "~/components/git/TaskPullRequestReviewFeed";
 import { TaskGitReviewNavProvider } from "~/lib/git/task-git-review-nav";
+import { getClosingStatusId, isTaskOverdue } from "~/lib/statuses";
 
 export function OpenTask({
   task,
@@ -86,6 +87,7 @@ export function OpenTask({
   location: "project" | "sprint" | "all";
 }) {
   const navigate = useNavigate();
+  const closingStatusId = getClosingStatusId(statuses);
 
   const updateTask = useUpdateTaskMutation();
   const assignTask = useAssignTaskMutation();
@@ -396,7 +398,7 @@ export function OpenTask({
                         label="Due"
                         icon={Calendar}
                         statusColor={
-                          task.deadline && task.deadline < new Date()
+                          isTaskOverdue(task, { closingStatusId })
                             ? "text-red-500"
                             : undefined
                         }

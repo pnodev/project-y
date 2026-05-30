@@ -9,11 +9,13 @@ import { Button } from "~/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "~/components/ui/form";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Color, COLOR_VALUES } from "~/db/schema";
 import {
@@ -23,12 +25,18 @@ import {
 } from "~/components/ui/surface-styles";
 import { cn } from "~/lib/utils";
 
-const schema = z.object({
+const baseSchema = z.object({
   name: z.string().min(1, "Name is required"),
   color: z.enum(COLOR_VALUES as [Color, ...Color[]]),
 });
 
-type FormValues = z.infer<typeof schema>;
+const statusSchema = baseSchema.extend({
+  isClosing: z.boolean(),
+});
+
+type LabelFormValues = z.infer<typeof baseSchema>;
+type StatusFormValues = z.infer<typeof statusSchema>;
+type FormValues = LabelFormValues | StatusFormValues;
 
 type EntityKind = "label" | "status";
 
@@ -57,7 +65,8 @@ const entityMeta: Record<
   },
   status: {
     sheetTitle: "Add status",
-    description: "Create a workflow status for your task board.",
+    description:
+      "Create a workflow status for your task board. Only one status can be marked as closing; choosing another replaces the previous.",
     sectionTitle: "General",
     nameLabel: "Name",
     namePlaceholder: "e.g. In progress",
@@ -74,7 +83,9 @@ type EntityConfigCreateFormProps = {
   layout?: FormLayout;
   formId?: string;
   sheetFooter?: React.ReactNode;
-  onSubmit: (data: { name: string; color: Color }) => void | Promise<void>;
+  onSubmit: (
+    data: { name: string; color: Color } | { name: string; color: Color; isClosing: boolean }
+  ) => void | Promise<void>;
 };
 
 export function EntityConfigCreateForm({
@@ -88,14 +99,21 @@ export function EntityConfigCreateForm({
   const resolvedFormId = formId ?? `${kind}-create-form`;
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { name: "", color: "neutral" },
+    resolver: zodResolver(kind === "status" ? statusSchema : baseSchema),
+    defaultValues:
+      kind === "status"
+        ? { name: "", color: "neutral", isClosing: false }
+        : { name: "", color: "neutral" },
   });
 
   const handleSubmit = async (values: FormValues) => {
     try {
-      await onSubmit(values);
-      form.reset({ name: "", color: "neutral" });
+      await onSubmit(values as Parameters<typeof onSubmit>[0]);
+      form.reset(
+        kind === "status"
+          ? { name: "", color: "neutral", isClosing: false }
+          : { name: "", color: "neutral" }
+      );
       toast.success(meta.successMessage);
     } catch {
       toast.error(meta.errorMessage);
@@ -140,6 +158,30 @@ export function EntityConfigCreateForm({
           </FormItem>
         )}
       />
+      {kind === "status" ? (
+        <FormField
+          control={form.control}
+          name="isClosing"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start gap-3 rounded-md border border-border/60 p-3">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={(checked) =>
+                    field.onChange(checked === true)
+                  }
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>Closing status</FormLabel>
+                <FormDescription>
+                  Tasks in this status are finished and no longer active.
+                </FormDescription>
+              </div>
+            </FormItem>
+          )}
+        />
+      ) : null}
     </>
   );
 
