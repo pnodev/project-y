@@ -86,7 +86,7 @@ export const Route = createFileRoute("/api/git/github/callback")({
                 accountType,
               });
 
-              return redirectToIntegrations(url.origin, { installed: "1" });
+              return redirectToIntegrations(url.origin, { installed: "success" });
             } catch (e) {
               console.error("GitHub installation callback failed", e);
               return redirectToIntegrations(url.origin, { installed: "error" });

@@ -125,7 +125,7 @@ function IntegrationsPage() {
     }
     handledCallbackSearch.current = true;
 
-    if (search.installed === "1") {
+    if (search.installed === "success") {
       toast.success("GitHub App connected");
       void queryClient.invalidateQueries({ queryKey: ["git"] });
     } else if (search.installed === "error") {
