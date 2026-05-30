@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AuthLayout } from "~/components/auth/auth-layout";
 import { ForgotPasswordForm } from "~/components/auth/forgot-password-form";
+import { pageMeta } from "~/utils/seo";
 
 export const Route = createFileRoute("/forgot-password")({
+  head: () => ({
+    meta: [...pageMeta("Reset your password")],
+  }),
   component: RouteComponent,
 });
 

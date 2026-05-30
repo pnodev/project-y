@@ -7,6 +7,7 @@ import { useTaskQuery } from "~/db/queries/tasks";
 import { fetchTaskPageBundle } from "~/db/queries/bundles";
 import { hydrateTaskPageCache } from "~/db/queries/hydrate-query-cache";
 import { taskTabSearchSchema } from "~/lib/task-tab-search";
+import { pageMeta } from "~/utils/seo";
 
 export const Route = createFileRoute("/_signed-in/tasks/$taskId")({
   validateSearch: taskTabSearchSchema,
@@ -15,7 +16,11 @@ export const Route = createFileRoute("/_signed-in/tasks/$taskId")({
       data: { taskId: params.taskId },
     });
     hydrateTaskPageCache(context.queryClient, params.taskId, bundle);
+    return { pageTitle: bundle.task?.name ?? "Task" };
   },
+  head: ({ loaderData }) => ({
+    meta: [...pageMeta(loaderData?.pageTitle ?? "Task")],
+  }),
   component: RouteComponent,
 });
 

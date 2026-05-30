@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 import { DefaultCatchBoundary } from "~/components/DefaultCatchBoundary";
 import { NotFound } from "~/components/NotFound";
 import appCss from "~/styles/app.css?url";
-import { seo } from "~/utils/seo";
+import { APP_NAME, DEFAULT_DESCRIPTION, seo } from "~/utils/seo";
 import { Toaster } from "~/components/ui/sonner";
 import { AppProviders } from "~/components/AppProviders";
 
@@ -29,8 +29,8 @@ export const Route = createRootRouteWithContext<{
         content: "width=device-width, initial-scale=1",
       },
       ...seo({
-        title: "Project Y",
-        description: `Project Management without bullshit.`,
+        title: APP_NAME,
+        description: DEFAULT_DESCRIPTION,
       }),
     ],
     links: [

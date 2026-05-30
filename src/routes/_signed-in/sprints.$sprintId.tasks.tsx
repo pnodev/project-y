@@ -20,13 +20,21 @@ import { fetchSprintBoardBundle } from "~/db/queries/bundles";
 import { hydrateSprintBoardCache } from "~/db/queries/hydrate-query-cache";
 import { UpdateTask } from "~/db/schema";
 import { sprintEditSheetSearch } from "~/lib/form-sheet-search";
+import { pageMeta } from "~/utils/seo";
 
 export const Route = createFileRoute("/_signed-in/sprints/$sprintId/tasks")({
   loader: async ({ context, params }) => {
     const { sprintId } = params;
     const bundle = await fetchSprintBoardBundle({ data: { sprintId } });
     hydrateSprintBoardCache(context.queryClient, sprintId, bundle);
+    const sprint = bundle.sprint;
+    return {
+      pageTitle: sprint ? `${sprint.name} - Tasks` : "Tasks",
+    };
   },
+  head: ({ loaderData }) => ({
+    meta: [...pageMeta(loaderData?.pageTitle ?? "Tasks")],
+  }),
   component: RouteComponent,
 });
 

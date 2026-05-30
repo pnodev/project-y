@@ -22,13 +22,21 @@ import { TaskViewSortControls } from "~/components/views/TaskViewSortControls";
 import { TaskViewSwitcher } from "~/components/views/TaskViewSwitcher";
 import { TaskViewsContainer } from "~/components/views/TaskViewsContainer";
 import { projectEditSheetSearch } from "~/lib/form-sheet-search";
+import { pageMeta } from "~/utils/seo";
 
 export const Route = createFileRoute("/_signed-in/projects/$projectId/tasks")({
   loader: async ({ context, params }) => {
     const { projectId } = params;
     const bundle = await fetchProjectBoardBundle({ data: { projectId } });
     hydrateProjectBoardCache(context.queryClient, projectId, bundle);
+    const project = bundle.project;
+    return {
+      pageTitle: project ? `${project.name} - Tasks` : "Tasks",
+    };
   },
+  head: ({ loaderData }) => ({
+    meta: [...pageMeta(loaderData?.pageTitle ?? "Tasks")],
+  }),
   component: Home,
 });
 

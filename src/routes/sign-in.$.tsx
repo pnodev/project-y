@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { toast } from "sonner";
 import { formatUserName } from "~/lib/utils";
 import { VerifyEmailPending } from "~/components/auth/verify-email-pending";
+import { pageMeta } from "~/utils/seo";
 
 const signInSearchSchema = z.object({
   tab: z.enum(["sign-in", "sign-up"]).optional().catch(undefined),
@@ -28,6 +29,11 @@ const signInSearchSchema = z.object({
 
 export const Route = createFileRoute("/sign-in/$")({
   validateSearch: signInSearchSchema,
+  head: ({ match }) => ({
+    meta: [
+      ...pageMeta(match.search.tab === "sign-up" ? "Sign up" : "Sign in"),
+    ],
+  }),
   component: RouteComponent,
 });
 

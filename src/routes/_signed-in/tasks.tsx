@@ -13,12 +13,16 @@ import { hydrateAllTasksBoardCache } from "~/db/queries/hydrate-query-cache";
 import { TaskViewSortControls } from "~/components/views/TaskViewSortControls";
 import { TaskViewSwitcher } from "~/components/views/TaskViewSwitcher";
 import { TaskViewsContainer } from "~/components/views/TaskViewsContainer";
+import { pageMeta } from "~/utils/seo";
 
 export const Route = createFileRoute("/_signed-in/tasks")({
   loader: async ({ context }) => {
     const bundle = await fetchAllTasksBoardBundle();
     hydrateAllTasksBoardCache(context.queryClient, bundle);
   },
+  head: () => ({
+    meta: [...pageMeta("All Projects - Tasks")],
+  }),
   component: RouteComponent,
 });
 

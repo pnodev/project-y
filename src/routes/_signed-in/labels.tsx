@@ -16,13 +16,14 @@ import {
 } from "~/db/mutations/labels";
 import { FORM_SHEET_CREATE_LINKS } from "~/lib/form-sheet-search";
 import { Tag } from "lucide-react";
+import { pageMeta } from "~/utils/seo";
 
 export const Route = createFileRoute("/_signed-in/labels")({
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData(labelsWithCountsQueryOptions());
   },
   head: () => ({
-    meta: [{ title: "Labels" }],
+    meta: [...pageMeta("Labels")],
   }),
   component: LabelsComponent,
 });

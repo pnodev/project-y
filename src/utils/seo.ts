@@ -1,3 +1,10 @@
+export const APP_NAME = "Project Y"
+export const DEFAULT_DESCRIPTION = "Project Management without bullshit."
+
+export function formatPageTitle(pageTitle: string): string {
+  return `${pageTitle} · ${APP_NAME}`
+}
+
 export const seo = ({
   title,
   description,
@@ -15,8 +22,6 @@ export const seo = ({
     { name: 'keywords', content: keywords },
     { name: 'twitter:title', content: title },
     { name: 'twitter:description', content: description },
-    { name: 'twitter:creator', content: '@tannerlinsley' },
-    { name: 'twitter:site', content: '@tannerlinsley' },
     { name: 'og:type', content: 'website' },
     { name: 'og:title', content: title },
     { name: 'og:description', content: description },
@@ -30,4 +35,8 @@ export const seo = ({
   ]
 
   return tags
+}
+
+export function pageMeta(pageTitle: string, description = DEFAULT_DESCRIPTION) {
+  return seo({ title: formatPageTitle(pageTitle), description })
 }

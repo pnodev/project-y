@@ -2,10 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageLayout } from "~/components/PageLayout";
 import { UserSettingsForm } from "~/components/settings/UserSettingsForm";
 import { authClient } from "~/lib/auth-client";
+import { pageMeta } from "~/utils/seo";
 
 export const Route = createFileRoute("/_signed-in/settings/account")({
   head: () => ({
-    meta: [{ title: "Account settings" }],
+    meta: [...pageMeta("Account settings")],
   }),
   component: RouteComponent,
 });
