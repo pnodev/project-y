@@ -14,6 +14,18 @@ export const formSheetSearchSchema = z.object({
     .optional(),
 });
 
+/** Query params set by /api/git/github/callback after install or user OAuth. */
+export const gitIntegrationCallbackSearchSchema = z.object({
+  installed: z.enum(["1", "error"]).optional().catch(undefined),
+  user: z.enum(["connected", "error"]).optional().catch(undefined),
+  error: z.string().max(200).optional().catch(undefined),
+});
+
+/** Parent layout search: form sheets + GitHub integration callback flags. */
+export const signedInSearchSchema = formSheetSearchSchema.extend(
+  gitIntegrationCallbackSearchSchema.shape
+);
+
 export type FormSheetSearch = z.infer<typeof formSheetSearchSchema>;
 
 export type FormSheetCreateSearch = NonNullable<FormSheetSearch["sheet"]>;
