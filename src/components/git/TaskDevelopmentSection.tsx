@@ -118,12 +118,6 @@ export function TaskDevelopmentSection({
     }
   }, [data, branch?.repositoryId, branch?.id, projectRepos]);
 
-  useEffect(() => {
-    if (branch && startingDevelopment) {
-      setStartingDevelopment(false);
-    }
-  }, [branch, startingDevelopment]);
-
   if (isLoading || !data) return null;
 
   const { taskKey, activity } = data;
