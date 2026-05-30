@@ -16,6 +16,7 @@ import { DEFAULT_STATUS_RULE_PATTERNS } from "~/lib/git/status-rules";
 import { Octokit } from "@octokit/rest";
 import { exchangeGitHubUserAccessToken } from "~/lib/git/github/app";
 import { isGitHubConfigured } from "~/env";
+import { getClosingStatusOrLastByOrder } from "~/lib/statuses";
 import { getOwningIdentity } from "~/lib/utils";
 import type { requireSessionFromRequest } from "~/lib/session";
 
@@ -66,8 +67,7 @@ export async function runCompleteGitHubInstallation(
       where: eq(statuses.owner, owner),
       orderBy: (s, { asc }) => [asc(s.order)],
     });
-    const doneStatus =
-      ownerStatuses[ownerStatuses.length - 1] ?? ownerStatuses[0];
+    const doneStatus = getClosingStatusOrLastByOrder(ownerStatuses);
     const inProgressStatus =
       ownerStatuses[Math.min(1, ownerStatuses.length - 1)] ?? ownerStatuses[0];
 

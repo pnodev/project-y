@@ -15,22 +15,47 @@ import z from "zod";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
+
+type StatusTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function clearOtherClosingStatuses(
+  owner: string,
+  exceptId: string | undefined,
+  tx: StatusTx
+) {
+  const conditions = [eq(statuses.owner, owner), eq(statuses.isClosing, true)];
+  if (exceptId) {
+    conditions.push(ne(statuses.id, exceptId));
+  }
+  await tx
+    .update(statuses)
+    .set({ isClosing: false, updatedAt: new Date() })
+    .where(and(...conditions));
+}
 
 const createStatus = createServerFn({ method: "POST" })
   .inputValidator(insertStatusValidator)
   .handler(async ({ data }) => {
     const session = await requireSessionFromRequest();
+    const owner = getOwningIdentity(session);
+    const id = uuid();
 
-    await db.insert(statuses).values({
-      ...data,
-      id: uuid(),
-      owner: getOwningIdentity(session),
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    await db.transaction(async (tx) => {
+      if (data.isClosing) {
+        await clearOtherClosingStatuses(owner, undefined, tx);
+      }
+
+      await tx.insert(statuses).values({
+        ...data,
+        id,
+        owner,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
     });
     await sync(`status-create`, { data });
   });
@@ -63,20 +88,24 @@ const updateStatus = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const session = await requireSessionFromRequest();
 
-    await db
-      .update(statuses)
-      .set({
-        name: data.name,
-        color: data.color,
-        order: data.order,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(statuses.id, data.id!),
-          eq(statuses.owner, getOwningIdentity(session))
-        )
-      );
+    const owner = getOwningIdentity(session);
+
+    await db.transaction(async (tx) => {
+      if (data.isClosing) {
+        await clearOtherClosingStatuses(owner, data.id!, tx);
+      }
+
+      await tx
+        .update(statuses)
+        .set({
+          name: data.name,
+          color: data.color,
+          order: data.order,
+          isClosing: data.isClosing,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(statuses.id, data.id!), eq(statuses.owner, owner)));
+    });
     await sync(`status-update-${data.id}`, { data });
   });
 

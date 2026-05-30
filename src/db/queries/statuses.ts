@@ -55,6 +55,7 @@ export const fetchStatusesWithTaskCounts = createServerFn({
       name: statuses.name,
       color: statuses.color,
       order: statuses.order,
+      isClosing: statuses.isClosing,
       createdAt: statuses.createdAt,
       updatedAt: statuses.updatedAt,
       taskCount: sql<number>`count(${tasks.id})::int`,

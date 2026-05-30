@@ -23,6 +23,7 @@ import {
 } from "./task-view-dnd";
 import { TaskViewStore } from "./task-view-store";
 import type { TaskViewProps } from "./task-view-types";
+import { getClosingStatusId } from "~/lib/statuses";
 
 const statusDotClass = {
   red: "bg-red-500",
@@ -81,6 +82,8 @@ export function ListView({
     return section.sortedTasks.length > 0 || section.status || isUnknown;
   });
 
+  const closingStatusId = getClosingStatusId(statuses);
+
   return (
     <DndContext
       sensors={sensors}
@@ -111,6 +114,7 @@ export function ListView({
                 sprintId={sprintId}
                 updateTask={updateTask}
                 isFirst={index === 0}
+                closingStatusId={closingStatusId}
               />
             ))}
           </div>
@@ -126,6 +130,7 @@ export function ListView({
               location={location}
               updateTask={updateTask}
               isOverlay
+              closingStatusId={closingStatusId}
             />
           </div>
         ) : null}
@@ -150,6 +155,7 @@ function ListSection({
   sprintId,
   updateTask,
   isFirst,
+  closingStatusId,
 }: {
   section: TaskStatusSection;
   sortedTasks: TaskViewProps["tasks"];
@@ -160,6 +166,7 @@ function ListSection({
   sprintId?: string;
   updateTask: TaskViewProps["updateTask"];
   isFirst: boolean;
+  closingStatusId?: string;
 }) {
   const status = section.status;
   const isUnknown = section.key.startsWith("unknown-");
@@ -243,6 +250,7 @@ function ListSection({
               location={location}
               columnFlags={columnFlags}
               updateTask={updateTask}
+              closingStatusId={closingStatusId}
             />
           ))}
         </div>

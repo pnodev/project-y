@@ -12,6 +12,7 @@ import {
 } from "./task-view-dnd";
 import { TaskViewStore } from "./task-view-store";
 import type { TaskViewProps } from "./task-view-types";
+import { getClosingStatusId } from "~/lib/statuses";
 
 export const BoardView = ({
   tasks,
@@ -68,6 +69,7 @@ export const BoardView = ({
   const showProject = location === "sprint" || location === "all";
   const showSprint = location === "project" || location === "all";
   const taskLinkTo = location === "all" ? ("all" as const) : undefined;
+  const closingStatusId = getClosingStatusId(statuses);
 
   const renderColumnCards = (columnTasks: TaskViewProps["tasks"]) => {
     const sorted = sortColumnTasks(columnTasks);
@@ -81,6 +83,7 @@ export const BoardView = ({
         showProject={showProject}
         taskLinkTo={taskLinkTo}
         gitSummary={gitSummaries?.[task.id]}
+        closingStatusId={closingStatusId}
       />
     ));
   };
@@ -132,6 +135,7 @@ export const BoardView = ({
             showSprint={showSprint}
             showProject={showProject}
             taskLinkTo={taskLinkTo}
+            closingStatusId={closingStatusId}
           />
         ) : null}
       </DragOverlay>

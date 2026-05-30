@@ -37,6 +37,7 @@ import {
   handleTaskSelectClick,
   setHoveredTaskId,
 } from "./views/task-selection";
+import { isTaskOverdue } from "~/lib/statuses";
 
 export default function TaskCard({
   task,
@@ -45,6 +46,7 @@ export default function TaskCard({
   showProject,
   taskLinkTo,
   gitSummary,
+  closingStatusId,
 }: {
   task: TaskWithRelations;
   columnTaskIds: string[];
@@ -52,6 +54,7 @@ export default function TaskCard({
   showProject?: boolean;
   taskLinkTo?: "project" | "sprint" | "all";
   gitSummary?: TaskGitSummary;
+  closingStatusId?: string;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `task:${task.id}`,
@@ -73,6 +76,7 @@ export default function TaskCard({
           showSprint={showSprint}
           showProject={showProject}
           taskLinkTo={taskLinkTo}
+          closingStatusId={closingStatusId}
         />
       }
     >
@@ -114,6 +118,7 @@ export default function TaskCard({
             isSelected={isSelected}
             isHovered={isHovered}
             gitSummary={gitSummary}
+            closingStatusId={closingStatusId}
           />
         </div>
       </div>
@@ -195,6 +200,7 @@ export const TaskCardComponent = ({
   isSelected = false,
   isHovered = false,
   gitSummary,
+  closingStatusId,
 }: {
   task: TaskWithRelations;
   columnTaskIds?: string[];
@@ -204,8 +210,9 @@ export const TaskCardComponent = ({
   isSelected?: boolean;
   isHovered?: boolean;
   gitSummary?: TaskGitSummary;
+  closingStatusId?: string;
 }) => {
-  const isOverdue = task.deadline && task.deadline < new Date();
+  const isOverdue = isTaskOverdue(task, { closingStatusId });
   const taskKeyLabel =
     task.project.taskKeyPrefix != null
       ? formatTaskKey(task.project.taskKeyPrefix, task.number)

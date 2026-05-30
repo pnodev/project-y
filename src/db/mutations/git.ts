@@ -821,6 +821,20 @@ const disconnectGitHub = createServerFn({ method: "POST" }).handler(async () => 
     );
 });
 
+const disconnectGitHubUser = createServerFn({ method: "POST" }).handler(
+  async () => {
+    const session = await requireSessionFromRequest();
+    await db
+      .delete(gitUserLinks)
+      .where(
+        and(
+          eq(gitUserLinks.userId, session.user.id),
+          eq(gitUserLinks.provider, "github")
+        )
+      );
+  }
+);
+
 type SaveProjectGitInput = {
   projectId: string;
   repositoryIds: string[];
@@ -1133,6 +1147,15 @@ export function useDiscardTaskPullRequestReviewMutation() {
 export function useDisconnectGitHubMutation() {
   const queryClient = useQueryClient();
   const fn = useServerFn(disconnectGitHub);
+  return useCallback(async () => {
+    await fn();
+    queryClient.invalidateQueries({ queryKey: ["git"] });
+  }, [fn, queryClient]);
+}
+
+export function useDisconnectGitHubUserMutation() {
+  const queryClient = useQueryClient();
+  const fn = useServerFn(disconnectGitHubUser);
   return useCallback(async () => {
     await fn();
     queryClient.invalidateQueries({ queryKey: ["git"] });

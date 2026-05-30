@@ -1,8 +1,18 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { and, count, eq, isNotNull, isNull, lt } from "drizzle-orm";
+import {
+  and,
+  count,
+  eq,
+  exists,
+  isNotNull,
+  isNull,
+  lt,
+  not,
+  or,
+} from "drizzle-orm";
 import { db } from "~/db";
-import { Sprint, tasks } from "~/db/schema";
+import { Sprint, statuses, tasks } from "~/db/schema";
 import { ownerDashboardTopic } from "~/lib/owner-dashboard-topic";
 import { useEventSource } from "~/hooks/use-event-source";
 import { requireSessionFromRequest } from "~/lib/session";
@@ -44,7 +54,26 @@ export const fetchDashboardStats = createServerFn({ method: "GET" }).handler(
         countTasks(owner, isNull(tasks.statusId)),
         countTasks(
           owner,
-          and(isNotNull(tasks.deadline), lt(tasks.deadline, now))
+          and(
+            isNotNull(tasks.deadline),
+            lt(tasks.deadline, now),
+            or(
+              isNull(tasks.statusId),
+              not(
+                exists(
+                  db
+                    .select({ id: statuses.id })
+                    .from(statuses)
+                    .where(
+                      and(
+                        eq(statuses.id, tasks.statusId),
+                        eq(statuses.isClosing, true)
+                      )
+                    )
+                )
+              )
+            )
+          )
         ),
         activeSprint
           ? countTasks(owner, eq(tasks.sprintId, activeSprint.id))

@@ -41,12 +41,22 @@ function StatusesComponent() {
   );
 
   const handleUpdate = async (
-    id: string,
-    data: { name: string; color: keyof typeof selectableColorClasses }
+    status: (typeof statusesQuery.data)[number],
+    data: {
+      name: string;
+      color: keyof typeof selectableColorClasses;
+      isClosing?: boolean;
+    }
   ) => {
     if (typeof data.name !== "string" || !data.name) return;
 
-    await updateStatus({ id, name: data.name, color: data.color });
+    await updateStatus({
+      id: status.id,
+      name: data.name,
+      color: data.color,
+      order: status.order,
+      isClosing: data.isClosing ?? false,
+    });
   };
 
   const sortedStatuses = [...statusesQuery.data].sort(
@@ -90,8 +100,10 @@ function StatusesComponent() {
                     status.taskCount === 1 ? "task" : "tasks"
                   } associated with this status`}
                   color={status.color}
+                  isClosing={status.isClosing}
+                  showClosingFields
                   handleDelete={() => handleDelete(status.id)}
-                  handleUpdate={(data) => handleUpdate(status.id, data)}
+                  handleUpdate={(data) => handleUpdate(status, data)}
                   icon={Flag}
                 />
               ))}
