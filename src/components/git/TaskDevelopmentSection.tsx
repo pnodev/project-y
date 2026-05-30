@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   ChevronDown,
   Copy,
@@ -35,6 +35,7 @@ import { MULTI_REPO_SELECTION_MESSAGE } from "~/lib/git/constants";
 import { useGitTaskLiveSync } from "~/hooks/use-git-task-live-sync";
 import { formatClientError } from "~/lib/git/errors";
 import { PullRequestDescriptionPanel } from "~/components/git/PullRequestDescriptionPanel";
+import { CopyableBranchRef } from "~/components/git/CopyableBranchRef";
 import { TaskDevelopmentEmptyState } from "~/components/git/TaskDevelopmentEmptyState";
 import { TaskDevelopmentWorkspace } from "~/components/git/TaskDevelopmentWorkspace";
 import {
@@ -53,7 +54,7 @@ function PipelineStep({
   state,
 }: {
   label: string;
-  detail: string;
+  detail: ReactNode;
   state: StepState;
 }) {
   return (
@@ -69,7 +70,7 @@ function PipelineStep({
         />
         <span className="text-muted-foreground text-xs font-medium">{label}</span>
       </div>
-      <p className="mt-0.5 truncate pl-3.5 text-xs">{detail}</p>
+      <div className="mt-0.5 truncate pl-3.5 text-xs">{detail}</div>
     </div>
   );
 }
@@ -98,7 +99,6 @@ export function TaskDevelopmentSection({
   const [busy, setBusy] = useState(false);
   const [startingDevelopment, setStartingDevelopment] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [gitCommandsOpen, setGitCommandsOpen] = useState(false);
 
   const projectRepos = data?.projectRepos ?? [];
   const branches = data?.branches ?? [];
@@ -137,10 +137,6 @@ export function TaskDevelopmentSection({
     void navigator.clipboard.writeText(text);
     toast.success(`${label} copied`);
   };
-
-  const checkoutCommand = branch
-    ? `git fetch origin && git checkout ${branch.ref}`
-    : null;
 
   const branchStep: StepState = branch ? "done" : "pending";
   const commitStep: StepState =
@@ -335,11 +331,18 @@ export function TaskDevelopmentSection({
             <PipelineStep
               label="Branch"
               detail={
-                branch
-                  ? multipleRepos
-                    ? `${branch.repository.fullName} · ${branch.ref}`
-                    : branch.ref
-                  : "Not started"
+                branch ? (
+                  multipleRepos ? (
+                    <>
+                      {branch.repository.fullName} ·{" "}
+                      <CopyableBranchRef branchRef={branch.ref} onCopy={copy} />
+                    </>
+                  ) : (
+                    <CopyableBranchRef branchRef={branch.ref} onCopy={copy} />
+                  )
+                ) : (
+                  "Not started"
+                )
               }
               state={branchStep}
             />
@@ -370,14 +373,32 @@ export function TaskDevelopmentSection({
         </>
       ) : isPanel && displayPr ? null : (
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
-          <p className="text-muted-foreground min-w-0 truncate text-xs">
-            {branch
-              ? multipleRepos
-                ? `${branch.repository.fullName} · ${branch.ref}`
-                : branch.ref
-              : "No branch"}
-            {commitCount > 0 ? ` · ${commitCount} commit${commitCount === 1 ? "" : "s"}` : ""}
-            {pr && !displayPr ? ` · PR #${pr.number} ${pr.state}` : ""}
+          <p className="text-muted-foreground flex min-w-0 items-center truncate text-xs">
+            {branch ? (
+              <>
+                {multipleRepos ? (
+                  <>
+                    <span className="truncate">{branch.repository.fullName}</span>
+                    <span className="shrink-0"> · </span>
+                  </>
+                ) : null}
+                <CopyableBranchRef branchRef={branch.ref} onCopy={copy} />
+                {commitCount > 0 ? (
+                  <span className="shrink-0">
+                    {" "}
+                    · {commitCount} commit{commitCount === 1 ? "" : "s"}
+                  </span>
+                ) : null}
+                {pr && !displayPr ? (
+                  <span className="shrink-0">
+                    {" "}
+                    · PR #{pr.number} {pr.state}
+                  </span>
+                ) : null}
+              </>
+            ) : (
+              "No branch"
+            )}
           </p>
           {linkedRepo ? (
             <Button
@@ -595,87 +616,6 @@ export function TaskDevelopmentSection({
         </div>
       </div>
       )}
-
-      {branch && checkoutCommand ? (
-        isPanel ? (
-          <Collapsible
-            open={gitCommandsOpen}
-            onOpenChange={setGitCommandsOpen}
-            className="border-t border-border/60"
-          >
-            <CollapsibleTrigger className="text-muted-foreground flex w-full items-center justify-between px-3 py-2 text-xs hover:bg-muted/40">
-              Git commands
-              <ChevronDown
-                className={cn(
-                  "size-3.5 transition-transform",
-                  gitCommandsOpen && "rotate-180"
-                )}
-              />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-2 px-3 pb-3">
-              <div className="flex items-start gap-2">
-                <code className="bg-background/80 flex-1 truncate rounded border px-2 py-1.5 text-xs">
-                  {checkoutCommand}
-                </code>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  aria-label="Copy checkout command"
-                  onClick={() => copy(checkoutCommand, "Checkout command")}
-                >
-                  <Copy className="size-3.5" />
-                </Button>
-              </div>
-              <div className="flex items-start gap-2">
-                <code className="bg-background/80 flex-1 truncate rounded border px-2 py-1.5 text-xs">
-                  {branch.ref}
-                </code>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  aria-label="Copy branch name"
-                  onClick={() => copy(branch.ref, "Branch name")}
-                >
-                  <Copy className="size-3.5" />
-                </Button>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        ) : (
-          <div className="space-y-2 border-t border-border/60 px-4 py-3">
-            <div className="flex items-start gap-2">
-              <code className="bg-background/80 flex-1 truncate rounded border px-2 py-1.5 text-xs">
-                {checkoutCommand}
-              </code>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                aria-label="Copy checkout command"
-                onClick={() => copy(checkoutCommand, "Checkout command")}
-              >
-                <Copy className="size-3.5" />
-              </Button>
-            </div>
-            <div className="flex items-start gap-2">
-              <code className="bg-background/80 flex-1 truncate rounded border px-2 py-1.5 text-xs">
-                {branch.ref}
-              </code>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                aria-label="Copy branch name"
-                onClick={() => copy(branch.ref, "Branch name")}
-              >
-                <Copy className="size-3.5" />
-              </Button>
-            </div>
-          </div>
-        )
-      ) : null}
 
       {phase !== "no_repo" && phase !== "not_started" ? (
         <TaskDevelopmentWorkspace

@@ -7,6 +7,7 @@ import {
   Link2,
   MessageSquare,
 } from "lucide-react";
+import { GitProviderIcon } from "~/components/git/GitProviderIcon";
 import { Button } from "~/components/ui/button";
 import { useGitConnectionQuery } from "~/db/queries/git";
 import { projectEditSheetSearch } from "~/lib/form-sheet-search";
@@ -74,7 +75,9 @@ export function TaskDevelopmentEmptyState({
   starting?: boolean;
 }) {
   const { data: connectionData } = useGitConnectionQuery();
-  const hasGitHubApp = Boolean(connectionData?.connection);
+  const provider = connectionData?.connection?.provider ?? null;
+  /** Integrations UI and connection query are GitHub-only today. */
+  const isGitHubConnected = provider === "github";
   const isPanel = layout === "panel";
 
   const steps: SetupStep[] =
@@ -84,13 +87,13 @@ export function TaskDevelopmentEmptyState({
             title: "Connect GitHub",
             description:
               "Install the app and sync repositories from your organization.",
-            state: hasGitHubApp ? "done" : "active",
+            state: isGitHubConnected ? "done" : "active",
           },
           {
             title: "Link repositories to this project",
             description:
               "Choose which repos this project uses for branches and pull requests.",
-            state: hasGitHubApp ? "active" : "pending",
+            state: isGitHubConnected ? "active" : "pending",
           },
           {
             title: "Start development on this task",
@@ -145,7 +148,11 @@ export function TaskDevelopmentEmptyState({
         <div className={cn(isPanel && "text-center")}>
           {isPanel ? (
             <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-xl bg-muted">
-              <GitBranch className="text-muted-foreground size-5" />
+              {isGitHubConnected ? (
+                <GitProviderIcon provider="github" className="text-muted-foreground" />
+              ) : (
+                <GitBranch className="text-muted-foreground size-5" aria-hidden />
+              )}
             </div>
           ) : (
             <h3 className="text-sm font-medium">Development</h3>
@@ -183,7 +190,7 @@ export function TaskDevelopmentEmptyState({
         >
           {phase === "no_repo" ? (
             <>
-              {!hasGitHubApp ? (
+              {!isGitHubConnected ? (
                 <Button asChild>
                   <Link to="/settings/integrations">
                     <Github className="size-4" />
@@ -198,7 +205,7 @@ export function TaskDevelopmentEmptyState({
                   </Link>
                 </Button>
               )}
-              {hasGitHubApp ? (
+              {isGitHubConnected ? (
                 <Button variant="outline" asChild>
                   <Link to="/settings/integrations">
                     <Github className="size-4" />
