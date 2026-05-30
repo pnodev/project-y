@@ -65,11 +65,13 @@ export function TaskDevelopmentEmptyState({
   projectId,
   layout = "panel",
   actions,
+  starting = false,
 }: {
   phase: Extract<TaskDevPhase, "no_repo" | "not_started">;
   projectId: string;
   layout?: "panel" | "inline";
   actions?: React.ReactNode;
+  starting?: boolean;
 }) {
   const { data: connectionData } = useGitConnectionQuery();
   const hasGitHubApp = Boolean(connectionData?.connection);
@@ -110,21 +112,29 @@ export function TaskDevelopmentEmptyState({
           },
           {
             title: "Start development on this task",
-            description:
-              "Creates a branch from the task key. Commits and diffs appear once you push.",
+            description: starting
+              ? "Creating branch on GitHub…"
+              : "Creates a branch from the task key. Commits and diffs appear once you push.",
             state: "active",
           },
         ];
 
   const title =
-    phase === "no_repo" ? "Set up development" : "Ready to start development";
+    phase === "no_repo"
+      ? "Set up development"
+      : starting
+        ? "Creating branch…"
+        : "Ready to start development";
   const description =
     phase === "no_repo"
       ? "Connect your repository to track branches, commits, pull requests, and code review — without leaving this task."
-      : "Your project is configured. Start development to create a branch and begin tracking work on this task.";
+      : starting
+        ? "Setting up your branch on GitHub. This may take a few seconds."
+        : "Your project is configured. Start development to create a branch and begin tracking work on this task.";
 
   return (
     <section
+      aria-busy={starting || undefined}
       className={cn(
         isPanel
           ? "flex h-full min-h-0 flex-col items-center justify-center px-6 py-8"

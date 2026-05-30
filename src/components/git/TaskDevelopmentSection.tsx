@@ -96,6 +96,7 @@ export function TaskDevelopmentSection({
   const [prUrl, setPrUrl] = useState("");
   const [selectedRepositoryId, setSelectedRepositoryId] = useState("");
   const [busy, setBusy] = useState(false);
+  const [startingDevelopment, setStartingDevelopment] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [gitCommandsOpen, setGitCommandsOpen] = useState(false);
 
@@ -116,6 +117,12 @@ export function TaskDevelopmentSection({
       setSelectedRepositoryId(projectRepos[0]!.repositoryId);
     }
   }, [data, branch?.repositoryId, branch?.id, projectRepos]);
+
+  useEffect(() => {
+    if (branch && startingDevelopment) {
+      setStartingDevelopment(false);
+    }
+  }, [branch, startingDevelopment]);
 
   if (isLoading || !data) return null;
 
@@ -153,6 +160,27 @@ export function TaskDevelopmentSection({
       : "pending";
   const reviewStep: StepState = openPr ? "active" : pr ? "done" : "pending";
 
+  const handleStartDevelopment = async () => {
+    setStartingDevelopment(true);
+    try {
+      const result = await startDevelopment({
+        taskId,
+        repositoryId: selectedRepositoryId || undefined,
+      });
+      void navigator.clipboard.writeText(result.checkoutCommand);
+      toast.success("Development started — checkout command copied");
+    } catch (e) {
+      const message = formatClientError(e, "Failed to start development");
+      toast.error(
+        message.includes(MULTI_REPO_SELECTION_MESSAGE)
+          ? "Select a repository first"
+          : message
+      );
+    } finally {
+      setStartingDevelopment(false);
+    }
+  };
+
   const startDevelopmentActions = (
     <>
       {!branch && multipleRepos ? (
@@ -163,6 +191,7 @@ export function TaskDevelopmentSection({
           <Select
             value={selectedRepositoryId}
             onValueChange={setSelectedRepositoryId}
+            disabled={startingDevelopment}
           >
             <SelectTrigger
               id="task-dev-repo-empty"
@@ -182,30 +211,14 @@ export function TaskDevelopmentSection({
       ) : null}
       <Button
         type="button"
-        disabled={busy || (multipleRepos && !selectedRepositoryId)}
-        onClick={async () => {
-          setBusy(true);
-          try {
-            const result = await startDevelopment({
-              taskId,
-              repositoryId: selectedRepositoryId || undefined,
-            });
-            void navigator.clipboard.writeText(result.checkoutCommand);
-            toast.success("Development started — checkout command copied");
-          } catch (e) {
-            const message = formatClientError(e, "Failed to start development");
-            toast.error(
-              message.includes(MULTI_REPO_SELECTION_MESSAGE)
-                ? "Select a repository first"
-                : message
-            );
-          } finally {
-            setBusy(false);
-          }
-        }}
+        loading={startingDevelopment}
+        disabled={
+          startingDevelopment || busy || (multipleRepos && !selectedRepositoryId)
+        }
+        onClick={() => void handleStartDevelopment()}
       >
-        <Play className="size-3.5" />
-        Start development
+        {!startingDevelopment ? <Play className="size-3.5" /> : null}
+        {startingDevelopment ? "Starting…" : "Start development"}
       </Button>
     </>
   );
@@ -227,6 +240,7 @@ export function TaskDevelopmentSection({
           phase="not_started"
           projectId={projectId}
           layout="panel"
+          starting={startingDevelopment}
           actions={startDevelopmentActions}
         />
         <Collapsible
@@ -447,6 +461,7 @@ export function TaskDevelopmentSection({
             <Select
               value={selectedRepositoryId}
               onValueChange={setSelectedRepositoryId}
+              disabled={startingDevelopment}
             >
               <SelectTrigger id="task-dev-repo" className="h-8 w-full max-w-md">
                 <SelectValue placeholder="Select repository" />
@@ -469,33 +484,16 @@ export function TaskDevelopmentSection({
         {!branch ? (
           <Button
             type="button"
-            disabled={busy || (multipleRepos && !selectedRepositoryId)}
-            onClick={async () => {
-              setBusy(true);
-              try {
-                const result = await startDevelopment({
-                  taskId,
-                  repositoryId: selectedRepositoryId || undefined,
-                });
-                void navigator.clipboard.writeText(result.checkoutCommand);
-                toast.success("Development started — checkout command copied");
-              } catch (e) {
-                const message = formatClientError(
-                  e,
-                  "Failed to start development"
-                );
-                toast.error(
-                  message.includes(MULTI_REPO_SELECTION_MESSAGE)
-                    ? "Select a repository first"
-                    : message
-                );
-              } finally {
-                setBusy(false);
-              }
-            }}
+            loading={startingDevelopment}
+            disabled={
+              startingDevelopment ||
+              busy ||
+              (multipleRepos && !selectedRepositoryId)
+            }
+            onClick={() => void handleStartDevelopment()}
           >
-            <Play className="size-3.5" />
-            Start development
+            {!startingDevelopment ? <Play className="size-3.5" /> : null}
+            {startingDevelopment ? "Starting…" : "Start development"}
           </Button>
         ) : !openPr && !pr ? (
           <>
