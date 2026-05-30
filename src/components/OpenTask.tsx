@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   Dialog,
   DialogContent,
@@ -72,6 +72,11 @@ import { TaskDevelopmentSection } from "~/components/git/TaskDevelopmentSection"
 import { TaskPullRequestReviewFeed } from "~/components/git/TaskPullRequestReviewFeed";
 import { TaskGitReviewNavProvider } from "~/lib/git/task-git-review-nav";
 import { getClosingStatusId, isTaskOverdue } from "~/lib/statuses";
+import {
+  getTaskTabFromSearch,
+  type TaskTab,
+  type TaskTabSearch,
+} from "~/lib/task-tab-search";
 
 export function OpenTask({
   task,
@@ -87,6 +92,21 @@ export function OpenTask({
   location: "project" | "sprint" | "all";
 }) {
   const navigate = useNavigate();
+  const taskTabSearch = useSearch({ strict: false }) as TaskTabSearch;
+  const dialogView = getTaskTabFromSearch(taskTabSearch);
+  const setDialogView = useCallback(
+    (value: TaskTab) => {
+      navigate({
+        to: ".",
+        search: (prev) => ({
+          ...prev,
+          tab: value === "overview" ? undefined : value,
+        }),
+        replace: true,
+      });
+    },
+    [navigate]
+  );
   const closingStatusId = getClosingStatusId(statuses);
 
   const updateTask = useUpdateTaskMutation();
@@ -164,9 +184,6 @@ export function OpenTask({
 
   const owner = useCurrentOwningIdentity();
   const [preventClose, setPreventClose] = useState(false);
-  const [dialogView, setDialogView] = useState<"overview" | "development">(
-    "overview"
-  );
   const [taskTab, setTaskTab] = useState<"attachments" | "subtasks">(
     "attachments"
   );
@@ -185,7 +202,6 @@ export function OpenTask({
 
   useEffect(() => {
     if (!task?.id) return;
-    setDialogView("overview");
     setTaskTab(task.subTasks.length > 0 ? "subtasks" : "attachments");
     clearFileDragOver();
     // Intentionally only when switching tasks — not when subtask count changes.
@@ -327,9 +343,7 @@ export function OpenTask({
             <div className="col-span-8 flex min-h-0 flex-col">
               <Tabs
                 value={dialogView}
-                onValueChange={(value) =>
-                  setDialogView(value as "overview" | "development")
-                }
+                onValueChange={(value) => setDialogView(value as TaskTab)}
                 className="flex min-h-0 flex-1 flex-col gap-0"
               >
                 <div className="shrink-0">

@@ -6,10 +6,12 @@ import { useStatusesQuery } from "~/db/queries/statuses";
 import { useTaskQuery } from "~/db/queries/tasks";
 import { fetchTaskPageBundle } from "~/db/queries/bundles";
 import { hydrateTaskPageCache } from "~/db/queries/hydrate-query-cache";
+import { taskTabSearchSchema } from "~/lib/task-tab-search";
 
 export const Route = createFileRoute(
   "/_signed-in/sprints/$sprintId/tasks/$taskId"
 )({
+  validateSearch: taskTabSearchSchema,
   loader: async ({ context, params }) => {
     const bundle = await fetchTaskPageBundle({
       data: { taskId: params.taskId },
