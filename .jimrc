@@ -1,0 +1,6 @@
+NODE_VERSION=22
+DIR_JIM_SCRIPTS=./jim-scripts
+
+# Provisioning
+STORAGE_DATA_DIR=project-y
+STORAGE_SERVER=deploy@storage.pno.dev

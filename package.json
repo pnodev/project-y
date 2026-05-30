@@ -25,6 +25,7 @@
     "@octokit/rest": "^22.0.1",
     "@pierre/diffs": "^1.2.1",
     "@pierre/trees": "1.0.0-beta.4",
+    "@pnodev/jim-core": "^1.1.3",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-checkbox": "^1.3.3",
