@@ -3,7 +3,7 @@ import { AppSidebar } from "~/components/app-sidebar";
 import { FormSheetsHost } from "~/components/EntityFormSheets";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { SiteHeader } from "~/components/site-header";
-import { formSheetSearchSchema } from "~/lib/form-sheet-search";
+import { signedInSearchSchema } from "~/lib/form-sheet-search";
 import { useOrganizationCacheClear } from "~/hooks/organization-cache-clear";
 import { fetchSidebarBundle } from "~/db/queries/bundles";
 import { fetchUserPreferences } from "~/db/queries/user-preferences";
@@ -15,7 +15,7 @@ import { useRouterState } from "@tanstack/react-router";
 import { TopLoadingState } from "~/components/TopLoadingState";
 
 export const Route = createFileRoute("/_signed-in")({
-  validateSearch: formSheetSearchSchema,
+  validateSearch: signedInSearchSchema,
   loader: async ({ context }) => {
     const [bundle, preferences] = await Promise.all([
       fetchSidebarBundle(),

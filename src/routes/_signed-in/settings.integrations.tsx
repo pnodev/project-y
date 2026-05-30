@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Github, Plus, RefreshCw, Trash2, Unplug, User } from "lucide-react";
 import { PageLayout } from "~/components/PageLayout";
@@ -31,9 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { z } from "zod";
 import {
   COMMIT_STATUS_RULE_CONVENTION,
   DEFAULT_STATUS_RULE_PATTERNS,
@@ -46,14 +45,7 @@ const connectedBadgeClassName =
 const reconnectButtonClassName =
   "border-emerald-600 bg-emerald-600 text-white hover:border-emerald-700 hover:bg-emerald-700 dark:border-emerald-600 dark:bg-emerald-700 dark:hover:border-emerald-600 dark:hover:bg-emerald-600";
 
-const integrationsSearchSchema = z.object({
-  installed: z.enum(["1", "error"]).optional().catch(undefined),
-  user: z.enum(["connected", "error"]).optional().catch(undefined),
-  error: z.string().optional().catch(undefined),
-});
-
 export const Route = createFileRoute("/_signed-in/settings/integrations")({
-  validateSearch: integrationsSearchSchema,
   head: () => ({
     meta: [{ title: "Integrations" }],
   }),
@@ -98,7 +90,9 @@ function IntegrationRow({
 
 function IntegrationsPage() {
   const search = Route.useSearch();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const handledCallbackSearch = useRef(false);
   const { data: connectionData } = useSuspenseQuery(gitConnectionQueryOptions());
   const { data: rules } = useSuspenseQuery(gitStatusRulesQueryOptions());
   const { data: installUrls } = useSuspenseQuery({
@@ -124,6 +118,13 @@ function IntegrationsPage() {
   const userLink = connectionData.userLink;
 
   useEffect(() => {
+    const hasCallbackSearch =
+      search.installed != null || search.user != null || search.error != null;
+    if (!hasCallbackSearch || handledCallbackSearch.current) {
+      return;
+    }
+    handledCallbackSearch.current = true;
+
     if (search.installed === "1") {
       toast.success("GitHub App connected");
       void queryClient.invalidateQueries({ queryKey: ["git"] });
@@ -139,11 +140,26 @@ function IntegrationsPage() {
     if (search.error) {
       toast.error(`GitHub: ${search.error}`);
     }
+
+    void navigate({
+      to: "/settings/integrations",
+      search: (prev) => {
+        const {
+          installed: _installed,
+          user: _user,
+          error: _error,
+          ...rest
+        } = prev;
+        return rest;
+      },
+      replace: true,
+    });
   }, [
     search.installed,
     search.user,
     search.error,
     queryClient,
+    navigate,
   ]);
 
   const handleSyncRepos = async () => {
