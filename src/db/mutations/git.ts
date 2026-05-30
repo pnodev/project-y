@@ -990,6 +990,9 @@ function invalidatePrReviewQueries(
     queryClient.invalidateQueries({
       queryKey: ["git", "pr-status", taskId, pullRequestId],
     }),
+    queryClient.invalidateQueries({
+      queryKey: ["git", "pr-meta", taskId, pullRequestId],
+    }),
     queryClient.invalidateQueries({ queryKey: ["git", "task", taskId] }),
     queryClient.invalidateQueries({ queryKey: ["git", "summaries"] }),
   ]);

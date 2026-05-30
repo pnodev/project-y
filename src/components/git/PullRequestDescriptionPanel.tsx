@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button";
 import { LoadingSpinner } from "~/components/ui/loading-spinner";
 import {
   useGitConnectionQuery,
-  useTaskPullRequestReviewCommentsQuery,
+  useTaskPullRequestMetaQuery,
 } from "~/db/queries/git";
 import { cn } from "~/lib/utils";
 
@@ -24,7 +24,7 @@ export function PullRequestDescriptionPanel({
   className?: string;
 }) {
   const { data: connectionData } = useGitConnectionQuery();
-  const { data, isLoading, isFetching } = useTaskPullRequestReviewCommentsQuery(
+  const { data, isLoading, isFetching } = useTaskPullRequestMetaQuery(
     taskId,
     pullRequestId,
     Boolean(connectionData?.connection)

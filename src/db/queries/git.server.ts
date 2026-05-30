@@ -29,7 +29,8 @@ import {
 } from "~/lib/git/task-dev-phase";
 import type { GitPullRequest, GitReviewComment } from "~/lib/git/types";
 import { upsertTaskPullRequest } from "~/lib/git/upsert-task-pull-request";
-import { sync } from "~/db/mutations/sync";
+import { syncTaskGitUpdate } from "~/lib/git/sync-task-update";
+import { invalidateGitHubCacheForPullRequest } from "~/lib/git/github/cache-invalidation";
 import { v7 as uuid } from "uuid";
 import { pickRicherReviewComment } from "~/lib/git/review-comment-annotation";
 import { applyReviewThreadMetadata } from "~/lib/git/review-thread";
@@ -175,6 +176,38 @@ export async function getTaskGitContext(
       >,
     })),
     projectRepos,
+  };
+}
+
+export async function getTaskPullRequestMeta(
+  session: Awaited<ReturnType<typeof requireSessionFromRequest>>,
+  taskId: string,
+  pullRequestId: string
+) {
+  const owner = getOwningIdentity(session);
+  const { repository, connection, pullRequest: pr } = await resolveTaskRepository(
+    owner,
+    taskId,
+    { pullRequestId }
+  );
+  if (!pr) throw new Error("Pull request not found");
+
+  const { getGitProvider } = await import("~/lib/git/factory");
+  const provider = getGitProvider(connection.provider);
+  const repo = toGitRepo(repository);
+  const livePr = await provider.getPullRequest(connection, repo, pr.number);
+
+  return {
+    pullRequest: {
+      id: pr.id,
+      number: livePr.number,
+      url: livePr.url,
+      title: livePr.title,
+      body: livePr.body,
+      state: livePr.state,
+      headRef: livePr.headRef,
+      baseRef: livePr.baseRef,
+    },
   };
 }
 
@@ -855,7 +888,19 @@ export async function mergeTaskPullRequest(
     occurredAt: new Date(),
   });
 
-  await sync(`task-update-${taskId}`, { id: taskId });
+  await syncTaskGitUpdate(taskId, [
+    "task",
+    "summaries",
+    "pr-status",
+    "pr-meta",
+    "diff",
+  ], { pullRequestId });
+  await invalidateGitHubCacheForPullRequest(repository.fullName, pr.number, [
+    "task",
+    "diff",
+    "pr-status",
+    "pr-meta",
+  ]);
   return merged;
 }
 
@@ -904,7 +949,19 @@ export async function closeTaskPullRequest(
     occurredAt: new Date(),
   });
 
-  await sync(`task-update-${taskId}`, { id: taskId });
+  await syncTaskGitUpdate(taskId, [
+    "task",
+    "summaries",
+    "pr-status",
+    "pr-meta",
+    "diff",
+  ], { pullRequestId });
+  await invalidateGitHubCacheForPullRequest(repository.fullName, pr.number, [
+    "task",
+    "diff",
+    "pr-status",
+    "pr-meta",
+  ]);
   return closed;
 }
 
