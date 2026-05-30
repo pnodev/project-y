@@ -185,6 +185,7 @@ async function linkPullRequestToTask(params: {
     number: number;
     url: string;
     title: string;
+    body?: string | null;
     state: "open" | "closed" | "merged" | "draft";
     headRef: string;
     baseRef: string;
@@ -201,6 +202,7 @@ async function linkPullRequestToTask(params: {
     number: params.pr.number,
     url: params.pr.url,
     title: params.pr.title,
+    body: params.pr.body ?? null,
     state: params.pr.state,
     headRef: params.pr.headRef,
     baseRef: params.pr.baseRef,
@@ -510,6 +512,7 @@ async function handlePullRequestEvent(payload: Record<string, unknown>) {
       number: pr.number,
       url: pr.html_url,
       title: pr.title,
+      body: pr.body ?? null,
       state,
       headRef: pr.head.ref,
       baseRef: pr.base.ref,

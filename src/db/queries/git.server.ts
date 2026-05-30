@@ -1,6 +1,6 @@
 import "@tanstack/react-start/server-only";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "~/db";
 import {
   gitConnections,
@@ -192,21 +192,56 @@ export async function getTaskPullRequestMeta(
   );
   if (!pr) throw new Error("Pull request not found");
 
-  const { getGitProvider } = await import("~/lib/git/factory");
-  const provider = getGitProvider(connection.provider);
-  const repo = toGitRepo(repository);
-  const livePr = await provider.getPullRequest(connection, repo, pr.number);
+  let title = pr.title;
+  let body = pr.body ?? null;
+  let state = pr.state;
+  let headRef = pr.headRef;
+  let baseRef = pr.baseRef;
+  let url = pr.url;
+
+  const needsLiveFetch =
+    body == null && (pr.state === "open" || pr.state === "draft");
+
+  if (needsLiveFetch) {
+    const { getGitProvider } = await import("~/lib/git/factory");
+    const provider = getGitProvider(connection.provider);
+    const livePr = await provider.getPullRequest(
+      connection,
+      toGitRepo(repository),
+      pr.number
+    );
+
+    title = livePr.title;
+    body = livePr.body;
+    state = livePr.state;
+    headRef = livePr.headRef;
+    baseRef = livePr.baseRef;
+    url = livePr.url;
+
+    await db
+      .update(taskGitPullRequests)
+      .set({
+        title,
+        body,
+        state,
+        headRef,
+        baseRef,
+        url,
+        updatedAt: new Date(),
+      })
+      .where(eq(taskGitPullRequests.id, pr.id));
+  }
 
   return {
     pullRequest: {
       id: pr.id,
-      number: livePr.number,
-      url: livePr.url,
-      title: livePr.title,
-      body: livePr.body,
-      state: livePr.state,
-      headRef: livePr.headRef,
-      baseRef: livePr.baseRef,
+      number: pr.number,
+      url,
+      title,
+      body,
+      state,
+      headRef,
+      baseRef,
     },
   };
 }
@@ -833,6 +868,7 @@ async function persistTaskPullRequestFromGit(
     number: pr.number,
     url: pr.url,
     title: pr.title,
+    body: pr.body,
     state: pr.state,
     headRef: pr.headRef,
     baseRef: pr.baseRef,
@@ -972,17 +1008,22 @@ export async function getTaskGitSummariesForTasks(
   if (taskIds.length === 0) return {};
 
   const branches = await db.query.taskGitBranches.findMany({
-    where: and(eq(taskGitBranches.owner, owner)),
+    where: and(
+      eq(taskGitBranches.owner, owner),
+      eq(taskGitBranches.state, "active"),
+      inArray(taskGitBranches.taskId, taskIds)
+    ),
   });
   const prs = await db.query.taskGitPullRequests.findMany({
-    where: and(eq(taskGitPullRequests.owner, owner)),
+    where: and(
+      eq(taskGitPullRequests.owner, owner),
+      inArray(taskGitPullRequests.taskId, taskIds)
+    ),
   });
 
   const result: Record<string, TaskGitSummary> = {};
   for (const taskId of taskIds) {
-    const taskBranches = branches.filter(
-      (b) => b.taskId === taskId && b.state === "active"
-    );
+    const taskBranches = branches.filter((b) => b.taskId === taskId);
     const taskPrs = prs.filter((p) => p.taskId === taskId);
     const openPr = taskPrs.find((p) => p.state === "open" || p.state === "draft");
     result[taskId] = {

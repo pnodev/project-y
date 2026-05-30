@@ -1,10 +1,64 @@
 import "@tanstack/react-start/server-only";
 
+import { Octokit } from "@octokit/rest";
 import { getGitHubApp } from "./app";
+import { readCache, writeCache } from "~/lib/cache/redis";
+
+type CachedInstallationAuth = {
+  token: string;
+  expiresAt: string;
+};
+
+async function getCachedInstallationToken(
+  installationId: number
+): Promise<string | null> {
+  const key = `gh:installation:${installationId}:token`;
+  const cached = await readCache<CachedInstallationAuth>(key);
+  if (!cached?.token || !cached.expiresAt) return null;
+
+  const expiresAt = new Date(cached.expiresAt).getTime();
+  if (expiresAt <= Date.now() + 60_000) return null;
+
+  return cached.token;
+}
+
+async function cacheInstallationToken(
+  installationId: number,
+  token: string,
+  expiresAt: string | number
+) {
+  const expiresAtMs =
+    typeof expiresAt === "number" ? expiresAt : new Date(expiresAt).getTime();
+  const ttlSeconds = Math.max(
+    60,
+    Math.floor((expiresAtMs - Date.now()) / 1000) - 60
+  );
+
+  await writeCache(
+    `gh:installation:${installationId}:token`,
+    { token, expiresAt: new Date(expiresAtMs).toISOString() },
+    ttlSeconds
+  );
+}
 
 export async function getInstallationOctokit(installationId: number) {
+  const cachedToken = await getCachedInstallationToken(installationId);
+  if (cachedToken) {
+    return new Octokit({ auth: cachedToken });
+  }
+
   const app = getGitHubApp();
-  return app.getInstallationOctokit(installationId);
+  const installationAuth = (await app.octokit.auth({
+    type: "installation",
+    installationId,
+  })) as { token: string; expiresAt: string | number };
+
+  await cacheInstallationToken(
+    installationId,
+    installationAuth.token,
+    installationAuth.expiresAt
+  );
+  return new Octokit({ auth: installationAuth.token });
 }
 
 /** Octokit from @octokit/app — has `.request()`, not `.rest`. */

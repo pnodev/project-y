@@ -185,6 +185,7 @@ export const taskGitPullRequests = createTable(
     providerPrId: varchar("provider_pr_id", { length: 64 }).notNull(),
     url: varchar("url", { length: 512 }).notNull(),
     title: varchar("title", { length: 512 }).notNull(),
+    body: text("body"),
     state: gitPrStateEnum("state").notNull().default("open"),
     headRef: varchar("head_ref", { length: 512 }).notNull(),
     baseRef: varchar("base_ref", { length: 512 }).notNull(),

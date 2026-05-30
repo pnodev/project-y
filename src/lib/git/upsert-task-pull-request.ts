@@ -14,6 +14,7 @@ export type UpsertTaskPullRequestInput = {
   number: number;
   url: string;
   title: string;
+  body?: string | null;
   state: GitPrState;
   headRef: string;
   baseRef: string;
@@ -44,6 +45,7 @@ export async function upsertTaskPullRequest(
         providerPrId: input.providerPrId,
         url: input.url,
         title: input.title,
+        body: input.body ?? null,
         state: input.state,
         headRef: input.headRef,
         baseRef: input.baseRef,
@@ -66,6 +68,7 @@ export async function upsertTaskPullRequest(
     providerPrId: input.providerPrId,
     url: input.url,
     title: input.title,
+    body: input.body ?? null,
     state: input.state,
     headRef: input.headRef,
     baseRef: input.baseRef,
