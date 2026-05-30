@@ -29,7 +29,7 @@ import {
 } from "~/lib/git/task-dev-phase";
 import type { GitPullRequest, GitReviewComment } from "~/lib/git/types";
 import { upsertTaskPullRequest } from "~/lib/git/upsert-task-pull-request";
-import { syncTaskGitUpdate } from "~/lib/git/sync-task-update";
+import { syncTaskGitUpdate } from "~/lib/git/sync-task-update.server";
 import { invalidateGitHubCacheForPullRequest } from "~/lib/git/github/cache-invalidation";
 import { v7 as uuid } from "uuid";
 import { pickRicherReviewComment } from "~/lib/git/review-comment-annotation";

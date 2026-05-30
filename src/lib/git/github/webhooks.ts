@@ -23,8 +23,8 @@ import { branchMatchesTaskKey, extractTaskKeysFromText, formatTaskKey } from "..
 import { upsertTaskPullRequest } from "../upsert-task-pull-request";
 import {
   syncTaskGitUpdate,
-  type GitInvalidateScope,
-} from "../sync-task-update";
+} from "../sync-task-update.server";
+import type { GitInvalidateScope } from "../sync-task-update";
 import { invalidateGitHubCacheForPullRequest } from "~/lib/git/github/cache-invalidation";
 import { encodeRepoFullName } from "~/lib/git/github/cache-keys";
 import { deleteCacheByPrefix } from "~/lib/cache/redis";

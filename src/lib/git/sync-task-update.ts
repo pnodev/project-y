@@ -1,7 +1,3 @@
-import "@tanstack/react-start/server-only";
-
-import { sync } from "~/db/mutations/sync";
-
 export type GitInvalidateScope =
   | "task"
   | "summaries"
@@ -16,19 +12,6 @@ export type TaskGitSyncPayload = {
   gitInvalidate?: GitInvalidateScope[];
   pullRequestId?: string;
 };
-
-export async function syncTaskGitUpdate(
-  taskId: string,
-  scopes: GitInvalidateScope[],
-  options?: { pullRequestId?: string }
-) {
-  const payload: TaskGitSyncPayload = {
-    id: taskId,
-    gitInvalidate: scopes,
-    pullRequestId: options?.pullRequestId,
-  };
-  await sync(`task-update-${taskId}`, payload);
-}
 
 export function parseTaskGitSyncPayload(data: unknown): TaskGitSyncPayload | null {
   if (data == null) return null;
