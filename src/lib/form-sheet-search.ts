@@ -18,7 +18,7 @@ export const formSheetSearchSchema = z.object({
 export const gitIntegrationCallbackSearchSchema = z.object({
   installed: z.enum(["1", "error"]).optional().catch(undefined),
   user: z.enum(["connected", "error"]).optional().catch(undefined),
-  error: z.string().optional().catch(undefined),
+  error: z.string().max(200).optional().catch(undefined),
 });
 
 /** Parent layout search: form sheets + GitHub integration callback flags. */
