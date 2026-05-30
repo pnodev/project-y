@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { AuthLayout } from "~/components/auth/auth-layout";
 import { ResetPasswordForm } from "~/components/auth/reset-password-form";
+import { pageMeta } from "~/utils/seo";
 
 const resetPasswordSearchSchema = z.object({
   token: z.string().optional().catch(undefined),
@@ -10,6 +11,9 @@ const resetPasswordSearchSchema = z.object({
 
 export const Route = createFileRoute("/reset-password")({
   validateSearch: resetPasswordSearchSchema,
+  head: () => ({
+    meta: [...pageMeta("Choose a new password")],
+  }),
   component: RouteComponent,
 });
 

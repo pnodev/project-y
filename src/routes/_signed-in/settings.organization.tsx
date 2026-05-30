@@ -9,6 +9,7 @@ import { OrganizationSettingsForm } from "~/components/settings/OrganizationSett
 import { authClient } from "~/lib/auth-client";
 import { FORM_SHEET_CREATE_LINKS } from "~/lib/form-sheet-search";
 import { useOrganizations, type Organization } from "~/hooks/use-organizations";
+import { pageMeta } from "~/utils/seo";
 
 type FullOrganization = Organization & {
   members: Array<{
@@ -28,7 +29,7 @@ type FullOrganization = Organization & {
 
 export const Route = createFileRoute("/_signed-in/settings/organization")({
   head: () => ({
-    meta: [{ title: "Organization settings" }],
+    meta: [...pageMeta("Organization settings")],
   }),
   component: RouteComponent,
 });

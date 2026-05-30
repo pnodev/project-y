@@ -4,8 +4,12 @@ import { toast } from "sonner";
 import { AuthLayout } from "~/components/auth/auth-layout";
 import { TotpCodeForm } from "~/components/auth/totp-code-form";
 import { authClient } from "~/lib/auth-client";
+import { pageMeta } from "~/utils/seo";
 
 export const Route = createFileRoute("/two-factor")({
+  head: () => ({
+    meta: [...pageMeta("Two-factor authentication")],
+  }),
   component: RouteComponent,
 });
 

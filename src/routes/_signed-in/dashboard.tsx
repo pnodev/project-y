@@ -20,6 +20,7 @@ import { useSprintsQuery } from "~/db/queries/sprints";
 import { authClient } from "~/lib/auth-client";
 import { FORM_SHEET_CREATE_LINKS } from "~/lib/form-sheet-search";
 import { cn, formatUserName } from "~/lib/utils";
+import { pageMeta } from "~/utils/seo";
 
 export const Route = createFileRoute("/_signed-in/dashboard")({
   loader: async ({ context }) => {
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/_signed-in/dashboard")({
     hydrateDashboardCache(context.queryClient, stats);
   },
   head: () => ({
-    meta: [{ title: "Dashboard" }],
+    meta: [...pageMeta("Dashboard")],
   }),
   component: RouteComponent,
 });

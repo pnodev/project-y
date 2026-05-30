@@ -38,6 +38,7 @@ import {
   DEFAULT_STATUS_RULE_PATTERNS,
 } from "~/lib/git/status-rules";
 import { cn } from "~/lib/utils";
+import { pageMeta } from "~/utils/seo";
 
 const connectedBadgeClassName =
   "border-emerald-500/40 bg-emerald-100 text-emerald-950 dark:border-emerald-600/50 dark:bg-emerald-950/50 dark:text-emerald-50";
@@ -47,7 +48,7 @@ const reconnectButtonClassName =
 
 export const Route = createFileRoute("/_signed-in/settings/integrations")({
   head: () => ({
-    meta: [{ title: "Integrations" }],
+    meta: [...pageMeta("Integrations")],
   }),
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData(gitConnectionQueryOptions());

@@ -16,13 +16,14 @@ import {
 } from "~/db/queries/statuses";
 import { FORM_SHEET_CREATE_LINKS } from "~/lib/form-sheet-search";
 import { Flag } from "lucide-react";
+import { pageMeta } from "~/utils/seo";
 
 export const Route = createFileRoute("/_signed-in/statuses")({
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData(statusesWithCountsQueryOptions());
   },
   head: () => ({
-    meta: [{ title: "Statuses" }],
+    meta: [...pageMeta("Statuses")],
   }),
   component: StatusesComponent,
 });
