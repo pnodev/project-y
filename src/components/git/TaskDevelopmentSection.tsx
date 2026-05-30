@@ -24,7 +24,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
-import { useTaskGitContextQuery } from "~/db/queries/git";
+import { useTaskGitContextQuery, useGitConnectionQuery } from "~/db/queries/git";
 import {
   useCreateTaskPullRequestMutation,
   useDisconnectTaskGitBranchMutation,
@@ -34,7 +34,9 @@ import {
 import { MULTI_REPO_SELECTION_MESSAGE } from "~/lib/git/constants";
 import { useGitTaskLiveSync } from "~/hooks/use-git-task-live-sync";
 import { formatClientError } from "~/lib/git/errors";
+import { resolveGitProvider } from "~/lib/git/resolve-git-provider";
 import { PullRequestDescriptionPanel } from "~/components/git/PullRequestDescriptionPanel";
+import { GitProviderIcon } from "~/components/git/GitProviderIcon";
 import { TaskDevelopmentEmptyState } from "~/components/git/TaskDevelopmentEmptyState";
 import { TaskDevelopmentWorkspace } from "~/components/git/TaskDevelopmentWorkspace";
 import {
@@ -87,6 +89,7 @@ export function TaskDevelopmentSection({
   layout?: "inline" | "panel";
 }) {
   const isPanel = layout === "panel";
+  const { data: gitConnection } = useGitConnectionQuery();
   const { data, isLoading } = useTaskGitContextQuery(taskId);
   useGitTaskLiveSync(taskId);
   const startDevelopment = useStartTaskDevelopmentMutation();
@@ -132,6 +135,14 @@ export function TaskDevelopmentSection({
   const linkedRepo = branch?.repository;
   const multipleRepos = projectRepos.length > 1;
   const commitCount = activity.filter((a) => a.type === "commit").length;
+  const gitProvider = resolveGitProvider({
+    connectionProvider: gitConnection?.connection?.provider,
+    pullRequestUrl: pr?.url,
+    repositoryHtmlUrl:
+      linkedRepo?.htmlUrl ??
+      branch?.repository?.htmlUrl ??
+      projectRepos[0]?.repository?.htmlUrl,
+  });
 
   const copy = (text: string, label: string) => {
     void navigator.clipboard.writeText(text);
@@ -370,7 +381,13 @@ export function TaskDevelopmentSection({
         </>
       ) : isPanel && displayPr ? null : (
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
-          <p className="text-muted-foreground min-w-0 truncate text-xs">
+          <p className="text-muted-foreground flex min-w-0 items-center gap-1.5 truncate text-xs">
+            {gitProvider === "github" ? (
+              <GitProviderIcon
+                provider="github"
+                className="size-3.5 shrink-0"
+              />
+            ) : null}
             {branch
               ? multipleRepos
                 ? `${branch.repository.fullName} · ${branch.ref}`
@@ -400,6 +417,7 @@ export function TaskDevelopmentSection({
         <PullRequestDescriptionPanel
           taskId={taskId}
           pullRequestId={displayPr.id}
+          gitProvider={gitProvider}
           repository={
             linkedRepo
               ? { fullName: linkedRepo.fullName, htmlUrl: linkedRepo.htmlUrl }

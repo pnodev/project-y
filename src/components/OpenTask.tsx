@@ -70,6 +70,9 @@ import { Badge } from "./ui/badge";
 import { SprintSelect } from "./SprintSelect";
 import { TaskDevelopmentSection } from "~/components/git/TaskDevelopmentSection";
 import { TaskPullRequestReviewFeed } from "~/components/git/TaskPullRequestReviewFeed";
+import { GitProviderIcon } from "~/components/git/GitProviderIcon";
+import { useGitConnectionQuery, useTaskGitContextQuery } from "~/db/queries/git";
+import { resolveGitProvider } from "~/lib/git/resolve-git-provider";
 import { TaskGitReviewNavProvider } from "~/lib/git/task-git-review-nav";
 import { getClosingStatusId, isTaskOverdue } from "~/lib/statuses";
 import {
@@ -108,6 +111,18 @@ export function OpenTask({
     [navigate]
   );
   const closingStatusId = getClosingStatusId(statuses);
+  const { data: gitConnection } = useGitConnectionQuery();
+  const { data: gitContext } = useTaskGitContextQuery(
+    task?.id ?? "",
+    Boolean(task?.id)
+  );
+  const developmentGitProvider = resolveGitProvider({
+    connectionProvider: gitConnection?.connection?.provider,
+    pullRequestUrl: gitContext?.pullRequests[0]?.url,
+    repositoryHtmlUrl:
+      gitContext?.branches[0]?.repository?.htmlUrl ??
+      gitContext?.projectRepos[0]?.repository?.htmlUrl,
+  });
 
   const updateTask = useUpdateTaskMutation();
   const assignTask = useAssignTaskMutation();
@@ -356,7 +371,14 @@ export function OpenTask({
                       Overview
                     </TabsTrigger>
                     <TabsTrigger variant="dialog" value="development">
-                      <Code2 className="size-3.5" />
+                      {developmentGitProvider === "github" ? (
+                        <GitProviderIcon
+                          provider="github"
+                          className="size-3.5"
+                        />
+                      ) : (
+                        <Code2 className="size-3.5" />
+                      )}
                       Development
                     </TabsTrigger>
                   </TabsList>
