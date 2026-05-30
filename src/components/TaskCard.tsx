@@ -17,11 +17,21 @@ import {
   Users,
 } from "lucide-react";
 import { formatTaskKey } from "~/lib/git/task-key";
+import {
+  taskBranchTooltipLabel,
+  taskKeyTooltipLabel,
+  taskPullRequestTooltipLabel,
+} from "~/lib/git/task-card-git-labels";
 import type { TaskGitSummary } from "~/db/queries/git";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import { DateDisplay } from "./ui/date-display";
 import { Avatar, AvatarFallback, AvatarImage, AvatarList } from "./ui/avatar";
 import { useUsersQuery } from "~/db/queries/users";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { authClient } from "~/lib/auth-client";
 import {
   useAssignTaskMutation,
@@ -152,7 +162,6 @@ const TaskCardLinkWrapper = ({
     return (
       <Link
         to="/tasks/$taskId"
-        title="All Projects"
         params={{ taskId: params.taskId as string }}
         onClick={handleClick}
       >
@@ -165,7 +174,6 @@ const TaskCardLinkWrapper = ({
     return (
       <Link
         to="/projects/$projectId/tasks/$taskId"
-        title="Project"
         params={{
           projectId: params.projectId as string,
           taskId: params.taskId as string,
@@ -179,7 +187,6 @@ const TaskCardLinkWrapper = ({
   return (
     <Link
       to="/sprints/$sprintId/tasks/$taskId"
-      title="Sprint"
       params={{
         sprintId: params.sprintId as string,
         taskId: params.taskId as string,
@@ -190,6 +197,27 @@ const TaskCardLinkWrapper = ({
     </Link>
   );
 };
+
+// Supplementary hover hints only; indicators sit inside the card link, so they
+// stay non-focusable to avoid nested tab stops on the board.
+function TaskCardIndicatorTooltip({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <Tooltip delayDuration={400}>
+      <TooltipTrigger asChild>
+        <span className="inline-flex" aria-label={label}>
+          {children}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 export const TaskCardComponent = ({
   task,
@@ -311,27 +339,30 @@ export const TaskCardComponent = ({
             <CardTitle className="line-clamp-4">{task.name}</CardTitle>
             <div className="flex shrink-0 items-center gap-1">
               {taskKeyLabel ? (
-                <Badge variant="outline" className="font-mono text-[10px]">
-                  {taskKeyLabel}
-                </Badge>
+                <TaskCardIndicatorTooltip label={taskKeyTooltipLabel()}>
+                  <Badge variant="outline" className="font-mono text-[10px]">
+                    {taskKeyLabel}
+                  </Badge>
+                </TaskCardIndicatorTooltip>
               ) : null}
               {gitSummary?.hasBranch ? (
-                <GitBranch className="text-muted-foreground size-3.5" />
+                <TaskCardIndicatorTooltip label={taskBranchTooltipLabel()}>
+                  <GitBranch className="text-muted-foreground size-3.5" />
+                </TaskCardIndicatorTooltip>
               ) : null}
               {gitSummary?.hasPr ? (
-                <GitPullRequest
-                  className={cn(
-                    "size-3.5",
-                    gitSummary.hasOpenPr
-                      ? "text-primary"
-                      : "text-muted-foreground"
-                  )}
-                  aria-label={
-                    gitSummary.prState
-                      ? `Pull request ${gitSummary.prState}`
-                      : "Pull request linked"
-                  }
-                />
+                <TaskCardIndicatorTooltip
+                  label={taskPullRequestTooltipLabel(gitSummary)}
+                >
+                  <GitPullRequest
+                    className={cn(
+                      "size-3.5",
+                      gitSummary.hasOpenPr
+                        ? "text-primary"
+                        : "text-muted-foreground"
+                    )}
+                  />
+                </TaskCardIndicatorTooltip>
               ) : null}
             </div>
           </div>
