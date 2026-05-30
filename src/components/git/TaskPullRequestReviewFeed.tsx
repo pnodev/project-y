@@ -161,7 +161,7 @@ export function TaskPullRequestReviewFeed({
         ) : !reviewPr ? (
           <TaskPullRequestReviewEmptyState
             variant={
-              gitContext && gitContext.projectRepos.length === 0
+              !gitContext || gitContext.projectRepos.length === 0
                 ? "no_setup"
                 : "no_pr"
             }

@@ -156,7 +156,7 @@ export function TaskDevelopmentEmptyState({
         <ol className="space-y-3">
           {steps.map((step, index) => (
             <SetupStepRow
-              key={step.title}
+              key={index}
               step={step}
               stepNumber={index + 1}
             />
