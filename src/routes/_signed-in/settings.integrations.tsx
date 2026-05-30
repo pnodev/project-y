@@ -151,6 +151,9 @@ function IntegrationsPage() {
     try {
       await syncRepos();
       toast.success("Repositories synced");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to sync repositories");
     } finally {
       setIsSyncing(false);
     }
@@ -161,6 +164,9 @@ function IntegrationsPage() {
     try {
       await disconnectApp();
       toast.success("GitHub App disconnected");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to disconnect GitHub App");
     } finally {
       setIsDisconnectingApp(false);
     }
@@ -171,6 +177,9 @@ function IntegrationsPage() {
     try {
       await disconnectUser();
       toast.success("GitHub account disconnected");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to disconnect GitHub account");
     } finally {
       setIsDisconnectingUser(false);
     }
