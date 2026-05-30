@@ -908,7 +908,7 @@ export class GitHubProvider implements GitProvider {
         `query($threadId: ID!, $commentsAfter: String) {
           node(id: $threadId) {
             ... on PullRequestReviewThread {
-              comments(first: 50, after: $commentsAfter) {
+              comments(first: 100, after: $commentsAfter) {
                 pageInfo { hasNextPage endCursor }
                 nodes {
                   databaseId

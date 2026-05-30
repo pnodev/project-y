@@ -7,6 +7,16 @@ export type GitInvalidateScope =
   | "pr-status"
   | "pr-meta";
 
+export const ALLOWED_GIT_INVALIDATE_SCOPES: GitInvalidateScope[] = [
+  "task",
+  "summaries",
+  "diff",
+  "commits",
+  "pr-comments",
+  "pr-status",
+  "pr-meta",
+];
+
 export type TaskGitSyncPayload = {
   id: string;
   gitInvalidate?: GitInvalidateScope[];
@@ -40,15 +50,7 @@ export function parseTaskGitSyncPayload(data: unknown): TaskGitSyncPayload | nul
     ? wrapped.gitInvalidate.filter(
         (scope): scope is GitInvalidateScope =>
           typeof scope === "string" &&
-          [
-            "task",
-            "summaries",
-            "diff",
-            "commits",
-            "pr-comments",
-            "pr-status",
-            "pr-meta",
-          ].includes(scope)
+          ALLOWED_GIT_INVALIDATE_SCOPES.includes(scope as GitInvalidateScope)
       )
     : undefined;
 

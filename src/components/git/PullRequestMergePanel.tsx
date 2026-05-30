@@ -250,7 +250,7 @@ export function PullRequestMergePanel({
   return (
     <div className="border-border/60 shrink-0 border-t">
       <div className="px-4 py-3">
-        {isLoading ? (
+        {!deferReady || isLoading ? (
           <p className="text-muted-foreground text-xs">Loading checks…</p>
         ) : (
           <div className="space-y-3">

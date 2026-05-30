@@ -1,7 +1,7 @@
 import "@tanstack/react-start/server-only";
 
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { v7 as uuid } from "uuid";
 import { db } from "~/db";
 import {
@@ -257,7 +257,7 @@ export async function processGitHubWebhook(
       await handlePushEvent(payload, deliveryId);
     }
 
-    if (eventType.startsWith("pull_request")) {
+    if (eventType === "pull_request") {
       await handlePullRequestEvent(payload);
     }
 
@@ -421,6 +421,8 @@ async function handlePushEvent(
           eq(taskGitPullRequests.headRef, branchRef)
         ),
       });
+      await syncTaskGitUpdate(task.id, ["task", "summaries", "diff", "commits"]);
+
       for (const openPr of openPrs) {
         if (openPr.state !== "open" && openPr.state !== "draft") continue;
         await invalidateGitHubCacheForPullRequest(
@@ -428,16 +430,10 @@ async function handlePushEvent(
           openPr.number,
           ["task", "diff", "commits", "pr-status", "pr-meta"]
         );
+        await syncTaskGitUpdate(task.id, ["pr-status", "pr-meta"], {
+          pullRequestId: openPr.id,
+        });
       }
-
-      await syncTaskGitUpdate(task.id, [
-        "task",
-        "summaries",
-        "diff",
-        "commits",
-        "pr-status",
-        "pr-meta",
-      ]);
     }
   }
 }
@@ -620,7 +616,7 @@ async function handleCheckStatusEvent(payload: Record<string, unknown>) {
             eq(taskGitPullRequests.owner, connection.owner),
             eq(taskGitPullRequests.repositoryId, repository.id),
             eq(taskGitPullRequests.headRef, branch.name),
-            eq(taskGitPullRequests.state, "open")
+            inArray(taskGitPullRequests.state, ["open", "draft"])
           ),
         });
         for (const pr of linkedPrs) {

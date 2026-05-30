@@ -49,8 +49,10 @@ export async function readCache<T>(key: string): Promise<T | null> {
 
   try {
     return deserializeFromCache<T>(hit);
-  } catch {
-    await redis.del(key);
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      await redis.del(key);
+    }
     return null;
   }
 }

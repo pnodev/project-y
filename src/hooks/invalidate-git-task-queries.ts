@@ -44,7 +44,7 @@ export function invalidateGitTaskQueries(
             queryKey: pullRequestId
               ? ["git", "pr-comments", taskId, pullRequestId]
               : ["git", "pr-comments", taskId],
-            exact: !pullRequestId,
+            exact: Boolean(pullRequestId),
           })
         );
         break;
@@ -54,7 +54,7 @@ export function invalidateGitTaskQueries(
             queryKey: pullRequestId
               ? ["git", "pr-status", taskId, pullRequestId]
               : ["git", "pr-status", taskId],
-            exact: !pullRequestId,
+            exact: Boolean(pullRequestId),
           })
         );
         break;
@@ -64,7 +64,7 @@ export function invalidateGitTaskQueries(
             queryKey: pullRequestId
               ? ["git", "pr-meta", taskId, pullRequestId]
               : ["git", "pr-meta", taskId],
-            exact: !pullRequestId,
+            exact: Boolean(pullRequestId),
           })
         );
         break;
