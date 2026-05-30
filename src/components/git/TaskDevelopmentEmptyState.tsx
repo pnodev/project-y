@@ -1,12 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import {
   Check,
-  GitBranch,
   Github,
   GitPullRequest,
   Link2,
   MessageSquare,
 } from "lucide-react";
+import { GitProviderIcon } from "~/components/git/GitProviderIcon";
 import { Button } from "~/components/ui/button";
 import { useGitConnectionQuery } from "~/db/queries/git";
 import { projectEditSheetSearch } from "~/lib/form-sheet-search";
@@ -145,7 +145,10 @@ export function TaskDevelopmentEmptyState({
         <div className={cn(isPanel && "text-center")}>
           {isPanel ? (
             <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-xl bg-muted">
-              <GitBranch className="text-muted-foreground size-5" />
+              <GitProviderIcon
+                provider={connectionData?.connection?.provider ?? null}
+                className="text-muted-foreground"
+              />
             </div>
           ) : (
             <h3 className="text-sm font-medium">Development</h3>
