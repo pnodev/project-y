@@ -54,6 +54,7 @@ function mergeReviewCommentsById(
 export type TaskGitSummary = {
   hasBranch: boolean;
   hasOpenPr: boolean;
+  hasPr: boolean;
   prState?: string;
 };
 
@@ -930,6 +931,7 @@ export async function getTaskGitSummariesForTasks(
     result[taskId] = {
       hasBranch: taskBranches.length > 0,
       hasOpenPr: Boolean(openPr),
+      hasPr: taskPrs.length > 0,
       prState: openPr?.state ?? taskPrs[0]?.state,
     };
   }
