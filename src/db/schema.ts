@@ -155,7 +155,12 @@ export const statuses = createTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }),
   },
-  (example) => [index("status_owner_idx").on(example.owner)]
+  (example) => [
+    index("status_owner_idx").on(example.owner),
+    uniqueIndex("status_owner_is_closing_unique")
+      .on(example.owner)
+      .where(sql`${example.isClosing} = true`),
+  ]
 );
 
 export const labels = createTable(

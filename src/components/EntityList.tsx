@@ -151,7 +151,7 @@ export function EntityListItem({
       setIsSaving(false);
       setIsEditing(false);
     },
-    [handleUpdate]
+    [handleUpdate, showClosingFields]
   );
 
   const colorClass =

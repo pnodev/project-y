@@ -20,15 +20,18 @@ import { requireSessionFromRequest } from "~/lib/session";
 import { getOwningIdentity } from "~/lib/utils";
 import { sync } from "./sync";
 
+type StatusTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 async function clearOtherClosingStatuses(
   owner: string,
-  exceptId?: string
+  exceptId: string | undefined,
+  tx: StatusTx
 ) {
   const conditions = [eq(statuses.owner, owner), eq(statuses.isClosing, true)];
   if (exceptId) {
     conditions.push(ne(statuses.id, exceptId));
   }
-  await db
+  await tx
     .update(statuses)
     .set({ isClosing: false, updatedAt: new Date() })
     .where(and(...conditions));
@@ -41,16 +44,18 @@ const createStatus = createServerFn({ method: "POST" })
     const owner = getOwningIdentity(session);
     const id = uuid();
 
-    if (data.isClosing) {
-      await clearOtherClosingStatuses(owner);
-    }
+    await db.transaction(async (tx) => {
+      if (data.isClosing) {
+        await clearOtherClosingStatuses(owner, undefined, tx);
+      }
 
-    await db.insert(statuses).values({
-      ...data,
-      id,
-      owner,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      await tx.insert(statuses).values({
+        ...data,
+        id,
+        owner,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
     });
     await sync(`status-create`, { data });
   });
@@ -85,20 +90,22 @@ const updateStatus = createServerFn({ method: "POST" })
 
     const owner = getOwningIdentity(session);
 
-    if (data.isClosing) {
-      await clearOtherClosingStatuses(owner, data.id!);
-    }
+    await db.transaction(async (tx) => {
+      if (data.isClosing) {
+        await clearOtherClosingStatuses(owner, data.id!, tx);
+      }
 
-    await db
-      .update(statuses)
-      .set({
-        name: data.name,
-        color: data.color,
-        order: data.order,
-        isClosing: data.isClosing,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(statuses.id, data.id!), eq(statuses.owner, owner)));
+      await tx
+        .update(statuses)
+        .set({
+          name: data.name,
+          color: data.color,
+          order: data.order,
+          isClosing: data.isClosing,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(statuses.id, data.id!), eq(statuses.owner, owner)));
+    });
     await sync(`status-update-${data.id}`, { data });
   });
 
